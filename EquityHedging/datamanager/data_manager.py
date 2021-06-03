@@ -10,8 +10,9 @@ import os
 from datetime import datetime as dt
 
 CWD = os.getcwd()
-RETURNS_DATA_FP = '\\EquityHedging\\data\\ups_equity_hedge\\'
-EQUITY_HEDGING_RETURNS_DATA = CWD + RETURNS_DATA_FP + 'returns_data.xlsx'
+RETURNS_DATA_FP = '\\EquityHedging\\data\\'
+EQUITY_HEDGING_RETURNS_DATA = CWD + RETURNS_DATA_FP + 'ups_equity_hedge\\returns_data.xlsx'
+NEW_DATA = CWD + RETURNS_DATA_FP + 'new_strats\\'
 
 def merge_dicts(main_dict, new_dict):
     """
@@ -323,7 +324,7 @@ def get_new_strategy_returns_data(report_name, sheet_name, strategy_name):
     Returns:
     dataframe
     """
-    df_strategy = pd.read_excel(report_name, sheet_name=sheet_name, index_col=0)
+    df_strategy = pd.read_excel(NEW_DATA+report_name, sheet_name=sheet_name, index_col=0)
     df_strategy = get_real_cols(df_strategy)
     df_strategy.columns = [strategy_name]
     try:
