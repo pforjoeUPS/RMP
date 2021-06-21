@@ -312,7 +312,7 @@ def get_prices_df(df_returns):
             df_prices[col][i] = (df_returns[col][i] + 1) * df_prices[col][i-1]
     return df_prices
 
-def get_new_strategy_returns_data(report_name, sheet_name, strategy_name):
+def get_new_strategy_returns_data(report_name, sheet_name, strategy_list=[]):
     """
     dataframe of stratgy returns
     
@@ -326,7 +326,8 @@ def get_new_strategy_returns_data(report_name, sheet_name, strategy_name):
     """
     df_strategy = pd.read_excel(NEW_DATA+report_name, sheet_name=sheet_name, index_col=0)
     df_strategy = get_real_cols(df_strategy)
-    df_strategy.columns = [strategy_name]
+    if strategy_list:
+        df_strategy.columns = strategy_list
     try:
         df_strategy.index = pd.to_datetime(df_strategy.index)
     except TypeError:

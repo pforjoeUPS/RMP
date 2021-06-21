@@ -21,13 +21,13 @@ new_strat = False
 returns = dm.get_equity_hedge_returns(equity_bmk, include_fi, strat_drop_list)
 
 #Add new strat
-strategy_name = 'Def Var'
+strategy_list = ['Def Var']
 filename = 'def_var_data.xlsx'
 sheet_name = 'Daily Returns'
-new_strategy = dm.get_new_strategy_returns_data(filename, sheet_name, strategy_name)
+new_strategy = dm.get_new_strategy_returns_data(filename, sheet_name, strategy_list)
 new_strategy_dict = dm.get_data_dict(new_strategy, data_type='returns')
 returns = dm.merge_dicts(returns, new_strategy_dict)
-new_strat = True
+#returns['Weekly'] = returns['Weekly'][:-1]
 
 #get notional weights
 notional_weights = dm.get_notional_weights(returns['Monthly'])
@@ -49,12 +49,13 @@ analytics_dict = summary.get_analytics_data(returns,analytics_freq_list,weighted
 #compute historical selloffs
 hist_dict = summary.get_hist_data(returns,notional_weights=notional_weights, weighted=weighted)
 
-
+#get quintile dataframe
 quintile_df = summary.get_quintile_data(returns, notional_weights,weighted=True)
 
+#get annual dollar returns dataframe
 annual_dollar_returns = summary.get_annual_dollar_returns(returns, notional_weights)
 
 #run report
-equity_hedge_report = 'equity_hedge_analysis_052021'
-selloffs = False
+equity_hedge_report = 'equity_hedge_analysis_test'
+selloffs = True
 rp.get_equity_hedge_report(equity_hedge_report, returns, notional_weights, include_fi, new_strat, weighted[0], selloffs)
