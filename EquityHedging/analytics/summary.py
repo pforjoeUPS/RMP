@@ -178,6 +178,9 @@ def get_corr_data(returns_dict, frequency, weighted=[False], notional_weights=[]
     
     corr_data = {}
     
+    if weighted:
+        notional_weights = util.check_notional(returns_dict['Monthly'], notional_weights)
+    
     for freq in frequency:
         return_df = returns_dict[freq].copy()
         temp_corr_data = {}
@@ -191,6 +194,9 @@ def get_analytics_data(returns_dict, frequency, weighted=[False], notional_weigh
     """
     
     analytics_data = {}
+    
+    if weighted:
+        notional_weights = util.check_notional(returns_dict['Monthly'], notional_weights)
     
     for freq in frequency:
         return_df = returns_dict[freq].copy()

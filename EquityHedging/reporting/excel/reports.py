@@ -7,6 +7,7 @@ Created on Tue Oct  1 17:59:28 2019
 
 import pandas as pd
 from ...analytics import summary
+from ...analytics import util
 from ...analytics.corr_stats import get_corr_rank_data
 from ...analytics.historical_selloffs import get_hist_sim_table
 from ...datamanager import data_manager as dm
@@ -28,7 +29,12 @@ def get_equity_hedge_report(report_name, returns_dict, notional_weights=[],inclu
     writer = pd.ExcelWriter(file_path,engine='xlsxwriter')
     
     freq_list = ['Monthly', 'Weekly']
+    
+    if notional_weights == []:
+        notional_weights = util.check_notional(returns_dict['Monthly'], notional_weights)
+        
     for freq in freq_list:
+        print("Computing {} Analytics".format(freq))
         analysis_data = summary.get_analysis_sheet_data(returns_dict[freq], notional_weights,
                                                           include_fi,new_strat,
                                                           dm.switch_string_freq(freq), weighted)
@@ -43,6 +49,7 @@ def get_equity_hedge_report(report_name, returns_dict, notional_weights=[],inclu
         sheets.set_hist_return_sheet(writer,df_weighted_returns, return_sheet)
     if selloffs:
         daily_returns = returns_dict['Daily'].copy()
+        print("Computing Historical SellOffs")
         hist_df = summary.get_hist_sim_table(daily_returns, notional_weights, weighted)
         sheets.set_hist_sheet(writer, hist_df)
         sheets.set_hist_return_sheet(writer, daily_returns, 'Daily Historical Returns')
