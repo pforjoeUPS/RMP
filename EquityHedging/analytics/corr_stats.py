@@ -22,7 +22,7 @@ def get_corr_analysis(df_returns, notional_weights=[], include_fi=False, weighte
     weighted -- boolean
     
     Returns:
-    corr_dict -- dict(key: string, value: list[dataframe, string])
+    dict -- {key: string, value: list[dataframe, string]}
     """
     
     col_list = list(df_returns.columns)
@@ -43,6 +43,7 @@ def get_corr_analysis(df_returns, notional_weights=[], include_fi=False, weighte
     equity_up = (df_returns[df_returns[equity_id] > 0])
     equity_down = (df_returns[df_returns[equity_id] < 0])
     
+    #TODO: fix bug in title
     dates = get_min_max_dates(df_returns)
     data_range = str(dates['start']).split()[0] + ' to ' + str(dates['end']).split()[0]
     title = 'Correlation of ' + str(len(df_returns)) + ' Historical Observations (' + data_range + ')'
@@ -60,8 +61,20 @@ def get_corr_analysis(df_returns, notional_weights=[], include_fi=False, weighte
     return corr_dict
 
 #TODO: make flexible to compute corrs w/o weighted strats/hedges
+#TODO: add comments
 def get_corr_rank_data(df_returns,buckets, notional_weights=[],include_fi=False):
     """
+    Creates a dictionary of correlation dataframes ranked based on the
+    equity benchmark returns
+    
+    Parameters:
+    df_returns -- dataframe
+    buckets -- int
+    notional_weights -- list
+    include_fi -- boolean
+    
+    Returns:
+    dict{key: string, value: list[dataframe, string]}
     """
     
     strategy_returns = df_returns.copy()
@@ -72,8 +85,8 @@ def get_corr_rank_data(df_returns,buckets, notional_weights=[],include_fi=False)
     #confirm notional weights is correct len
     notional_weights = util.check_notional(strategy_returns, notional_weights)
     
-    strat_weights = util.get_strat_weights(notional_weights, include_fi)
     #compute weighted hedges returns
+    strat_weights = util.get_strat_weights(notional_weights, include_fi)
     strategy_returns['Weighted Hedges'] = strategy_returns.dot(tuple(strat_weights))
     
     #create a ranking for the equity index returns

@@ -16,21 +16,32 @@ from .rolling_cum import get_rolling_cum
 
 def get_analysis(df_returns, notional_weights=[], include_fi=False, new_strat=False, freq='1M', weighted = False):
     """
-    Returns a tuple of dataframes containing:
+    Returns a dictionary of dataframes containing:
     1. Return Statistics
     2. Hedge Framework Metrics
     
-    Parameters:
-    df_returns -- dataframe
-    notional_weights -- list
-    include_fi -- boolean
-    new_strat -- boolean
-    freq -- string
-    
-    Returns:
-    tuple(datframe, dataframe)
-        
+    Parameters
+    ----------
+    df_returns : dataframe
+        dataframe of returns
+    notional_weights : list, optional
+        notional weights of strategies. The default is [].
+    include_fi : boolean, optional
+        Include Fixed Income benchmark. The default is False.
+    new_strat : boolean, optional
+        Does analysis involve a new strategy. The default is False.
+    freq : string, optional
+        frequency. The default is '1M'.
+    weighted : boolean, optional
+        Include weighgted hedges and weighgted strats. The default is False.
+
+    Returns
+    -------
+    dict
+        DESCRIPTION.
+
     """
+    
     col_list = list(df_returns.columns)
     analysis_dict = {}
     if weighted:
