@@ -30,9 +30,8 @@ def get_equity_hedge_report(report_name, returns_dict, notional_weights=[],inclu
     
     freq_list = ['Monthly', 'Weekly']
     
-    if notional_weights == []:
-        notional_weights = util.check_notional(returns_dict['Monthly'], notional_weights)
-        
+    notional_weights = util.check_notional(returns_dict['Monthly'], notional_weights)
+    
     for freq in freq_list:
         print("Computing {} Analytics".format(freq))
         analysis_data = summary.get_analysis_sheet_data(returns_dict[freq], notional_weights,
