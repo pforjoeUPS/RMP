@@ -13,20 +13,20 @@ from EquityHedging.reporting.excel import reports as rp
 from EquityHedging.reporting import formatter as fmt, plots
 
 #import returns data
-equity_bmk = 'SPTR'
+equity_bmk = 'M1WD'
 include_fi = False
 weighted = [True, False]
 strat_drop_list = ['99%/90% Put Spread', 'Vortex']
 new_strat = False
-returns = dm.get_equity_hedge_returns(equity_bmk, include_fi, strat_drop_list)
+returns_ups = dm.get_equity_hedge_returns(equity_bmk, include_fi, strat_drop_list, False)
 
 #Add new strat
-strategy_list = ['Def Var']
-filename = 'def_var_data.xlsx'
-sheet_name = 'Daily Returns'
+strategy_list = ['FVA', 'Def Term Premia', 'FVA + Def Term Premia']
+filename = 'Credit Suisse_SX5E_Tail_FSFVA_20210528_UPS Pension.xlsx'
+sheet_name = 'data'
 new_strategy = dm.get_new_strategy_returns_data(filename, sheet_name, strategy_list)
-new_strategy_dict = dm.get_data_dict(new_strategy, data_type='returns')
-returns = dm.merge_dicts(returns, new_strategy_dict)
+new_strategy_dict = dm.get_data_dict(new_strategy, data_type='index')
+returns = dm.merge_dicts(returns_ups, new_strategy_dict)
 #returns['Weekly'] = returns['Weekly'][:-1]
 
 #get notional weights
@@ -57,5 +57,5 @@ annual_dollar_returns = summary.get_annual_dollar_returns(returns, notional_weig
 
 #run report
 equity_hedge_report = 'equity_hedge_analysis_test'
-selloffs = True
+selloffs = False
 rp.get_equity_hedge_report(equity_hedge_report, returns, notional_weights, include_fi, new_strat, weighted[0], selloffs)
