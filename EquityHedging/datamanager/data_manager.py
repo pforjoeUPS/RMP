@@ -215,9 +215,10 @@ def get_notional_weights(df_returns):
     """
     return [float(input('notional value (Billions) for ' + col + ': ')) for col in df_returns.columns]    
 
+#TODO: Add Def Var
 def create_copy_with_fi(df_returns, equity = 'SPTR', freq='1M', include_fi=False):
     """
-    Combine columns together to get:
+    Combine columns of df_returns together to get:
     FI Benchmark (avg of Long Corps and STRIPS)
     VOLA (avg of VOLA I and VOLA II)
     
@@ -236,21 +237,28 @@ def create_copy_with_fi(df_returns, equity = 'SPTR', freq='1M', include_fi=False
             strategy_returns['FI Benchmark'] = (strategy_returns['Long Corp'] + strategy_returns['STRIPS'])/2
             strategy_returns = strategy_returns[[equity, 'FI Benchmark', '99%/90% Put Spread', 
                                                  'Down Var', 'Vortex', 'VOLA','Dynamic Put Spread',
-                                                 'VRR', 'GW Dispersion', 'Corr Hedge']]
+                                                 'VRR', 'GW Dispersion', 'Corr Hedge', 'Def Var']]
         else:
             strategy_returns = strategy_returns[[equity, '99%/90% Put Spread', 
                                                  'Down Var', 'Vortex', 'VOLA','Dynamic Put Spread',
-                                                 'VRR', 'GW Dispersion', 'Corr Hedge']]
+                                                 'VRR', 'GW Dispersion', 'Corr Hedge', 'Def Var']]
     else:
         strategy_returns['VOLA'] = (strategy_returns['VOLA I'] + strategy_returns['VOLA II'])/2
         strategy_returns = strategy_returns[[equity, '99%/90% Put Spread', 'Down Var', 'Vortex',
                                              'VOLA','Dynamic Put Spread','VRR', 
-                                             'GW Dispersion', 'Corr Hedge']]
+                                             'GW Dispersion', 'Corr Hedge', 'Def Var']]
     
     return strategy_returns
 
 def get_real_cols(df):
     """
+    Removes empty columns labeled 'Unnamed: ' after importing data
+    
+    Parameters:
+    df -- dataframe
+    
+    Returns:
+    dataframe
     """
     real_cols = [x for x in df.columns if not x.startswith("Unnamed: ")]
     df = df[real_cols]
@@ -258,6 +266,17 @@ def get_real_cols(df):
 
 def get_equity_hedge_returns(equity='SPTR', include_fi=False, strat_drop_list=[],only_equity=False):
     """
+    Returns a dictionary of dataframes containing returns data of 
+    different frequencies
+    
+    Parameters:
+    equity -- dataframe
+    include_fi --boolean
+    strat_drop_list -- list
+    only_equity -- boolean
+    
+    Returns:
+    dictionary
     """
     returns_dict = {}
     freqs = ['1D', '1W', '1M', '1Q', '1Y']
@@ -278,6 +297,15 @@ def get_equity_hedge_returns(equity='SPTR', include_fi=False, strat_drop_list=[]
 
 def get_data_dict(data, data_type='index'):
     """
+    Converts daily data into a dictionary of dataframes containing returns 
+    data of different frequencies
+    
+    Parameters:
+    data -- df
+    data_type -- string
+    
+    Returns:
+    dictionary
     """
     freq_list = ['Daily', 'Weekly', 'Monthly', 'Quarterly', 'Yearly']
     data_dict = {}
@@ -319,7 +347,7 @@ def get_new_strategy_returns_data(report_name, sheet_name, strategy_list=[]):
     Parameters:
     report_name -- string
     sheet_name -- string
-    strategy_name -- string
+    strategy_list -- list
     
     Returns:
     dataframe
