@@ -111,14 +111,17 @@ def set_analysis_sheet(writer, data_dict, sheet_name, spaces):
             #TODO: figure mout way to format date to short date
             worksheet.conditional_format(row+9,col+1, row+9, col_dim,{'type':'no_blanks',
                                       'format':date_fmt})
+            #format ret/Max 1M and 3M to digits
+            worksheet.conditional_format(row+10,col+1,row+11, col_dim,{'type':'no_blanks',
+                                      'format':digits_fmt})
             #format skew and avg_pos_ret/avg_neg_ret to digits
-            worksheet.conditional_format(row+10,col+1, row+11, col_dim,{'type':'no_blanks',
+            worksheet.conditional_format(row+12,col+1, row+13, col_dim,{'type':'no_blanks',
                                       'format':digits_fmt})
             #format downside dev to percent
-            worksheet.conditional_format(row+12,col+1, row+12, col_dim,{'type':'no_blanks',
+            worksheet.conditional_format(row+14,col+1, row+14, col_dim,{'type':'no_blanks',
                                       'format':pct_fmt})
             #format sortino to digits
-            worksheet.conditional_format(row+13,col+1, row+13, col_dim,{'type':'no_blanks',
+            worksheet.conditional_format(row+15,col+1, row+15, col_dim,{'type':'no_blanks',
                                       'format':digits_fmt})
             
             
@@ -130,23 +133,32 @@ def set_analysis_sheet(writer, data_dict, sheet_name, spaces):
             #format benefit mean and median to percent
             worksheet.conditional_format(row+2,col+1, row+3, col_dim,{'type':'no_blanks',
                                       'format':pct_fmt})
+            #format benefit cumulative to percent
+            worksheet.conditional_format(row+4,col+1, row+4, col_dim, {'type':'no_blanks',
+                                      'format':pct_fmt})
             #format reliability to digits
-            worksheet.conditional_format(row+4,col+1, row+4, col_dim,{'type':'no_blanks',
+            worksheet.conditional_format(row+5,col+1, row+5, col_dim,{'type':'no_blanks',
                                       'format':digits_fmt})
             #format convexity count to int
-            worksheet.conditional_format(row+5,col+1, row+5, col_dim,{'type':'no_blanks',
+            worksheet.conditional_format(row+6,col+1, row+6, col_dim,{'type':'no_blanks',
                                       'format':int_fmt})
             #format convexity mean and median to percent
-            worksheet.conditional_format(row+6,col+1, row+7, col_dim,{'type':'no_blanks',
+            worksheet.conditional_format(row+7,col+1, row+8, col_dim,{'type':'no_blanks',
+                                      'format':pct_fmt})
+            #format convexity cumulative to percent
+            worksheet.conditional_format(row+9,col+1, row+9, col_dim,{'type':'no_blanks',
                                       'format':pct_fmt})
             #format cost count to int
-            worksheet.conditional_format(row+8,col+1, row+8, col_dim,{'type':'no_blanks',
+            worksheet.conditional_format(row+10,col+1, row+10, col_dim,{'type':'no_blanks',
                                       'format':int_fmt})
             #format cost mean and median to percent
-            worksheet.conditional_format(row+9,col+1, row+10, col_dim,{'type':'no_blanks',
+            worksheet.conditional_format(row+11,col+1, row+12, col_dim,{'type':'no_blanks',
+                                      'format':pct_fmt})
+            #format cost cumulative to percent
+            worksheet.conditional_format(row+13,col+1, row+13, col_dim,{'type':'no_blanks',
                                       'format':pct_fmt})
             #format decay days to int
-            worksheet.conditional_format(row+11,col+1, row+13, col_dim,{'type':'no_blanks',
+            worksheet.conditional_format(row+13,col+1, row+15, col_dim,{'type':'no_blanks',
                                       'format':int_fmt})
             
         row = row_dim + spaces + 1

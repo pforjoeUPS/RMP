@@ -30,7 +30,8 @@ def get_benefit_stats(df_returns, col_name):
     pos_ret = get_pos_neg_df(benefit_ret,col_name,True)
     benefit = {'count':pos_ret[col_name].count(), 
                'mean':pos_ret[col_name].mean(), 
-               'median':pos_ret[col_name].median()
+               'median':pos_ret[col_name].median(),
+               'cumulative':pos_ret[col_name].count()*pos_ret[col_name].mean()
                }
     return benefit
 
@@ -56,7 +57,8 @@ def get_convexity_stats(df_returns, col_name):
     pos_ret = get_pos_neg_df(convexity_ret,col_name,True)
     convexity = {'count':pos_ret[col_name].count(), 
                'mean':pos_ret[col_name].mean(), 
-               'median':pos_ret[col_name].median()
+               'median':pos_ret[col_name].median(),
+               'cumulative':pos_ret[col_name].count()*pos_ret[col_name].mean()
                }
     return convexity
 
@@ -103,7 +105,8 @@ def get_cost_stats(df_returns, col_name):
     
     cost = {'count':neg_ret[col_name].count(), 
                'mean':neg_ret[col_name].mean(), 
-               'median':neg_ret[col_name].median()
+               'median':neg_ret[col_name].median(),
+               'cumulative':neg_ret[col_name].count()*neg_ret[col_name].mean()
                }
     return cost
 
@@ -118,13 +121,19 @@ def get_reliability_stats(df_returns, col_name):
     Returns:
     reliability -- dict(cout(double), mean(double), median(double))
     """
-    
+    #TODO: Create reliability for upside and downside equity and make dictionary including both
+    #Look at corr_stats 
     col_list = list(df_returns.columns)
     equity_id = col_list[0]
     equity_down = (df_returns[df_returns[equity_id]<0])
+    equity_up = (df_returns[df_returns[equity_id]>0])
     
+    corr_u = equity_up.corr()
     corr_d = equity_down.corr()
-    reliability = corr_d[col_name].iloc[0]
+    reliability_d = corr_d[col_name].iloc[0]
+    reliability_u = corr_u[col_name].iloc[0]
+    
+    reliability = {"upside": reliability_u, "downside": reliability_d}
     return reliability
 
 def get_hedge_metrics(df_returns, freq="1M"):
@@ -147,10 +156,12 @@ def get_hedge_metrics(df_returns, freq="1M"):
         decay = get_decay_stats(df_returns, col, freq)
         
         hedge_dict[col] = [benefit['count'], benefit['median'],
-                          benefit['mean'], reliability,
+                          benefit['mean'], benefit['cumulative'], 
+                          reliability['upside'], reliability['downside'],
                           convexity['count'], convexity['median'],
-                          convexity['mean'], cost['count'],
-                          cost['median'], cost['mean'], decay['half'], 
+                          convexity['mean'], convexity['cumulative'],
+                          cost['count'], cost['median'], cost['mean'], 
+                          cost['cumulative'], decay['half'], 
                           decay['quarter'],decay['tenth']]
         
     return hedge_dict

@@ -16,7 +16,7 @@ from .rolling_cum import get_rolling_cum
 
 def get_analysis(df_returns, notional_weights=[], include_fi=False, new_strat=False, freq='1M', weighted = False):
     """
-    Returns a tuple of dataframes containing:
+    Returns a dictionary of dataframes containing:
     1. Return Statistics
     2. Hedge Framework Metrics
     
@@ -28,7 +28,7 @@ def get_analysis(df_returns, notional_weights=[], include_fi=False, new_strat=Fa
     freq -- string
     
     Returns:
-    tuple(datframe, dataframe)
+    dictionary
         
     """
     col_list = list(df_returns.columns)
@@ -56,7 +56,8 @@ def get_analysis(df_returns, notional_weights=[], include_fi=False, new_strat=Fa
                                         'Annualized Vol','Ret/Vol', 
                                         'Max DD','Ret/Max DD','Max 1M DD',
                                         'Max 1M DD Date', 'Max 3M DD', 
-                                        'Max 3M DD Date', 'Skew',
+                                        'Max 3M DD Date', 'Ret/Max 1M DD',
+                                        'Ret/Max 3M DD', 'Skew',
                                         'Avg Pos Ret/Avg Neg Ret',
                                         'Downside Deviation',
                                         'Sortino Ratio'])
@@ -84,10 +85,10 @@ def get_analysis(df_returns, notional_weights=[], include_fi=False, new_strat=Fa
     # Create pandas DataFrame for hedge metrics
     df_hedge_metrics = pd.DataFrame(hedge_dict, 
                                   index = ['Benefit Count', 'Benefit Median', 
-                                           'Benefit Mean', 'Reliabitlity',
+                                           'Benefit Mean', 'Benefit Cumulative','Reliabitlity',
                                            'Convexity Count', 'Convexity Median',
-                                           'Convexity Mean','Cost Count',
-                                           'Cost Median','Cost Mean', 'Decay Days (50% retrace)',
+                                           'Convexity Mean', 'Convexity Cumulative', 'Cost Count',
+                                           'Cost Median','Cost Mean', 'Cost Cumulative', 'Decay Days (50% retrace)',
                                             'Decay Days (25% retrace)', 'Decay Days (10% retrace)'])
     
     #remove equity col

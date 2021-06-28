@@ -167,19 +167,55 @@ def get_return_stats(df_returns, freq='1M'):
         
         ann_ret = get_ann_return(df_strat[col], freq)
         ann_vol = get_ann_vol(df_strat[col], freq)
-        ret_vol = ann_ret / ann_vol
+        ret_vol = get_ret_vol_ratio(df_strat, col, freq)
         max_dd = get_max_dd(df_prices[col])
-        ret_dd = ann_ret / abs(max_dd)
+        ret_dd = get_ret_maxdd_ratio(df_strat, df_prices, col, freq)
         max_1m_dd = get_max_dd_freq(df_prices[col],freq)['max_dd']
         max_1m_date = get_max_dd_freq(df_prices[col],freq)['index']
         max_1q_dd = get_max_dd_freq(df_prices[col],freq,True)['max_dd']
         max_1q_date = get_max_dd_freq(df_prices[col],freq,True)['index']
-        skew = df_strat[col].skew()
+        ret_1m_dd = get_ret_maxdd_freq_ratio(df_strat, col, df_prices[col], freq, max_1q_dd=False)
+        ret_1q_dd = get_ret_maxdd_freq_ratio(df_strat, col, df_prices[col], freq, max_1q_dd=True)
+        skew = get_skew(df_strat,col)
         avg_pos_neg = get_avg_pos_neg(df_strat, col)
         down_stdev = get_down_stddev(df_strat, col, freq)
         sortino = get_sortino_ratio(df_strat, col, freq)
         analysis_dict[col] = [ann_ret, ann_vol, ret_vol, max_dd, ret_dd,
                              max_1m_dd, max_1m_date, max_1q_dd, max_1q_date,
+                             ret_1m_dd, ret_1q_dd,
                              skew, avg_pos_neg, down_stdev, sortino]
         
     return analysis_dict
+
+def get_ret_vol_ratio(df_strat, col, freq = "1M"):
+    #Calculate annualized return and annualzed vol
+    ann_ret = (get_ann_return(df_strat[col], freq))
+    ann_vol = (get_ann_vol(df_strat[col], freq))
+    #Calculate return vol by dividing annualized return by annualized vol
+    ret_vol = ann_ret/ann_vol
+    return ret_vol
+
+def get_ret_maxdd_ratio(df_strat, df_prices, col, freq = "1M"):
+    #Calculate annualized return and the max drawdown
+    ann_ret = get_ann_return(df_strat[col], freq)
+    max_dd = get_max_dd(df_prices[col])
+    #Divide annualized return by the absolute value of max drawdown
+    ret_dd = ann_ret/(abs(max_dd))
+    return ret_dd
+
+def get_skew(df_strat,col):
+    #Use skew function to calculate the skew of the data
+    skew = df_strat[col].skew()
+    return skew
+
+def get_ret_maxdd_freq_ratio(df_strat,col,price_series,freq,max_1q_dd=False):
+    #Calculate annualized return
+    ann_ret = get_ann_return(df_strat[col], freq)
+    #Calculate max drawdown frequency for when max quarter drawdown is true and false
+    max_dd_freq_false = (get_max_dd_freq(price_series, freq= '1M', max_3m_dd=False)['max_dd'])
+    max_dd_freq_true = (get_max_dd_freq(price_series,freq='1M',max_3m_dd=True)['max_dd'])
+    if max_1q_dd==False:
+        ret_maxdd_ratio = ann_ret/max_dd_freq_false
+    else:
+        ret_maxdd_ratio = ann_ret/max_dd_freq_true
+    return ret_maxdd_ratio         
