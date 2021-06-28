@@ -232,20 +232,21 @@ def create_copy_with_fi(df_returns, equity = 'SPTR', freq='1M', include_fi=False
     
     if freq == '1W' or freq == '1M':
         strategy_returns['VOLA'] = (strategy_returns['VOLA I'] + strategy_returns['VOLA II'])/2
+        #put in def var to account for mon wed and fri def var
         if include_fi:
             strategy_returns['FI Benchmark'] = (strategy_returns['Long Corp'] + strategy_returns['STRIPS'])/2
             strategy_returns = strategy_returns[[equity, 'FI Benchmark', '99%/90% Put Spread', 
                                                  'Down Var', 'Vortex', 'VOLA','Dynamic Put Spread',
-                                                 'VRR', 'GW Dispersion', 'Corr Hedge']]
+                                                 'VRR', 'GW Dispersion', 'Corr Hedge','Def Var']]
         else:
             strategy_returns = strategy_returns[[equity, '99%/90% Put Spread', 
                                                  'Down Var', 'Vortex', 'VOLA','Dynamic Put Spread',
-                                                 'VRR', 'GW Dispersion', 'Corr Hedge']]
+                                                 'VRR', 'GW Dispersion', 'Corr Hedge','Def Var']]
     else:
         strategy_returns['VOLA'] = (strategy_returns['VOLA I'] + strategy_returns['VOLA II'])/2
         strategy_returns = strategy_returns[[equity, '99%/90% Put Spread', 'Down Var', 'Vortex',
                                              'VOLA','Dynamic Put Spread','VRR', 
-                                             'GW Dispersion', 'Corr Hedge']]
+                                             'GW Dispersion', 'Corr Hedge','Def Var']]
     
     return strategy_returns
 

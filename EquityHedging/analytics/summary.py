@@ -2,7 +2,7 @@
 """
 Created on Tue Oct  1 17:59:28 2019
 
-@author: Powis Forjoe
+@author: Powis Forjoe and Maddie Choi
 """
 
 import pandas as pd
@@ -55,8 +55,8 @@ def get_analysis(df_returns, notional_weights=[], include_fi=False, new_strat=Fa
                                index = ['Annualized Ret', 
                                         'Annualized Vol','Ret/Vol', 
                                         'Max DD','Ret/Max DD','Max 1M DD',
-                                        'Max 1M DD Date', 'Max 3M DD', 
-                                        'Max 3M DD Date', 'Skew',
+                                        'Max 1M DD Date', 'Ret/Max 1M DD','Max 3M DD', 
+                                        'Max 3M DD Date','Ret/Max 3M DD', 'Skew',
                                         'Avg Pos Ret/Avg Neg Ret',
                                         'Downside Deviation',
                                         'Sortino Ratio'])
@@ -84,10 +84,10 @@ def get_analysis(df_returns, notional_weights=[], include_fi=False, new_strat=Fa
     # Create pandas DataFrame for hedge metrics
     df_hedge_metrics = pd.DataFrame(hedge_dict, 
                                   index = ['Benefit Count', 'Benefit Median', 
-                                           'Benefit Mean', 'Reliabitlity',
+                                           'Benefit Mean','Benefit Cumulative', 'Reliabitlity (BMK>0)','Reliabitlity (BMK<0)',
                                            'Convexity Count', 'Convexity Median',
-                                           'Convexity Mean','Cost Count',
-                                           'Cost Median','Cost Mean', 'Decay Days (50% retrace)',
+                                           'Convexity Mean','Convexity Cumulative','Cost Count',
+                                           'Cost Median','Cost Mean','Cost Cumulative', 'Decay Days (50% retrace)',
                                             'Decay Days (25% retrace)', 'Decay Days (10% retrace)'])
     
     #remove equity col
