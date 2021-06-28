@@ -2,7 +2,7 @@
 """
 Created on Sat Apr 24 00:21:46 2021
 
-@author: Powis Forjoe
+@author: Powis Forjoe, Zach Wells and Maddie Choi
 """
 
 #import libraries
