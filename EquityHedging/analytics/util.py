@@ -190,13 +190,26 @@ def get_weighted_strats_df_1(df_returns, notional_weights=[], include_fi=False, 
     
     return df_weighted_strats
 
-def get_weighted_hedges(df_returns, notional_weights, include_fi=False):
+def get_weighted_hedges(df_returns, notional_weights, include_fi=False, new_strat=False):
     """
     """
     
     df_weighted_hedges = df_returns.copy()
     strat_weights = get_strat_weights(notional_weights, include_fi)
     df_weighted_hedges['Weighted Hedges'] = df_weighted_hedges.dot(tuple(strat_weights))
+    
+# =============================================================================
+#     if new_strat:
+#         df_weighted_hedges_old= df_returns.copy()
+#         df_weighted_hedges_old[len(df_weighted_hedges_old)-1] = 0
+#         col_names = list(df_returns.columns)
+#         wgt_hedge_wo_name='Weighted Hedges w/o ' + col_names[len(col_names)-1]
+#         notional_weights_old=notional_weights.copy()
+#         notional_weights_old[len(notional_weights)-1] = 0  
+#         strat_weights_old= get_strat_weights(notional_weights_old, include_fi)
+#         df_weighted_hedges[wgt_hedge_wo_name] = df_weighted_hedges.dot(tuple(strat_weights_old))
+# =============================================================================
+    
     return df_weighted_hedges
 
 def bucket(x):

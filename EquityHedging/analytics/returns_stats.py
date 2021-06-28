@@ -2,8 +2,9 @@
 """
 Created on Tue Oct  1 17:59:28 2019
 
-@author: Powis Forjoe
+@author: Powis Forjoe and Maddie Choi
 """
+
 
 import numpy as np
 from ..datamanager import data_manager as dm
@@ -145,7 +146,57 @@ def get_sortino_ratio(df_returns, col, freq='1M', rfr=0, target=0):
     sortino_ratio = (ann_ret - rfr) / down_stddev
     
     return sortino_ratio
+
+def get_ret_vol_ratio(df_strat,col,freq='1M'):
+    #ret vol= annual return/annual vol
+    #calculate annual return
+    ann_ret = get_ann_return(df_strat[col], freq)
     
+    #calculate annual vol
+    ann_vol = get_ann_vol(df_strat[col], freq)
+    
+    #calculate ratio
+    ret_vol = ann_ret / ann_vol
+    return ret_vol
+
+def get_ret_maxdd_ratio(df_strat,df_prices,col,freq='1M'):
+    #return max draw down ratio = (annual returns)/ (max draw downs)
+    #compute annual returns
+    ann_ret = get_ann_return(df_strat[col], freq)
+    
+    #compute max draw down
+    max_dd = get_max_dd(df_prices[col])
+    
+    #calculate ratio
+    ret_maxdd=  ann_ret/abs(max_dd)
+    return ret_maxdd
+ 
+def get_skew(df_strat, col):
+    #compute skew
+     skew= df_strat[col].skew()
+     return skew
+
+def get_ret_maxdd_freq_ratio(df_strat,col,price_series,freq,max_1Q_dd=False):
+    #calculate annual return
+    ann_ret=get_ann_return(df_strat[col], freq)
+        
+    if max_1Q_dd==False:
+        #calculates 1m ret max dd ratio
+        #calculate max 1 month draw down
+        max_1m_dd=get_max_dd_freq(price_series[col], freq='1M', max_3m_dd=False)['max_dd']
+        
+        #compute ratio
+        ret_maxdd_ratio= ann_ret/max_1m_dd
+    else:
+        #calculates 3m return max dd ratio
+        
+        #calculate max 1 month draw down
+        max_1m_dd=get_max_dd_freq(price_series[col], freq='1M', max_3m_dd=True)['max_dd']
+        
+        #compute ratio
+        ret_maxdd_ratio= ann_ret/max_1m_dd
+    return ret_maxdd_ratio
+
 def get_return_stats(df_returns, freq='1M'):
     """
     Return a dict of return analytics
@@ -164,22 +215,26 @@ def get_return_stats(df_returns, freq='1M'):
     for col in df_returns.columns:
         df_strat = dm.remove_na(df_returns, col)
         df_prices = dm.get_prices_df(df_strat)
-        
+    
         ann_ret = get_ann_return(df_strat[col], freq)
         ann_vol = get_ann_vol(df_strat[col], freq)
-        ret_vol = ann_ret / ann_vol
+        ret_vol = get_ret_vol_ratio(df_strat,col=col,freq=freq)
         max_dd = get_max_dd(df_prices[col])
-        ret_dd = ann_ret / abs(max_dd)
+        ret_dd = get_ret_maxdd_ratio(df_strat,df_prices,col,freq=freq)
         max_1m_dd = get_max_dd_freq(df_prices[col],freq)['max_dd']
         max_1m_date = get_max_dd_freq(df_prices[col],freq)['index']
+        ret_1m_dd=get_ret_maxdd_freq_ratio(df_strat, col, df_prices, freq=freq,max_1Q_dd=False)   
         max_1q_dd = get_max_dd_freq(df_prices[col],freq,True)['max_dd']
         max_1q_date = get_max_dd_freq(df_prices[col],freq,True)['index']
-        skew = df_strat[col].skew()
+        ret_1q_dd=get_ret_maxdd_freq_ratio(df_strat, col, df_prices, freq=freq,max_1Q_dd=True)
+        skew=get_skew(df_strat, col)
         avg_pos_neg = get_avg_pos_neg(df_strat, col)
         down_stdev = get_down_stddev(df_strat, col, freq)
         sortino = get_sortino_ratio(df_strat, col, freq)
         analysis_dict[col] = [ann_ret, ann_vol, ret_vol, max_dd, ret_dd,
-                             max_1m_dd, max_1m_date, max_1q_dd, max_1q_date,
+                             max_1m_dd, max_1m_date,ret_1m_dd, max_1q_dd, max_1q_date, ret_1q_dd,
                              skew, avg_pos_neg, down_stdev, sortino]
         
     return analysis_dict
+
+
