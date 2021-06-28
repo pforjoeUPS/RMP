@@ -2,7 +2,7 @@
 """
 Created on Tue Oct  1 17:59:28 2019
 
-@author: Powis Forjoe and Maddie Choi
+@author: Powis Forjoe, Maddie Choi, and Zach Wells
 """
 
 
