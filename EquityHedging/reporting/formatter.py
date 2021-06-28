@@ -9,8 +9,20 @@ import pandas as pd
 from ..datamanager.data_manager import switch_freq_int
 
 #TODO: separate code into dataframe stylers vs formats
+#TODO: Update to include new analytics once code merged
 def format_return_stats(anayltics_df):
     """
+    Formats the return stats analytics
+
+    Parameters
+    ----------
+    anayltics_df : dataframe
+        dataframe containing returns stats
+
+    Returns
+    -------
+    formatters : formatter
+
     """
     
     formatters = {"Annualized Ret":lambda x: f"{x:.2%}"
@@ -29,8 +41,22 @@ def format_return_stats(anayltics_df):
                   }
     return formatters 
 
+#TODO: Update to include new analytics once code merged
 def format_hedge_metrics(anayltics_df, freq='1M'):
     """
+    Formats the hedge metrics analytics
+
+    Parameters
+    ----------
+    anayltics_df : dataframe
+        dataframe containing hedge metrics
+    freq : string, optional
+        frequency of hedge metrics computed. The default is '1M'.
+
+    Returns
+    -------
+    formatters : formatter
+
     """
     
     if switch_freq_int(freq) <= 12:
@@ -64,6 +90,17 @@ def format_hedge_metrics(anayltics_df, freq='1M'):
 
 def format_notional_weights(df_weights):
     """
+    Formats the portfolio weightings
+
+    Parameters
+    ----------
+    df_weights : dataframe
+        dataframe containing portfolio weightings
+
+    Returns
+    -------
+    formatters : formatter
+
     """
     
     formatters = {"Notional Weights (Billions)":lambda x: f"${x:.2f}"
@@ -74,7 +111,19 @@ def format_notional_weights(df_weights):
 
 def format_row_wise(styler, formatter):
     """
+    Returns a styler that applies a formatter to a dataframe by row
+
+    Parameters
+    ----------
+    styler : styler
+    formatter : formatter
+
+    Returns
+    -------
+    styler : styler
+
     """
+    
     for row, row_formatter in formatter.items():
         row_num = styler.index.get_loc(row)
         for col_num in range(len(styler.columns)):
@@ -83,8 +132,27 @@ def format_row_wise(styler, formatter):
 
 def get_analytics_styler(analytics_dict, stats='return_stats', freq='1M'):
     """
+    Returns styler for analytics dataframe
+
+    Parameters
+    ----------
+    analytics_dict : dictionary
+        Dictionary containing return stats and hedge metrics
+    stats : string, optional
+        'return_stats', 'hedge_metrics'. The default is 'return_stats'.
+    freq : string, optional
+        frequency. The default is '1M'.
+
+    Returns
+    -------
+    analytics_styler : styler
+
     """
+    
+    #make copy of dataframe being styled
     stats_df = analytics_dict[stats].copy()
+    
+    #apply appropirate styler based on stats freq choice
     if stats == 'return_stats':
         return_formatter = format_return_stats(stats_df)
         analytics_styler = format_row_wise(stats_df.style, return_formatter)
@@ -95,6 +163,16 @@ def get_analytics_styler(analytics_dict, stats='return_stats', freq='1M'):
 
 def get_notional_styler(df_weights):
     """
+    Returns styler for portfolio weightings dataframe
+
+    Parameters
+    ----------
+    df_weights : dataframe
+
+    Returns
+    -------
+    styler
+
     """
     return format_row_wise(df_weights.style,
                            format_notional_weights(df_weights))
@@ -104,7 +182,17 @@ def color_neg_pos(val):
     Takes a scalar and returns a string with
     the css property `'color: red'` for negative
     strings, green for positive, black otherwise.
+
+    Parameters
+    ----------
+    val : float
+
+    Returns
+    -------
+    string
+
     """
+
     if val < 0:
         color = 'red'
     elif val > 0:
@@ -118,51 +206,118 @@ def color_neg_red(val):
     Takes a scalar and returns a string with
     the css property `'color: red'` for negative
     strings, black otherwise.
+
+    Parameters
+    ----------
+    val : float
+
+    Returns
+    -------
+    string
+
     """
     color = 'red' if val < 0 else 'black'
     return 'color: %s' % color
 
 def get_returns_styler(df_returns):
     """
+    Returns styler for returns dataframe
+
+    Parameters
+    ----------
+    df_returns : dataframe
+
+    Returns
+    -------
+    styler
+
     """
+    
+    #make copy of dataframe
     data = df_returns.copy()
+    
+    #format dates
     data.index = pd.to_datetime(data.index, format = '%m/%d/%Y').strftime('%Y-%m-%d')
+    
+    #define formatter
     col_list = data.columns.tolist()
     formatter = {}
     for strat in col_list:
         formatter[strat] = "{:.2%}"
+    
+    #return styler
     return data.style.\
         applymap(color_neg_red, subset = pd.IndexSlice[:,col_list]).\
         format(formatter)
 
 def get_hist_styler(df_hist):
     """
+    Returns styler for historical selloffs dataframe
+
+    Parameters
+    ----------
+    df_hist : dataframe
+    Returns
+    -------
+    styler
+
     """
+    
+    #define formatter
     col_list = list(df_hist.columns)[2:]
     formatter = {}
     for strat in col_list:
         formatter[strat] = "{:.2%}"
+    
+    #return styler
     return df_hist.style.\
         applymap(color_neg_pos, subset = pd.IndexSlice[:,col_list]).\
         format(formatter)
 
 def highlight_max(s):
-    '''
-    highlight the maximum in a Series yellow.
-    '''
+    """
+    Highlight the maximum in a Series yellow
+
+    Parameters
+    ----------
+    s : series
+
+    Returns
+    -------
+    list
+
+    """
+    
     is_max = s == s.max()
     return ['background-color: yellow' if v else '' for v in is_max]
 
 def get_dollar_ret_styler(dollar_returns):
     """
+    Returns styler for returns dataframe
+
+    Parameters
+    ----------
+    dollar_returns : dataframe
+
+    Returns
+    -------
+    styler
+
     """
+    
+    #make copy of dataframe
     data = dollar_returns.copy()
-    # data.index = pd.to_datetime(data.index, format = '%m/%d/%Y').strftime('%Y-%m-%d')
+    
+    #format dates
     data.index = pd.to_datetime(data.index, format = '%m/%d/%Y').strftime('%Y')
+    
+    #define formatter
     formatter = {}
     col_list = list(data.columns)
     for strat in col_list:
         formatter[strat] = "${:,.0f}"
+    
+    #return styler
     return data.style.\
             applymap(color_neg_pos).\
             apply(highlight_max, subset = pd.IndexSlice[:,col_list[1:]]).\
