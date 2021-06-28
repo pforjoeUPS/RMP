@@ -16,38 +16,47 @@ from .rolling_cum import get_rolling_cum
 
 def get_analysis(df_returns, notional_weights=[], include_fi=False, new_strat=False, freq='1M', weighted = False):
     """
-    Returns a tuple of dataframes containing:
+    Returns a dictionary of dataframes containing:
     1. Return Statistics
     2. Hedge Framework Metrics
     
-    Parameters:
-    df_returns -- dataframe
-    notional_weights -- list
-    include_fi -- boolean
-    new_strat -- boolean
-    freq -- string
-    
-    Returns:
-    tuple(datframe, dataframe)
-        
+    Parameters
+    ----------
+    df_returns : dataframe
+        dataframe of returns
+    notional_weights : list, optional
+        notional weights of strategies. The default is [].
+    include_fi : boolean, optional
+        Include Fixed Income benchmark. The default is False.
+    new_strat : boolean, optional
+        Does analysis involve a new strategy. The default is False.
+    freq : string, optional
+        frequency. The default is '1M'.
+    weighted : boolean, optional
+        Include weighgted hedges and weighgted strats. The default is False.
+
+    Returns
+    -------
+    dict
+        dictionary containing:
+           return_stats: dataframe
+               dataframe containg returns stats of each strategy from df_returns
+           hedge_metrics: dataframe
+               dataframe containg hedge metrics of each strategy from df_returns
+
     """
+    
     col_list = list(df_returns.columns)
     analysis_dict = {}
-    if weighted:
-        notional_weights = util.check_notional(df_returns, notional_weights)
-        
-        #Get weighted strategies (weighted_strats) with and 
-        #without new strategy (weighted_strats_old)
-        df_weighted_strats = util.get_weighted_strats_df_1(df_returns, notional_weights, include_fi, new_strat)
     
-        #merge wighted_strats with returns
-        df_weighted_returns = dm.merge_data_frames(df_returns, df_weighted_strats)
-        strat_weights = util.get_strat_weights(notional_weights, include_fi)
-        #compute weighted hedges returns
-        df_weighted_returns['Weighted Hedges'] = df_returns.dot(tuple(strat_weights))
+    #if weighted, compute weighted hedges and strats
+    if weighted:
+        df_weighted_returns = get_weighted_data(df_returns,notional_weights,include_fi,new_strat)
+        
         #generate return statistics for each strategy
         analysis_dict = get_return_stats(df_weighted_returns, freq)
     else:
+        #generate return statistics for each strategy
         analysis_dict = get_return_stats(df_returns, freq)
         
     # Create pandas DataFrame for return statistics
@@ -61,9 +70,9 @@ def get_analysis(df_returns, notional_weights=[], include_fi=False, new_strat=Fa
                                         'Downside Deviation',
                                         'Sortino Ratio'])
         
-    # copy weighted returns df
-    #we want the weighted hedge returns
+    # remove the weighted strats from the dataframe
     if weighted:
+        df_weighted_strats = util.get_weighted_strats_df_1(df_returns, notional_weights, include_fi, new_strat)
         hedge_returns = df_weighted_returns.copy()
     
         #remove weighted strats col
@@ -102,8 +111,34 @@ def get_analysis(df_returns, notional_weights=[], include_fi=False, new_strat=Fa
 
 def get_analysis_sheet_data(df_returns, notional_weights=[], include_fi=False, new_strat=False,freq='1M', weighted=False):
     """
+    Returns data for analysis excel sheet into a dictionary
+
+    Parameters
+    ----------
+    df_returns : dataframe
+        dataframe of returns
+    notional_weights : list, optional
+        notional weights of strategies. The default is [].
+    include_fi : boolean, optional
+        Include Fixed Income benchmark. The default is False.
+    new_strat : boolean, optional
+        Does analysis involve a new strategy. The default is False.
+    freq : string, optional
+        frequency. The default is '1M'.
+    weighted : boolean, optional
+        Include weighgted hedges and weighgted strats. The default is False.
+
+    Returns
+    -------
+    dict
+       dictionary containing:
+           df_list: list
+               a list of dataframes:
+                   correlations, portfolio weightings, returns_stats, hedge_metrics
+           title_list: list
+               a list containing titles of each of the dataframes
+
     """
-    
     #create list of df_returns column names
     col_list = list(df_returns.columns)
     
@@ -120,13 +155,14 @@ def get_analysis_sheet_data(df_returns, notional_weights=[], include_fi=False, n
     #compute return stats and hedge metrics
     analytics_dict = get_analysis(df_returns, notional_weights, include_fi, new_strat, freq,weighted)
     
-    #Save to excel file
+    #compute portfolio weightings    
     df_weights = []
     weightings_title = ''
     if weighted:
         df_weights = util.get_df_weights(notional_weights, col_list, include_fi)
         weightings_title = 'Portfolio Weightings'
     
+    #store analytics and respective titles in lists
     df_list = [corr_dict['corr'][0], corr_dict["corr_down"][0], 
                corr_dict["corr_up"][0], df_weights, analytics_dict['return_stats'],analytics_dict['hedge_metrics']]
     
@@ -137,8 +173,41 @@ def get_analysis_sheet_data(df_returns, notional_weights=[], include_fi=False, n
     
     return {'df_list': df_list,'title_list': title_list}
 
-def get_data(returns_dict, notional_weights,weighted,freq_list,include_fi=False, new_strat=False):
+def get_data(returns_dict, notional_weights,weighted,freq_list=['Monthly', 'Weekly'],include_fi=False, new_strat=False):
     """
+    Returns a dictionary containing:
+        correlation data
+        analytics data
+        historical selloffs data
+        quintile data
+        annual $ returns data
+        
+    Parameters
+    ----------
+    returns_dict : dict
+        dictionary of returns data by frequencies.
+    notional_weights : list
+        notional weights of strategies.
+    weighted : list
+        [True,False].
+    freq_list : list, optional
+        list of frequencies:
+            'Daily', 'Weekly', 'Monthly'. The default is ['Monthly', 'Weekly']
+    include_fi : boolean, optional
+        Include Fixed Income benchmark. The default is False.
+    new_strat : boolean, optional
+        Does analysis involve a new strategy. The default is False.
+    
+    Returns
+    -------
+    dict
+       dictionary containing:
+           corr_dict: dictionary
+           analytics_dict: dictionary
+           hist_dict: dictionary
+           quintile_df: dataframe
+           annual_df: dataframe
+           
     """
     
     corr_dict = get_corr_data(returns_dict, freq_list, weighted, notional_weights, include_fi)
@@ -154,6 +223,23 @@ def get_data(returns_dict, notional_weights,weighted,freq_list,include_fi=False,
 #TODO: Add frequency (Monthly, Weekly)
 def get_quintile_data(returns_dict, notional_weights=[], weighted=False):
     """
+    Returns a dataframe containing average returns of each strategy grouped 
+    into quintiles based on the equity returns ranking.
+    
+    Parameters
+    ----------
+    returns_dict : dict
+        dictionary of returns data by frequencies.
+    notional_weights : list, optional
+        notional weights of strategies. The default is [].
+    weighted : boolean, optional
+        Include weighgted hedges and weighgted strats. The default is False.
+    
+    Returns
+    -------
+    quintile: dataframe
+        quinitle analysis data
+
     """
     
     df = returns_dict['Monthly'].copy()
@@ -172,8 +258,29 @@ def get_quintile_data(returns_dict, notional_weights=[], weighted=False):
     quintile.index.names = [equity + ' Monthly Returns Ranking']
     return quintile
 
-def get_corr_data(returns_dict, frequency, weighted=[False], notional_weights=[], include_fi = False):
+def get_corr_data(returns_dict, freq_list=['Monthly', 'Weekly'], weighted=[False], notional_weights=[], include_fi = False):
     """
+    Returns a dataframe containing correlations data
+    
+    Parameters
+    ----------
+    returns_dict : dict
+        dictionary of returns data by frequencies.
+   freq_list : list, optional
+        list of frequencies:
+            'Daily', 'Weekly', 'Monthly'. The default is ['Monthly', 'Weekly']
+    weighted : list, optional
+        [True,False]. The default is [False].
+     notional_weights : list
+        notional weights of strategies. The default is [].
+    include_fi : boolean, optional
+        Include Fixed Income benchmark. The default is False.
+
+    Returns
+    -------
+    corr_data : dataframe
+        correlation data.
+
     """
     
     corr_data = {}
@@ -181,7 +288,7 @@ def get_corr_data(returns_dict, frequency, weighted=[False], notional_weights=[]
     if weighted:
         notional_weights = util.check_notional(returns_dict['Monthly'], notional_weights)
     
-    for freq in frequency:
+    for freq in freq_list:
         return_df = returns_dict[freq].copy()
         temp_corr_data = {}
         for w in weighted:
@@ -189,8 +296,31 @@ def get_corr_data(returns_dict, frequency, weighted=[False], notional_weights=[]
         corr_data[freq] = temp_corr_data
     return corr_data
 
-def get_analytics_data(returns_dict, frequency, weighted=[False], notional_weights=[], include_fi = False, new_strat=False):
+def get_analytics_data(returns_dict, freq_list=['Monthly', 'Weekly'], weighted=[False], notional_weights=[], include_fi = False, new_strat=False):
     """
+    Returns a dataframe containing analytics data
+    
+    Parameters
+    ----------
+    returns_dict : dict
+        dictionary of returns data by frequencies.
+    freq_list : list, optional
+        list of frequencies:
+            'Daily', 'Weekly', 'Monthly'. The default is ['Monthly', 'Weekly']
+    weighted : list, optional
+        [True,False]. The default is [False].
+    notional_weights : list, optional
+        notional weights of strategies. The default is [].
+    include_fi : boolean, optional
+        Include Fixed Income benchmark. The default is False.
+    new_strat : boolean, optional
+        Does analysis involve a new strategy. The default is False.
+
+    Returns
+    -------
+    analytics_data : dictionary
+        analytics data.
+
     """
     
     analytics_data = {}
@@ -198,7 +328,7 @@ def get_analytics_data(returns_dict, frequency, weighted=[False], notional_weigh
     if weighted:
         notional_weights = util.check_notional(returns_dict['Monthly'], notional_weights)
     
-    for freq in frequency:
+    for freq in freq_list:
         return_df = returns_dict[freq].copy()
         temp_analytics_data = {}
         for w in weighted:
@@ -209,6 +339,22 @@ def get_analytics_data(returns_dict, frequency, weighted=[False], notional_weigh
 
 def get_hist_data(returns_dict, notional_weights=[], weighted=[False]):
     """
+    Returns a dictionary containing historical selloff data
+
+    Parameters
+    ----------
+    returns_dict : dictionary
+        dictionary of returns data by frequencies.
+    notional_weights : list, optional
+        notional weights of strategies. The default is [].
+    weighted : list, optional
+        [True,False]. The default is [False].
+
+    Returns
+    -------
+    hist_data : dictionary
+        historical selloff data.
+
     """
     daily = returns_dict['Daily'].copy()
     hist_data = {}
@@ -219,15 +365,37 @@ def get_hist_data(returns_dict, notional_weights=[], weighted=[False]):
 
 def get_annual_dollar_returns(returns_dict, notional_weights, new_strat=False):
     """
+    Returns a dataframe containing annual $ returns for each strategy.
+    
+    Parameters
+    ----------
+    returns_dict : dict
+        dictionary of returns data by frequencies.
+    notional_weights : list, optional
+        notional weights of strategies. The default is [].
+    new_strat : boolean, optional
+        Does analysis involve a new strategy. The default is False.
+    
+    Returns
+    -------
+    annual_returns: dataframe
+        annual $ returns data
+
     """
+    
+    #get annual returns data
     annual_returns = returns_dict['Yearly'].copy()
+    
+    #confirm notional weights is correct len
+    notional_weights = util.check_notional(annual_returns, notional_weights)
+    
+    #compute annual returns for strategies
     col_list = annual_returns.columns.to_list()
-    if len(col_list) != len(notional_weights):
-        notional_weights = []
-        notional_weights = dm.get_notional_weights(annual_returns)
     for i in range(len(notional_weights)):
         annual_returns[annual_returns.columns[i]] *= notional_weights[i]*1E9
     annual_returns = annual_returns[(annual_returns.select_dtypes('float').columns)[1:]]
+    
+    #compute annual returns for Tail Risk Program and add to annual_returns dataframe
     sum_column = 0
     col_list = col_list[1:]
     for col in col_list:
@@ -251,27 +419,38 @@ def get_dollar_returns_data(returns_dict, notional_weights, new_strat_bool):
     
 
 #TODO: make flexible to compute corrs w/o weighted strats/hedges
-def get_rolling_cum_data(df_returns, freq, notional_weights=[]):
+def get_rolling_cum_data(df_returns, freq='1W', notional_weights=[]):
     """
-    Return dict of rolling cumulatiuve returns for different intervals
+    Returns a dictionary of rolling cumulatiuve returns for different intervals
 
-    Parameters:
-    returns_df -- dataframe
-    freq -- string
-    notional weights -- list
-    
-    Returns:
+    Parameters
+    ----------
+    df_returns : dataframe
+        DESCRIPTION.
+    freq : string, optional
+        '1W' or '1D'. The default is '1W'
+    notional_weights : list, optional
+        notional weights of strategies. The default is [].
+
+    Returns
+    -------
     dict
+        dictionary containing dataframes
+
     """
-    if freq == '1W':
+
+    if freq == '1W' or freq == '1D':
         strategy_returns = df_returns.copy()
+        
         #confirm notional weights is correct len
         notional_weights = util.check_notional(df_returns, notional_weights)
         
+        #compute weighted hedges
         strat_weights = [weight/notional_weights[0] for weight in notional_weights]
         strat_weights[0] = 0
-        
         strategy_returns['Weighted Hedges'] = strategy_returns.dot(tuple(strat_weights))
+        
+        #get rolling cumulative returns
         rolling_cum_threemonths = get_rolling_cum(strategy_returns, interval=13)
         rolling_cum_sixmonths = get_rolling_cum(strategy_returns, interval=26)
         rolling_cum_annual = get_rolling_cum(strategy_returns, interval=52)
@@ -284,6 +463,23 @@ def get_rolling_cum_data(df_returns, freq, notional_weights=[]):
         
 def get_weighted_data(df_returns, notional_weights=[], include_fi=False, new_strat=False):
     """
+    Returns dataframe containg df_returns plus the weighted strats and hedges data
+
+    Parameters
+    ----------
+    df_returns : dataframe
+        dataframe of returns
+    notional_weights : list, optional
+        notional weights of strategies. The default is [].
+    include_fi : boolean, optional
+        Include Fixed Income benchmark. The default is False.
+    new_strat : boolean, optional
+        Does analysis involve a new strategy. The default is False.
+
+    Returns
+    -------
+    df_weighted_returns : dataframe
+
     """
     
     #confirm notional weights is correct len
@@ -297,9 +493,19 @@ def get_weighted_data(df_returns, notional_weights=[], include_fi=False, new_str
     #merge wighted_strats with returns
     df_weighted_returns = pd.merge(df_returns, df_weighted_strats, left_index=True, 
                                    right_index=True, how='outer')
-    strat_weights = util.get_strat_weights(notional_weights, include_fi)
     
     #compute weighted hedges returns
+    strat_weights = util.get_strat_weights(notional_weights, include_fi)
     df_weighted_returns['Weighted Hedges'] = df_returns.dot(tuple(strat_weights))
+    
+    #Get weighted hedges w/o new strategy
+    if new_strat:
+        col_list = list(df_returns.columns)
+        temp_weights = notional_weights.copy()
+        temp_weights[len(temp_weights)-1] = 0
+        temp_strat_weights = util.get_strat_weights(temp_weights, include_fi)
+        wgt_hedge_wo_name = 'Weighted Hedges w/o ' + col_list[len(col_list)-1]
+        df_weighted_returns[wgt_hedge_wo_name] = df_returns.dot(tuple(temp_strat_weights))
+    
     return df_weighted_returns
 
