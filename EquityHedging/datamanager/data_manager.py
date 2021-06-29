@@ -12,6 +12,7 @@ from datetime import datetime as dt
 CWD = os.getcwd()
 RETURNS_DATA_FP = '\\EquityHedging\\data\\'
 EQUITY_HEDGING_RETURNS_DATA = CWD + RETURNS_DATA_FP + 'ups_equity_hedge\\returns_data.xlsx'
+EQUITY_HEDGING_RETURNS_DATA
 NEW_DATA = CWD + RETURNS_DATA_FP + 'new_strats\\'
 
 def merge_dicts(main_dict, new_dict):
@@ -221,6 +222,7 @@ def create_copy_with_fi(df_returns, equity = 'SPTR', freq='1M', include_fi=False
     Combine columns of df_returns together to get:
     FI Benchmark (avg of Long Corps and STRIPS)
     VOLA (avg of VOLA I and VOLA II)
+    Def Var (weighted avg Def Var (Fri): 60%, Def Var (Mon):20%, Def Var (Wed): 20%)
     
     Parameters:
     df_returns -- dataframe
@@ -233,7 +235,8 @@ def create_copy_with_fi(df_returns, equity = 'SPTR', freq='1M', include_fi=False
     
     if freq == '1W' or freq == '1M':
         strategy_returns['VOLA'] = (strategy_returns['VOLA I'] + strategy_returns['VOLA II'])/2
-        #put in def var to account for mon wed and fri def var
+        strategy_returns['Def Var']=strategy_returns['Def Var (Fri)']*.6 + strategy_returns['Def Var (Mon)']*.2+strategy_returns['Def Var (Wed)']*.2
+    
         if include_fi:
             strategy_returns['FI Benchmark'] = (strategy_returns['Long Corp'] + strategy_returns['STRIPS'])/2
             strategy_returns = strategy_returns[[equity, 'FI Benchmark', '99%/90% Put Spread', 
@@ -245,6 +248,8 @@ def create_copy_with_fi(df_returns, equity = 'SPTR', freq='1M', include_fi=False
                                                  'VRR', 'GW Dispersion', 'Corr Hedge','Def Var']]
     else:
         strategy_returns['VOLA'] = (strategy_returns['VOLA I'] + strategy_returns['VOLA II'])/2
+        strategy_returns['Def Var']=strategy_returns['Def Var (Fri)']*.6 + strategy_returns['Def Var (Mon)']*.2+strategy_returns['Def Var (Wed)']*.2
+
         strategy_returns = strategy_returns[[equity, '99%/90% Put Spread', 'Down Var', 'Vortex',
                                              'VOLA','Dynamic Put Spread','VRR', 
                                              'GW Dispersion', 'Corr Hedge','Def Var']]
