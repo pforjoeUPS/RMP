@@ -2,7 +2,7 @@
 """
 Created on Tue Oct  1 17:59:28 2019
 
-@author: Powis Forjoe
+@author: Powis Forjoe and Maddie Choi
 """
 
 from ..datamanager import data_manager as dm
@@ -26,11 +26,19 @@ def get_benefit_stats(df_returns, col_name):
     
     benefit_index = df_strat.index[df_strat[col_name] < percentile]
     benefit_ret = df_strat.loc[benefit_index]
-    
     pos_ret = get_pos_neg_df(benefit_ret,col_name,True)
-    benefit = {'count':pos_ret[col_name].count(), 
-               'mean':pos_ret[col_name].mean(), 
-               'median':pos_ret[col_name].median()
+    
+    #calculate hedge metrics
+    benefit_count=pos_ret[col_name].count()
+    benefit_mean=pos_ret[col_name].mean()
+    benefit_med=pos_ret[col_name].median()
+    benefit_cumulative=benefit_count*benefit_mean
+    
+    #create dictionary
+    benefit = {'count':benefit_count, 
+               'mean':benefit_mean, 
+               'median': benefit_med,
+               'cumulative': benefit_cumulative
                }
     return benefit
 
@@ -54,9 +62,18 @@ def get_convexity_stats(df_returns, col_name):
     convexity_ret = df_strat.loc[convexity_index]
     
     pos_ret = get_pos_neg_df(convexity_ret,col_name,True)
-    convexity = {'count':pos_ret[col_name].count(), 
-               'mean':pos_ret[col_name].mean(), 
-               'median':pos_ret[col_name].median()
+    
+    #calculate hedge metrics
+    convexity_count=pos_ret[col_name].count()
+    convexity_mean=pos_ret[col_name].mean()
+    convexity_med=pos_ret[col_name].median()
+    convexity_cumulative= convexity_count*convexity_mean
+    
+    #create convexity dictionary
+    convexity = {'count':convexity_count, 
+               'mean': convexity_mean , 
+               'median': convexity_med,
+               'cumulative': convexity_cumulative
                }
     return convexity
 
@@ -101,9 +118,15 @@ def get_cost_stats(df_returns, col_name):
     
     neg_ret = get_pos_neg_df(df_returns,col_name,False)
     
-    cost = {'count':neg_ret[col_name].count(), 
-               'mean':neg_ret[col_name].mean(), 
-               'median':neg_ret[col_name].median()
+    #calculate hedge metrics
+    cost_count=neg_ret[col_name].count()
+    cost_mean=neg_ret[col_name].mean()
+    cost_med=neg_ret[col_name].median()
+    cost_cumulative= cost_count*cost_mean
+    cost = {'count': cost_count , 
+               'mean': cost_mean , 
+               'median': cost_med,
+               'cumulative': cost_cumulative
                }
     return cost
 
@@ -119,12 +142,21 @@ def get_reliability_stats(df_returns, col_name):
     reliability -- dict(cout(double), mean(double), median(double))
     """
     
+    
     col_list = list(df_returns.columns)
     equity_id = col_list[0]
-    equity_down = (df_returns[df_returns[equity_id]<0])
     
+    equity_down = (df_returns[df_returns[equity_id]<0])
     corr_d = equity_down.corr()
-    reliability = corr_d[col_name].iloc[0]
+    reliability_d= corr_d[col_name].iloc[0]
+    
+    equity_up = (df_returns[df_returns[equity_id]>0])
+    corr_u = equity_up.corr()
+    reliability_u = corr_u[col_name].iloc[0]
+    
+    reliability={'up': reliability_u,
+                 'down':reliability_d}
+    
     return reliability
 
 def get_hedge_metrics(df_returns, freq="1M"):
@@ -147,10 +179,10 @@ def get_hedge_metrics(df_returns, freq="1M"):
         decay = get_decay_stats(df_returns, col, freq)
         
         hedge_dict[col] = [benefit['count'], benefit['median'],
-                          benefit['mean'], reliability,
+                          benefit['mean'], benefit['cumulative'], reliability['up'],reliability['down'],
                           convexity['count'], convexity['median'],
-                          convexity['mean'], cost['count'],
-                          cost['median'], cost['mean'], decay['half'], 
+                          convexity['mean'],convexity['cumulative'], cost['count'],
+                          cost['median'], cost['mean'], cost['cumulative'], decay['half'], 
                           decay['quarter'],decay['tenth']]
         
     return hedge_dict
