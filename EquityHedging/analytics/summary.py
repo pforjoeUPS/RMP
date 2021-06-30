@@ -2,7 +2,7 @@
 """
 Created on Tue Oct  1 17:59:28 2019
 
-@author: Powis Forjoe and Maddie Choi
+@author: Powis Forjoe, Maddie Choi, and Zach Wells
 """
 
 import pandas as pd
@@ -93,10 +93,11 @@ def get_analysis(df_returns, notional_weights=[], include_fi=False, new_strat=Fa
     # Create pandas DataFrame for hedge metrics
     df_hedge_metrics = pd.DataFrame(hedge_dict, 
                                   index = ['Benefit Count', 'Benefit Median', 
-                                           'Benefit Mean','Benefit Cumulative', 'Reliabitlity (BMK>0)','Reliabitlity (BMK<0)',
+                                           'Benefit Mean','Benefit Cum', 
+                                           'Downside Reliabitlity','Upside Reliabitlity',
                                            'Convexity Count', 'Convexity Median',
-                                           'Convexity Mean','Convexity Cumulative','Cost Count',
-                                           'Cost Median','Cost Mean','Cost Cumulative', 'Decay Days (50% retrace)',
+                                           'Convexity Mean','Convexity Cum','Cost Count',
+                                           'Cost Median','Cost Mean','Cost Cum', 'Decay Days (50% retrace)',
                                             'Decay Days (25% retrace)', 'Decay Days (10% retrace)'])
     
     #remove equity col

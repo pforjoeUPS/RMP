@@ -2,11 +2,12 @@
 """
 Created on Tue Oct  1 17:59:28 2019
 
-@author: Powis Forjoe and Maddie Choi
+@author: Powis Forjoe, Maddie Choi, Zach Wells
 """
 
 import pandas as pd
 from .import formats
+
 def set_analysis_sheet(writer, data_dict, sheet_name, spaces):
     """
     Create excel sheet with:
@@ -179,7 +180,6 @@ def set_analysis_sheet(writer, data_dict, sheet_name, spaces):
     
     return 0
 
-#sheet
 def set_hist_return_sheet(writer,df_returns, sheet_name):
     """
     Create excel sheet for historical returns
@@ -215,7 +215,6 @@ def set_hist_return_sheet(writer,df_returns, sheet_name):
                                   'format':date_fmt})
     return 0
 
-#sheet
 def set_sgi_vrr_sheet(writer,df, sheet_name):
     """
     Create excel sheet for vrr returns
@@ -257,7 +256,6 @@ def set_sgi_vrr_sheet(writer,df, sheet_name):
     return 0
 
 #TODO: Edit comments
-#sheet
 def set_hist_sheet(writer, df_hist):
     """
     Create excel sheet for historical selloffs
@@ -325,8 +323,6 @@ def set_hist_sheet(writer, df_hist):
                                   'format':pct_fmt2})
     return 0
 
-#TODO: Create sheet function
-#report
 def set_corr_rank_sheet(writer,corr_pack,dates):
     """
     """

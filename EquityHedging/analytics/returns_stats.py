@@ -2,17 +2,13 @@
 """
 Created on Tue Oct  1 17:59:28 2019
 
-@author: Powis Forjoe and Maddie Choi
+@author: Powis Forjoe, Maddie Choi, and Zach Wells
 """
 
 
 import numpy as np
 from ..datamanager import data_manager as dm
 from .util import get_pos_neg_df
-
-#TODO: make sharpe (ret/vol) ratio function
-#TODO: make calmar (ret/dd) ratio functions
-#TODO: make skew function
 
 def get_ann_return(return_series, freq='1M'):
     """
@@ -173,8 +169,8 @@ def get_ret_maxdd_ratio(df_strat,df_prices,col,freq='1M'):
  
 def get_skew(df_strat, col):
     #compute skew
-     skew= df_strat[col].skew()
-     return skew
+    skew= df_strat[col].skew()
+    return skew
 
 def get_ret_maxdd_freq_ratio(df_strat,col,price_series,freq,max_1Q_dd=False):
     #calculate annual return
