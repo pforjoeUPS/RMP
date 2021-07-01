@@ -13,7 +13,7 @@ from EquityHedging.reporting.excel import reports as rp
 from EquityHedging.reporting import formatter as fmt, plots
 
 #import returns data
-equity_bmk = 'M1WD'
+equity_bmk = 'SPTR'
 include_fi = False
 weighted = [True, False]
 strat_drop_list = ['99%/90% Put Spread', 'Vortex']
