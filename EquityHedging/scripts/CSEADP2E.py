@@ -42,15 +42,19 @@ new_strategy_dict = dm.get_data_dict(new_strategy, data_type='index')
 monthly_ret = returns['Monthly'].copy()
 monthly_new_strat = new_strategy_dict['Monthly'].copy()
 monthly_ret['Dynamic Put Spread']= monthly_new_strat['Dynamic Put Spread']
+
 daily_ret = returns['Daily'].copy()
 daily_new_strat = new_strategy_dict['Daily'].copy()
 daily_ret['Dynamic Put Spread']= daily_new_strat['Dynamic Put Spread']
+
 quarter_ret = returns['Quarterly'].copy()
 quart_new_strat = new_strategy_dict['Quarterly'].copy()
 quarter_ret['Dynamic Put Spread'] = quart_new_strat['Dynamic Put Spread']
+
 weekly_ret = returns['Weekly'].copy()
 weekly_new_strat = new_strategy_dict['Weekly'].copy()
 weekly_ret['Dynamic Put Spread']= weekly_new_strat['Dynamic Put Spread']
+
 yearly_ret = returns['Yearly'].copy()
 yearly_new_strat = new_strategy_dict['Yearly'].copy()
 yearly_ret['Dynamic Put Spread'] = yearly_new_strat['Dynamic Put Spread']

@@ -93,7 +93,7 @@ def get_analysis(df_returns, notional_weights=[], include_fi=False, new_strat=Fa
     # Create pandas DataFrame for hedge metrics
     df_hedge_metrics = pd.DataFrame(hedge_dict, 
                                   index = ['Benefit Count', 'Benefit Median', 
-                                           'Benefit Mean','Benefit Cumulative', 'Reliabitlity (BMK>0)','Reliabitlity (BMK<0)',
+                                           'Benefit Mean','Benefit Cumulative', 'Reliability (BMK>0)','Reliability (BMK<0)',
                                            'Convexity Count', 'Convexity Median',
                                            'Convexity Mean','Convexity Cumulative','Cost Count',
                                            'Cost Median','Cost Mean','Cost Cumulative', 'Decay Days (50% retrace)',

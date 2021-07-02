@@ -17,11 +17,11 @@ equity_bmk = 'SPTR'
 include_fi = False
 weighted = [True, False]
 strat_drop_list = ['99%/90% Put Spread', 'Vortex']
-new_strat = False
+new_strat = True
 returns_ups = dm.get_equity_hedge_returns(equity_bmk, include_fi, strat_drop_list)
 
 #Add new strat
-strategy_list = ['test']
+strategy_list = ['both']
 filename = '2021.06.08 - Short 1W Var+Pulse Combination Tracks.xlsx'
 sheet_name = 'data'
 new_strategy = dm.get_new_strategy_returns_data(filename, sheet_name, strategy_list)
