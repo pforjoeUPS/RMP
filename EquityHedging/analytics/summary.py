@@ -284,8 +284,7 @@ def get_corr_data(returns_dict, freq_list=['Monthly', 'Weekly'], weighted=[False
     """
     
     corr_data = {}
-    
-    if weighted:
+    if True in weighted:    
         notional_weights = util.check_notional(returns_dict['Monthly'], notional_weights)
     
     for freq in freq_list:
