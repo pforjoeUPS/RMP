@@ -245,7 +245,8 @@ def get_quintile_data(returns_dict, notional_weights=[], weighted=False):
     df = returns_dict['Monthly'].copy()
     col_list = list(df.columns)
     equity = col_list[0]
-    if weighted:
+   
+    if weighted == True:
         if len(col_list) != len(notional_weights):
             notional_weights = []
             notional_weights = dm.get_notional_weights(df)
@@ -284,7 +285,7 @@ def get_corr_data(returns_dict, freq_list=['Monthly', 'Weekly'], weighted=[False
     """
     
     corr_data = {}
-    if True in weighted:    
+    if True in weighted:
         notional_weights = util.check_notional(returns_dict['Monthly'], notional_weights)
     
     for freq in freq_list:
@@ -324,12 +325,13 @@ def get_analytics_data(returns_dict, freq_list=['Monthly', 'Weekly'], weighted=[
     
     analytics_data = {}
     
-    if weighted:
+    if True in weighted:
         notional_weights = util.check_notional(returns_dict['Monthly'], notional_weights)
     
     for freq in freq_list:
         return_df = returns_dict[freq].copy()
         temp_analytics_data = {}
+        
         for w in weighted:
             temp_analytics_data[w] = get_analysis(return_df, notional_weights, include_fi, new_strat,
                                                        dm.switch_string_freq(freq),w)
