@@ -315,10 +315,7 @@ def get_corr_data(returns_dict, freq_list=['Monthly', 'Weekly'], weighted=[False
     """
     
     corr_data = {}
-<<<<<<< HEAD
-    
-=======
->>>>>>> fbd0d7184623b4346c99549e72c4c13eb8440f34
+
     if True in weighted:
         notional_weights = util.check_notional(returns_dict['Monthly'], notional_weights)
     
@@ -359,10 +356,9 @@ def get_analytics_data(returns_dict, freq_list=['Monthly', 'Weekly'], weighted=[
     
     analytics_data = {}
     
-<<<<<<< HEAD
+
 #TODO: fix to run when weighted has a true element is in the list and when weighted is true and false
-=======
->>>>>>> fbd0d7184623b4346c99549e72c4c13eb8440f34
+
     if True in weighted:
         notional_weights = util.check_notional(returns_dict['Monthly'], notional_weights)
     
