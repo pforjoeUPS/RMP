@@ -18,7 +18,7 @@ include_fi = False
 weighted = [True, False]
 strat_drop_list = ['99%/90% Put Spread', 'Vortex']
 new_strat = True
-returns_ups = dm.get_equity_hedge_returns(equity_bmk, include_fi, strat_drop_list)
+returns= dm.get_equity_hedge_returns(equity_bmk, include_fi, strat_drop_list)
 
 #Add new strat
 strategy_list = ['both']

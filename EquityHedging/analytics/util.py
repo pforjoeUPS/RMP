@@ -226,3 +226,25 @@ def bucket(x):
         return '4th'
     else:
         return 'Top'
+
+def decile_bucket(x):
+    if x < 1.0:
+        return 'Bottom'
+    elif x < 2.0 :
+        return '2nd'
+    elif x < 3.0 :
+        return '3rd'
+    elif x < 4.0 :
+        return '4th'
+    elif x < 5.0 :
+        return '5th'
+    elif x < 6.0 :
+        return '6th'
+    elif x < 7.0 :
+        return '7th'
+    elif x < 8.0 :
+        return '8th'
+    elif x < 9.0 :
+        return '9th'
+    else:
+        return 'Top'
