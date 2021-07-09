@@ -213,14 +213,14 @@ def get_data(returns_dict, notional_weights,weighted,freq_list=['Monthly', 'Week
     corr_dict = get_corr_data(returns_dict, freq_list, weighted, notional_weights, include_fi)
     analytics_dict = get_analytics_data(returns_dict,['Monthly', 'Weekly'],weighted,notional_weights, include_fi,new_strat)
     hist_dict = get_hist_data(returns_dict,notional_weights, weighted)
-    quintile_df = get_quintile_data(returns_dict, notional_weights)
+    quintile_df = get_grouped_data(returns_dict, notional_weights)
     annual_df = get_annual_dollar_returns(returns_dict, notional_weights)
     
     return {'corr':corr_dict, 'analytics':analytics_dict, 'hist':hist_dict,
             'quintile': quintile_df, 'annual_returns':annual_df}
 
 
-def get_percentile(df, group, bucket_format , bucket_size):
+def get_percentile(df , bucket_format , group='Quintile', bucket_size = 5):
     '''
     Computes Quintile or Decile based  on the given input. 
     
@@ -280,11 +280,11 @@ def get_grouped_data(returns_dict, notional_weights=[], weighted=False, group='Q
         df = util.get_weighted_hedges(df, notional_weights)
             
     if group == 'Quintile':       
-        quintile = get_percentile(df, group, util.bucket, 5)
+        quintile = get_percentile(df, util.bucket, group, 5)
         return quintile
     
     elif group == 'Decile':
-        decile = get_percentile(df, group, util.decile_bucket , 10)
+        decile = get_percentile(df, util.decile_bucket , group, 10)
         return decile
     
     
