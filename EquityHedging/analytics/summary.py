@@ -98,7 +98,7 @@ def get_analysis(df_returns, notional_weights=[], include_fi=False, new_strat=Fa
                                            'Convexity Count', 'Convexity Median',
                                            'Convexity Mean','Convexity Cum','Cost Count',
                                            'Cost Median','Cost Mean','Cost Cum', 'Decay Days (50% retrace)',
-                                            'Decay Days (25% retrace)', 'Decay Days (10% retrace)'])
+                                           'Decay Days (25% retrace)', 'Decay Days (10% retrace)'])
     
     #remove equity col
     df_hedge_metrics.drop([col_list[0]],axis=1,inplace=True)
@@ -214,16 +214,47 @@ def get_data(returns_dict, notional_weights,weighted,freq_list=['Monthly', 'Week
     corr_dict = get_corr_data(returns_dict, freq_list, weighted, notional_weights, include_fi)
     analytics_dict = get_analytics_data(returns_dict,['Monthly', 'Weekly'],weighted,notional_weights, include_fi,new_strat)
     hist_dict = get_hist_data(returns_dict,notional_weights, weighted)
-    quintile_df = get_quintile_data(returns_dict, notional_weights)
+    quintile_df = get_grouped_data(returns_dict, notional_weights)
     annual_df = get_annual_dollar_returns(returns_dict, notional_weights)
     
     #return a dictionary containing the data
     return {'corr':corr_dict, 'analytics':analytics_dict, 'hist':hist_dict,
             'quintile': quintile_df, 'annual_returns':annual_df}
 
-#TODO: Make it flexible to change the breakdowns (quintile, decile)
-#TODO: Add frequency (Monthly, Weekly)
-def get_quintile_data(returns_dict, notional_weights=[], weighted=False):
+
+def get_percentile(df , bucket_format , group='Quintile', bucket_size = 5):
+    """
+    Computes Quintile or Decile based  on the given input. 
+    
+    Parameters
+    ----------
+    df : data frame
+        returns data for given frequency 
+    group : string
+        Quintile or Decile
+    bucket_format : method
+        which formatting method to use when computing quintile or decile
+    bucket_size : int
+        how many buckets will returns data be divided into
+
+    Returns
+    -------
+    groups : TYPE
+        DESCRIPTION.
+
+    """
+    col_list = list(df.columns)
+    equity = col_list[0]
+    df['percentile'] = df[equity].rank(pct = True).mul(bucket_size)
+    df[group] = df['percentile'].apply(bucket_format)
+    groups= df.groupby(group).mean()
+    groups = groups.sort_values(by=[equity], ascending=True)
+    groups.drop(['percentile'], axis=1, inplace=True)
+    groups.index.names = [equity + ' Monthly Returns Ranking']
+    return groups
+
+#TODO: Add frequency (Monthly, Weekly)  
+def get_grouped_data(returns_dict, notional_weights=[], weighted=False, group='Quintile'):
     """
     Returns a dataframe containing average returns of each strategy grouped 
     into quintiles based on the equity returns ranking.
@@ -245,20 +276,20 @@ def get_quintile_data(returns_dict, notional_weights=[], weighted=False):
     """
     
     df = returns_dict['Monthly'].copy()
-    col_list = list(df.columns)
-    equity = col_list[0]
-    if weighted:
-        if len(col_list) != len(notional_weights):
-            notional_weights = []
-            notional_weights = dm.get_notional_weights(df)
-            df = util.get_weighted_hedges(df, notional_weights)
-    df['percentile'] = df[equity].rank(pct = True).mul(5)
-    df['Quintile'] = df['percentile'].apply(util.bucket)
-    quintile = df.groupby('Quintile').mean()
-    quintile = quintile.sort_values(by=[equity], ascending=True)
-    quintile.drop(['percentile'], axis=1, inplace=True)
-    quintile.index.names = [equity + ' Monthly Returns Ranking']
-    return quintile
+    
+    if weighted == True:
+        util.check_notional(df, notional_weights)
+        df = util.get_weighted_hedges(df, notional_weights)
+            
+    if group == 'Quintile':       
+        quintile = get_percentile(df, util.bucket, group, 5)
+        return quintile
+    
+    elif group == 'Decile':
+        decile = get_percentile(df, util.decile_bucket , group, 10)
+        return decile
+    
+    
 
 def get_corr_data(returns_dict, freq_list=['Monthly', 'Weekly'], weighted=[False], notional_weights=[], include_fi = False):
     """
@@ -286,8 +317,8 @@ def get_corr_data(returns_dict, freq_list=['Monthly', 'Weekly'], weighted=[False
     """
     
     corr_data = {}
-    
-    if weighted:
+
+    if True in weighted:
         notional_weights = util.check_notional(returns_dict['Monthly'], notional_weights)
     
     for freq in freq_list:
@@ -327,12 +358,16 @@ def get_analytics_data(returns_dict, freq_list=['Monthly', 'Weekly'], weighted=[
     
     analytics_data = {}
     
-    if weighted:
+
+#TODO: fix to run when weighted has a true element is in the list and when weighted is true and false
+
+    if True in weighted:
         notional_weights = util.check_notional(returns_dict['Monthly'], notional_weights)
     
     for freq in freq_list:
         return_df = returns_dict[freq].copy()
         temp_analytics_data = {}
+        
         for w in weighted:
             temp_analytics_data[w] = get_analysis(return_df, notional_weights, include_fi, new_strat,
                                                        dm.switch_string_freq(freq),w)

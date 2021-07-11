@@ -164,6 +164,7 @@ def get_down_stddev(return_series, freq='1M', target=0):
         downside std deviation.
 
     """
+
     #create a downside return column with the negative returns only
     downside_returns = return_series.loc[return_series < target]
 
@@ -190,7 +191,6 @@ def get_sortino_ratio(return_series, freq='1M', rfr=0, target=0):
     double
         sortino ratio
     """
-    
     #calculate annulaized return and std dev of downside
     ann_ret = get_ann_return(return_series, freq)
     down_stddev = get_down_stddev(return_series, freq, target)

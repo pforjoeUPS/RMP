@@ -52,6 +52,7 @@ def get_benefit_stats(df_returns, col_name):
                'median': benefit_med,
                'cumulative': benefit_cum
                }
+
     return benefit
 
 def get_convexity_stats(df_returns, col_name):
@@ -96,6 +97,7 @@ def get_convexity_stats(df_returns, col_name):
                  'median': convexity_med,
                  'cumulative': convexity_cum
                  }
+
     return convexity
 
 def get_decay_stats(df_returns, col_name, freq):
@@ -128,10 +130,10 @@ def get_decay_stats(df_returns, col_name, freq):
         decay_tenth = 0
         
     #create decay dictionary
-    decay_dict = {'half':decay_half, 
-               'quarter':decay_quarter, 
-               'tenth':decay_tenth
-               }
+    decay_dict = {'half': decay_half, 
+                  'quarter': decay_quarter, 
+                  'tenth':decay_tenth
+                  }
     
     return decay_dict
 
@@ -168,6 +170,17 @@ def get_cost_stats(df_returns, col_name):
             'cumulative': cost_cum
             }
     
+    #calculate hedge metrics
+    cost_count=neg_ret[col_name].count()
+    cost_mean=neg_ret[col_name].mean()
+    cost_med=neg_ret[col_name].median()
+    cost_cumulative= cost_count*cost_mean
+    cost = {'count': cost_count , 
+               'mean': cost_mean , 
+               'median': cost_med,
+               'cumulative': cost_cumulative
+               }
+
     return cost
 
 def get_reliability_stats(df_returns, col_name):

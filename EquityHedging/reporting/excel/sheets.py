@@ -125,7 +125,6 @@ def set_analysis_sheet(writer, data_dict, sheet_name, spaces):
             #format skew to digits and avg_pos_ret/avg_neg_ret to digits
             worksheet.conditional_format(row+12,col+1, row+13, col_dim,{'type':'no_blanks',
                                       'format':digits_fmt})
-            
             #format downside dev to percent
             worksheet.conditional_format(row+14,col+1, row+14, col_dim,{'type':'no_blanks',
                                       'format':pct_fmt})
