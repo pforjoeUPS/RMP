@@ -7,17 +7,20 @@ Created on Tue Oct  1 17:59:28 2019
 
 import numpy as np
 
-#rollling cum
 def get_rolling_cum(df_returns, interval):
     """
     Get rolling cum returns dataframe
-    
-    Parameters:
-    df_returns -- return dataframe
-    interval -- 
 
-    Returns:
-    Rolling cum return -- dataframe
+    Parameters
+    ----------
+    df_returns : dataframe
+        returns dataframe.
+    interval : int
+
+    Returns
+    -------
+    rolling_cum_ret : dataframe
+
     """
     
     rolling_cum_ret = df_returns.copy()

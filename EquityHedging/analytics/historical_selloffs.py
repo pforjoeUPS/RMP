@@ -46,52 +46,93 @@ EVENTS = [GFC, EURO_DEBT, US_DEBT, CHINA_WEAKNESS,
           OIL_DROP, FEB_2018, Q4_2018, COVID_19]
 
 
-#TODO: Add definitions
 def compute_event_ret(df_index, col, start, end):
-    """ 
     """
-    
+    Returns the return of an event
+
+    Parameters
+    ----------
+    df_index : dataframe
+        index dataframe.
+    col : string
+        column name (strategy name) in df_index.
+    start : string
+        start date.
+    end : string
+        end date.
+
+    Returns
+    -------
+    double
+        returns.
+
+    """    
     return df_index[col].loc[end] / df_index[col].loc[start] - 1
 
 def separate_events(events):
-    """ 
+    """
+    separate the list of dictionarries into a dictionary
+
+    Parameters
+    ----------
+    events : list
+        list of dictionaries containing historical event data.
+
+    Returns
+    -------
+    dictionary
+        
     """
     
+    #define 3 lists to contain period, start and end values
     period = []
     start = []
     end = []
+    
+    #lopp through event dictionary to get data for each list
     for event in events:
         period.append(event['period'])
         start.append(event['start'])
         end.append(event['end'])
-        
+    
+    #return dictionary
     return {'Period': period, 'Start': start, 'End': end}
 
-def get_index_df(df_returns, notional_weights=[], weighted=False):
-    """ 
+def get_hist_sim_table(df_returns, notional_weights=[], weighted=False):
+    """
+    Returns historical selloffs dataframe
+
+    Parameters
+    ----------
+    df_returns : dataframe
+        dataframe of returns.
+    notional_weights : list, optional
+        notional weights of strategies. The default is [].
+    weighted : boolean, optional
+         Include weighgted hedges. The default is False.
+
+    Returns
+    -------
+    df_hist : dataframe
+
     """
     
+    #get index level data
     df_index = dm.get_prices_df(df_returns)
     
+    #computed weighted hedges
     if weighted:
         notional_weights = util.check_notional(df_returns, notional_weights)
-        strat_weights = util.get_strat_weights(notional_weights)
-        
-        #compute weighted hedges returns
-        df_index['Weighted Hedges'] = df_index.dot(tuple(strat_weights))
-    return df_index
-
-def get_hist_sim_table(df_returns, notional_weights=[], weighted=False):
-    """ 
-    """
+        df_index = util.get_weighted_hedges(df_index, notional_weights)
     
-    df_index = get_index_df(df_returns, notional_weights, weighted)
+    #create dictionary 
     hist_dict = {}
     
     periods = separate_events(EVENTS)['Period']
     hist_dict['Start'] = separate_events(EVENTS)['Start']
     hist_dict['End'] = separate_events(EVENTS)['End']
     
+    #loop through columns to create dictionary
     for col in df_index.columns:
         strat_df = dm.remove_na(df_index, col)
         temp_col = []
@@ -101,5 +142,7 @@ def get_hist_sim_table(df_returns, notional_weights=[], weighted=False):
             event_return = compute_event_ret(strat_df, col, start, end)
             temp_col.append(event_return)
         hist_dict[col] = temp_col
+    
+    #convert dictionary to dataframe
     df_hist = pd.DataFrame(hist_dict, index = periods)
     return df_hist
