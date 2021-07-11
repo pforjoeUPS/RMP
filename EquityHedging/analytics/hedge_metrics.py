@@ -38,17 +38,17 @@ def get_benefit_stats(df_returns, col_name):
     benefit_ret = df_strat.loc[benefit_index]
     
     #filter out negative returns
-    pos_ret = get_pos_neg_df(benefit_ret,col_name,True)
+    pos_ret = get_pos_neg_df(benefit_ret[col_name],True)
     
     #calculate hedge metrics
-    benefit_count = pos_ret[col_name].count()
-    benefit_mean = pos_ret[col_name].mean()
-    benefit_med = pos_ret[col_name].median()
+    benefit_count = pos_ret.count()
+    benefit_mean = pos_ret.mean()
+    benefit_med = pos_ret.median()
     benefit_cum = benefit_count*benefit_mean
     
     #create dictionary
-    benefit = {'count':benefit_count, 
-               'mean':benefit_mean, 
+    benefit = {'count': benefit_count, 
+               'mean': benefit_mean, 
                'median': benefit_med,
                'cumulative': benefit_cum
                }
@@ -82,16 +82,16 @@ def get_convexity_stats(df_returns, col_name):
     convexity_ret = df_strat.loc[convexity_index]
     
     #may not need this line since all the data may be positive already
-    pos_ret = get_pos_neg_df(convexity_ret,col_name,True)
+    pos_ret = get_pos_neg_df(convexity_ret[col_name],True)
     
     #calculate hedge metrics
-    convexity_count = pos_ret[col_name].count()
-    convexity_mean = pos_ret[col_name].mean()
-    convexity_med = pos_ret[col_name].median()
+    convexity_count = pos_ret.count()
+    convexity_mean = pos_ret.mean()
+    convexity_med = pos_ret.median()
     convexity_cum = convexity_count*convexity_mean
     
     #create convexity dictionary
-    convexity = {'count':convexity_count, 
+    convexity = {'count': convexity_count, 
                  'mean': convexity_mean , 
                  'median': convexity_med,
                  'cumulative': convexity_cum
@@ -153,12 +153,12 @@ def get_cost_stats(df_returns, col_name):
     """
     
     #filter out positive returns
-    neg_ret = get_pos_neg_df(df_returns,col_name,False)
+    neg_ret = get_pos_neg_df(df_returns[col_name] ,False)
     
     #calculate hedge metrics
-    cost_count = neg_ret[col_name].count()
-    cost_mean = neg_ret[col_name].mean()
-    cost_med = neg_ret[col_name].median()
+    cost_count = neg_ret.count()
+    cost_mean = neg_ret.mean()
+    cost_med = neg_ret.median()
     cost_cum = cost_count*cost_mean
     
     #create cost dictionary
