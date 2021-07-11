@@ -170,17 +170,6 @@ def get_cost_stats(df_returns, col_name):
             'cumulative': cost_cum
             }
     
-    #calculate hedge metrics
-    cost_count=neg_ret[col_name].count()
-    cost_mean=neg_ret[col_name].mean()
-    cost_med=neg_ret[col_name].median()
-    cost_cumulative= cost_count*cost_mean
-    cost = {'count': cost_count , 
-               'mean': cost_mean , 
-               'median': cost_med,
-               'cumulative': cost_cumulative
-               }
-
     return cost
 
 def get_reliability_stats(df_returns, col_name):
