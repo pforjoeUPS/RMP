@@ -42,13 +42,13 @@ def test_max_3m_dd():
     assert result == pytest.approx(-0.00669775),"Max 3M DD should be -0.0066978"
 
 def test_avg_pos_neg():
-    result = rs.get_avg_pos_neg(RETURNS_DF,'SPTR')
+    result = rs.get_avg_pos_neg(RETURNS_DF['SPTR'])
     assert result == pytest.approx(-0.91666901),"Avg Pos Neg should be -0.91666901"
 
 def test_down_stddev():
-    result = rs.get_down_stddev(RETURNS_DF,'SPTR')
+    result = rs.get_down_stddev(RETURNS_DF['SPTR'])
     assert result == pytest.approx(0.116859687),"Downside deviation should be 0.116859687"
 
 def test_sortino():
-    result = rs.get_sortino_ratio(RETURNS_DF,'SPTR')
+    result = rs.get_sortino_ratio(RETURNS_DF['SPTR'])
     assert result == pytest.approx(2.6943791),"Sortino Ratio should be 2.6943791"
