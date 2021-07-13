@@ -13,50 +13,49 @@ from .import util
 def get_corr_analysis(df_returns, notional_weights=[], include_fi=False, weighted=False):
     """
     Returns a dict of correlation matrices: 
-    full correlation, when equity up, when equity down
-    
-    Parameters:
-    df_returns -- dataframe
-    notional_weights -- list
-    include_fi -- boolean
-    weighted -- boolean
-    
-    Returns:
-    dict -- {key: string, value: list[dataframe, string]}
-    """
-    
-    col_list = list(df_returns.columns)
-    
-    if weighted:
-        notional_weights = util.check_notional(df_returns, notional_weights)
-        
-        #get notional weights for weighted strategy returns
-        strat_weights = util.get_strat_weights(notional_weights, include_fi)
-        
-        #compute weighted hedges returns
-        df_returns['Weighted Hedges'] = df_returns.dot(tuple(strat_weights))
+        full correlation, when equity up, when equity down
 
-    #get equity value (e.g. 'SPTR', 'M1WD')
+    Parameters
+    ----------
+    df_returns : dataframe
+    notional_weights : list, optional
+        The default is [].
+    include_fi : boolean, optional
+        The default is False.
+    weighted : boolean, optional
+        The default is False.
+
+    Returns
+    -------
+    corr_dict : dictionary
+        {key: string, value: list[dataframe, string]}
+
+    """
+
+    strategy_returns = df_returns.copy()
+    
+    #compute weighted hedges returns
+    if weighted:
+        strategy_returns = util.get_weighted_hedges(strategy_returns, notional_weights, include_fi)
+
+    #get equity value (e.g. 'SPTR', 'M1WD', 'SX5T')
+    col_list = list(strategy_returns.columns)
     equity_id = col_list[0]
     
     #get returns when equity > 0 and equity < 0
-    equity_up = (df_returns[df_returns[equity_id] > 0])
-    equity_down = (df_returns[df_returns[equity_id] < 0])
-    
+    equity_up = (strategy_returns[strategy_returns[equity_id] > 0])
+    equity_down = (strategy_returns[strategy_returns[equity_id] < 0])
+
     #TODO: fix bug in title
-    dates = get_min_max_dates(df_returns)
+    dates = get_min_max_dates(strategy_returns)
     data_range = str(dates['start']).split()[0] + ' to ' + str(dates['end']).split()[0]
-    title = 'Correlation of ' + str(len(df_returns)) + ' Historical Observations (' + data_range + ')'
-    
-    #compute correlation and plot
+    title = 'Correlation of ' + str(len(strategy_returns)) + ' Historical Observations (' + data_range + ')'
+
     corr_dict = {
-        "corr": [df_returns.corr(), title],
+        "corr": [strategy_returns.corr(), title],
         "corr_up": [equity_up.corr(), title + ' where ' + equity_id + ' > 0'],
         "corr_down": [equity_down.corr(), title + ' where ' + equity_id + ' < 0']
         }
-    
-    if weighted:
-        del df_returns['Weighted Hedges']
     
     return corr_dict
 
@@ -66,30 +65,31 @@ def get_corr_rank_data(df_returns,buckets, notional_weights=[],include_fi=False)
     """
     Creates a dictionary of correlation dataframes ranked based on the
     equity benchmark returns
-    
-    Parameters:
-    df_returns -- dataframe
-    buckets -- int
-    notional_weights -- list
-    include_fi -- boolean
-    
-    Returns:
-    dict{key: string, value: list[dataframe, string]}
+
+    Parameters
+    ----------
+    df_returns : dataframe
+    buckets : TYPE
+        DESCRIPTION.
+    notional_weights : list, optional
+        The default is [].
+    include_fi : boolean, optional
+        The default is False.
+
+    Returns
+    -------
+    corr_pack : dicitionary
+        {key: string, value: list[dataframe, string]}.
+
     """
     
-    strategy_returns = df_returns.copy()
-    
-    #create list of df_returns column names
-    col_list = list(strategy_returns.columns)
+    strategy_returns = util.get_weighted_hedges(df_returns, notional_weights, include_fi)
     
     #confirm notional weights is correct len
     notional_weights = util.check_notional(strategy_returns, notional_weights)
     
-    #compute weighted hedges returns
-    strat_weights = util.get_strat_weights(notional_weights, include_fi)
-    strategy_returns['Weighted Hedges'] = strategy_returns.dot(tuple(strat_weights))
-    
     #create a ranking for the equity index returns
+    col_list = list(strategy_returns.columns)
     equity_id = col_list[0]
     strategy_returns['Rank'] = pd.qcut(strategy_returns[equity_id],buckets,
                                         labels=np.arange(0,buckets,1))

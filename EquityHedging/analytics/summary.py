@@ -2,7 +2,7 @@
 """
 Created on Tue Oct  1 17:59:28 2019
 
-@author: Powis Forjoe
+@author: Powis Forjoe, Maddie Choi, and Zach Wells
 """
 
 import pandas as pd
@@ -64,15 +64,15 @@ def get_analysis(df_returns, notional_weights=[], include_fi=False, new_strat=Fa
                                index = ['Annualized Ret', 
                                         'Annualized Vol','Ret/Vol', 
                                         'Max DD','Ret/Max DD','Max 1M DD',
-                                        'Max 1M DD Date', 'Max 3M DD', 
-                                        'Max 3M DD Date', 'Skew',
+                                        'Max 1M DD Date', 'Ret/Max 1M DD','Max 3M DD', 
+                                        'Max 3M DD Date','Ret/Max 3M DD', 'Skew',
                                         'Avg Pos Ret/Avg Neg Ret',
                                         'Downside Deviation',
                                         'Sortino Ratio'])
         
     # remove the weighted strats from the dataframe
     if weighted:
-        df_weighted_strats = util.get_weighted_strats_df_1(df_returns, notional_weights, include_fi, new_strat)
+        df_weighted_strats = util.get_weighted_strats_df(df_returns, notional_weights, include_fi, new_strat)
         hedge_returns = df_weighted_returns.copy()
     
         #remove weighted strats col
@@ -93,11 +93,12 @@ def get_analysis(df_returns, notional_weights=[], include_fi=False, new_strat=Fa
     # Create pandas DataFrame for hedge metrics
     df_hedge_metrics = pd.DataFrame(hedge_dict, 
                                   index = ['Benefit Count', 'Benefit Median', 
-                                           'Benefit Mean', 'Reliabitlity',
+                                           'Benefit Mean','Benefit Cum', 
+                                           'Downside Reliability','Upside Reliability',
                                            'Convexity Count', 'Convexity Median',
-                                           'Convexity Mean','Cost Count',
-                                           'Cost Median','Cost Mean', 'Decay Days (50% retrace)',
-                                            'Decay Days (25% retrace)', 'Decay Days (10% retrace)'])
+                                           'Convexity Mean','Convexity Cum','Cost Count',
+                                           'Cost Median','Cost Mean','Cost Cum', 'Decay Days (50% retrace)',
+                                           'Decay Days (25% retrace)', 'Decay Days (10% retrace)'])
     
     #remove equity col
     df_hedge_metrics.drop([col_list[0]],axis=1,inplace=True)
@@ -200,8 +201,7 @@ def get_data(returns_dict, notional_weights,weighted,freq_list=['Monthly', 'Week
     
     Returns
     -------
-    dict
-       dictionary containing:
+    dictionary containing:
            corr_dict: dictionary
            analytics_dict: dictionary
            hist_dict: dictionary
@@ -210,18 +210,51 @@ def get_data(returns_dict, notional_weights,weighted,freq_list=['Monthly', 'Week
            
     """
     
+    #compute correation, analytics, historical selloffs, quintile and annual dollar returns datasets
     corr_dict = get_corr_data(returns_dict, freq_list, weighted, notional_weights, include_fi)
     analytics_dict = get_analytics_data(returns_dict,['Monthly', 'Weekly'],weighted,notional_weights, include_fi,new_strat)
     hist_dict = get_hist_data(returns_dict,notional_weights, weighted)
-    quintile_df = get_quintile_data(returns_dict, notional_weights)
+    quintile_df = get_grouped_data(returns_dict, notional_weights)
     annual_df = get_annual_dollar_returns(returns_dict, notional_weights)
     
+    #return a dictionary containing the data
     return {'corr':corr_dict, 'analytics':analytics_dict, 'hist':hist_dict,
             'quintile': quintile_df, 'annual_returns':annual_df}
 
-#TODO: Make it flexible to change the breakdowns (quintile, decile)
-#TODO: Add frequency (Monthly, Weekly)
-def get_quintile_data(returns_dict, notional_weights=[], weighted=False):
+
+def get_percentile(df , bucket_format , group='Quintile', bucket_size = 5):
+    """
+    Computes Quintile or Decile based  on the given input. 
+    
+    Parameters
+    ----------
+    df : data frame
+        returns data for given frequency 
+    group : string
+        Quintile or Decile
+    bucket_format : method
+        which formatting method to use when computing quintile or decile
+    bucket_size : int
+        how many buckets will returns data be divided into
+
+    Returns
+    -------
+    groups : TYPE
+        DESCRIPTION.
+
+    """
+    col_list = list(df.columns)
+    equity = col_list[0]
+    df['percentile'] = df[equity].rank(pct = True).mul(bucket_size)
+    df[group] = df['percentile'].apply(bucket_format)
+    groups= df.groupby(group).mean()
+    groups = groups.sort_values(by=[equity], ascending=True)
+    groups.drop(['percentile'], axis=1, inplace=True)
+    groups.index.names = [equity + ' Monthly Returns Ranking']
+    return groups
+
+#TODO: Add frequency (Monthly, Weekly)  
+def get_grouped_data(returns_dict, notional_weights=[], weighted=False, group='Quintile'):
     """
     Returns a dataframe containing average returns of each strategy grouped 
     into quintiles based on the equity returns ranking.
@@ -243,20 +276,20 @@ def get_quintile_data(returns_dict, notional_weights=[], weighted=False):
     """
     
     df = returns_dict['Monthly'].copy()
-    col_list = list(df.columns)
-    equity = col_list[0]
-    if weighted:
-        if len(col_list) != len(notional_weights):
-            notional_weights = []
-            notional_weights = dm.get_notional_weights(df)
-            df = util.get_weighted_hedges(df, notional_weights)
-    df['percentile'] = df[equity].rank(pct = True).mul(5)
-    df['Quintile'] = df['percentile'].apply(util.bucket)
-    quintile = df.groupby('Quintile').mean()
-    quintile = quintile.sort_values(by=[equity], ascending=True)
-    quintile.drop(['percentile'], axis=1, inplace=True)
-    quintile.index.names = [equity + ' Monthly Returns Ranking']
-    return quintile
+    
+    if weighted == True:
+        util.check_notional(df, notional_weights)
+        df = util.get_weighted_hedges(df, notional_weights)
+            
+    if group == 'Quintile':       
+        quintile = get_percentile(df, util.bucket, group, 5)
+        return quintile
+    
+    elif group == 'Decile':
+        decile = get_percentile(df, util.decile_bucket , group, 10)
+        return decile
+    
+    
 
 def get_corr_data(returns_dict, freq_list=['Monthly', 'Weekly'], weighted=[False], notional_weights=[], include_fi = False):
     """
@@ -284,8 +317,8 @@ def get_corr_data(returns_dict, freq_list=['Monthly', 'Weekly'], weighted=[False
     """
     
     corr_data = {}
-    
-    if weighted:
+
+    if True in weighted:
         notional_weights = util.check_notional(returns_dict['Monthly'], notional_weights)
     
     for freq in freq_list:
@@ -325,12 +358,16 @@ def get_analytics_data(returns_dict, freq_list=['Monthly', 'Weekly'], weighted=[
     
     analytics_data = {}
     
-    if weighted:
+
+#TODO: fix to run when weighted has a true element is in the list and when weighted is true and false
+
+    if True in weighted:
         notional_weights = util.check_notional(returns_dict['Monthly'], notional_weights)
     
     for freq in freq_list:
         return_df = returns_dict[freq].copy()
         temp_analytics_data = {}
+        
         for w in weighted:
             temp_analytics_data[w] = get_analysis(return_df, notional_weights, include_fi, new_strat,
                                                        dm.switch_string_freq(freq),w)
@@ -416,7 +453,6 @@ def get_dollar_returns_data(returns_dict, notional_weights, new_strat_bool):
     for s in new_strat_bool:
         ann_ret_dict[s] = get_annual_dollar_returns(returns_dict, notional_weights, s)
     return ann_ret_dict
-    
 
 #TODO: make flexible to compute corrs w/o weighted strats/hedges
 def get_rolling_cum_data(df_returns, freq='1W', notional_weights=[]):
@@ -485,27 +521,20 @@ def get_weighted_data(df_returns, notional_weights=[], include_fi=False, new_str
     #confirm notional weights is correct len
     notional_weights = util.check_notional(df_returns, notional_weights)
     
-    #Get weighted strategies (weighted_strats) with and 
-    #without new strategy (weighted_strats_old)
-    df_weighted_strats = util.get_weighted_strats_df_1(df_returns, notional_weights, include_fi,
+    #Get weighted strategies with and without new strategy (if new_strat = True)
+    df_weighted_strats = util.get_weighted_strats_df(df_returns, notional_weights, include_fi,
                                                   new_strat)
 
-    #merge wighted_strats with returns
+    #merge weighted_strats with returns with and 
+    #without new strategy (weighted_strats_old)
     df_weighted_returns = pd.merge(df_returns, df_weighted_strats, left_index=True, 
                                    right_index=True, how='outer')
     
-    #compute weighted hedges returns
-    strat_weights = util.get_strat_weights(notional_weights, include_fi)
-    df_weighted_returns['Weighted Hedges'] = df_returns.dot(tuple(strat_weights))
+    #Get weighted hedges with and without new strategy (if new_strat = True)
+    df_weighted_hedges = util.get_weighted_hedges(df_returns, notional_weights, include_fi,new_strat)
     
-    #Get weighted hedges w/o new strategy
-    if new_strat:
-        col_list = list(df_returns.columns)
-        temp_weights = notional_weights.copy()
-        temp_weights[len(temp_weights)-1] = 0
-        temp_strat_weights = util.get_strat_weights(temp_weights, include_fi)
-        wgt_hedge_wo_name = 'Weighted Hedges w/o ' + col_list[len(col_list)-1]
-        df_weighted_returns[wgt_hedge_wo_name] = df_returns.dot(tuple(temp_strat_weights))
-    
+    #merge weighted hedges with weighted returns
+    df_weighted_hedges.drop(list(df_returns.columns), axis=1, inplace=True)
+    df_weighted_returns = pd.merge(df_weighted_returns, df_weighted_hedges, left_index=True, 
+                                   right_index=True, how='outer')
     return df_weighted_returns
-

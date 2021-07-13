@@ -106,6 +106,7 @@ def get_equity_hedge_report(report_name, returns_dict, notional_weights=[],inclu
         sheets.set_hist_sheet(writer, hist_df)
         sheets.set_hist_return_sheet(writer, daily_returns, 'Daily Historical Returns')
         
+    print_report_info(report_name, file_path)
     writer.save()
 
 def get_corr_rank_report(report_name, df_returns, buckets, notional_weights=[],include_fi=False):
@@ -121,6 +122,8 @@ def get_corr_rank_report(report_name, df_returns, buckets, notional_weights=[],i
     #create excel report
     sheets.set_corr_rank_sheet(writer,corr_pack,dates)
     sheets.set_hist_return_sheet(writer,df_returns, 'Returns')
+    
+    print_report_info(report_name, file_path)
     writer.save()
 
 def get_rolling_cum_ret_report(report_name, df_returns, freq, notional_weights):
@@ -135,6 +138,8 @@ def get_rolling_cum_ret_report(report_name, df_returns, freq, notional_weights):
     sheets.set_hist_return_sheet(writer, rolling_cum_dict['3M'], 'Rolling Cum Returns_3 Months')
     sheets.set_hist_return_sheet(writer, rolling_cum_dict['6M'], 'Rolling Cum Returns_6 Months')
     sheets.set_hist_return_sheet(writer, rolling_cum_dict['1Y'], 'Rolling Cum Returns_1 Year')
+    
+    print_report_info(report_name, file_path)
     writer.save()
 
 def generate_strat_report(report_name, returns_dict, selloffs=False):
@@ -192,6 +197,7 @@ def generate_strat_report(report_name, returns_dict, selloffs=False):
         sheets.set_hist_sheet(writer, hist_df)
         sheets.set_hist_return_sheet(writer, daily_returns, 'Daily Historical Returns')
         
+    print_report_info(report_name, file_path)
     writer.save()
 
 def generate_hs_report(report_name, returns_dict, notional_weights=[], weighted=False):
@@ -232,3 +238,50 @@ def generate_hs_report(report_name, returns_dict, notional_weights=[], weighted=
     sheets.set_hist_return_sheet(writer, daily_returns, 'Daily Historical Returns')
         
     writer.save()
+def get_returns_report(report_name, returns_dict):
+    """
+    Generates historical returns spreadsheet containing returns for different frequencies
+
+    Parameters
+    ----------
+    report_name : string
+        Name of report.
+    returns_dict : dict
+        dictionary of returns containing different frequencies.
+    
+    Returns
+    -------
+    None. An excel report called [report_name].xlsx is created 
+
+    """
+    #get file path and create excel writer
+    file_path = get_report_path(report_name)
+    writer = pd.ExcelWriter(file_path, engine='xlsxwriter')
+    
+    #loop through dictionary to create returns spreadsheet
+    for key in returns_dict:
+        print("Writing {} Historical Returns sheet...".format(key))
+        sheets.set_hist_return_sheet(writer, returns_dict[key], key)
+    
+    #save file
+    print_report_info(report_name, file_path)
+    writer.save()
+
+def print_report_info(report_name, file_path):
+    """
+    Print name of report and location
+
+    Parameters
+    ----------
+    report_name : string
+        Name of report.
+    file_path : string
+        flie location.
+
+    Returns
+    -------
+    None.
+
+    """
+    folder_location = file_path.replace(report_name+'.xlsx', '')
+    print('"{}.xlsx" report generated in "{}" folder'.format(report_name,folder_location))
