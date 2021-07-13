@@ -38,13 +38,40 @@ def switch_ticker(arg):
             }
     return switcher.get(arg, 1)
 
-def get_price_data(tickers,start_date,end_date):
-    df_index = blp.bdh(tickers, start_date=start_date,end_date=end_date)
+def get_price_data(tickers,start_date,end_date='today',freq='D'):
+    df_index = get_data(tickers, 'PX_LAST', start_date,end_date,freq)
     df_index.columns = tickers
-    df_index.dropna(inplace=True)
     return df_index
 
-def get_ups_data(start_date, end_date):
+def get_ups_data(start_date, end_date='today'):
     ups_data = get_price_data(UPS_BBG_TICKER_LIST,start_date, end_date)
     ups_data.columns = [switch_ticker(col) for col in ups_data.columns]
     return dm.get_data_dict(ups_data)
+
+def get_data(tickers,flds=None,start_date=None,end_date='today',freq='D'):
+    """
+    Returns Historical data of tickers Bloomberg
+
+    Parameters
+    ----------
+    tickers : list
+        Bloomberg tickers.
+    flds : list, optional
+        list of fields. The default is None.
+    start_date : string, optional
+        start date. The default is None.
+    end_date : string, optional
+        today. The default is 'today'.
+    freq : string, optional
+        frequency of data. The default is 'D'.
+
+    Returns
+    -------
+    df : dataframe
+        dataframe containing data.
+
+    """
+    df = blp.bdh(tickers,flds, start_date,end_date,Per=freq,Fill='P',Days='T')
+    df.dropna(inplace=True)
+    return df
+    
