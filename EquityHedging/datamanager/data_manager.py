@@ -10,10 +10,10 @@ import os
 from datetime import datetime as dt
 
 CWD = os.getcwd()
-RETURNS_DATA_FP = '\\EquityHedging\\data\\'
-EQUITY_HEDGING_RETURNS_DATA = CWD + RETURNS_DATA_FP + 'ups_equity_hedge\\returns_data.xlsx'
-EQUITY_HEDGING_RETURNS_DATA
-NEW_DATA = CWD + RETURNS_DATA_FP + 'new_strats\\'
+RETURNS_DATA_FP = CWD +'\\EquityHedging\\data\\'
+EQUITY_HEDGING_RETURNS_DATA = RETURNS_DATA_FP + 'ups_equity_hedge\\returns_data.xlsx'
+NEW_DATA = RETURNS_DATA_FP + 'new_strats\\'
+UPDATE_DATA = RETURNS_DATA_FP + 'update_strats\\'
 
 def merge_dicts(main_dict, new_dict):
     """
@@ -268,7 +268,7 @@ def get_real_cols(df):
     df = df[real_cols]
     return df
 
-def get_equity_hedge_returns(equity='SPTR', include_fi=False, strat_drop_list=[],only_equity=False):
+def get_equity_hedge_returns(equity='SPTR', include_fi=False, strat_drop_list=[],only_equity=False, all_data=False):
     """
     Returns a dictionary of dataframes containing returns data of 
     different frequencies
@@ -290,7 +290,10 @@ def get_equity_hedge_returns(equity='SPTR', include_fi=False, strat_drop_list=[]
                                  sheet_name=freq_string,
                                  index_col=0)
         temp_ret = get_real_cols(temp_ret)
-        returns_dict[freq_string] = create_copy_with_fi(temp_ret, equity, freq, include_fi)
+        if all_data:
+            returns_dict[freq_string] = temp_ret.copy()
+        else:
+            returns_dict[freq_string] = create_copy_with_fi(temp_ret, equity, freq, include_fi)
         if strat_drop_list:
             returns_dict[freq_string].drop(strat_drop_list, axis=1, inplace=True)
         if only_equity:
