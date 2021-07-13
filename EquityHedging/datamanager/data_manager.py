@@ -64,7 +64,8 @@ def format_data(df_index, freq="1M"):
     """
     data = df_index.copy()
     data.index = pd.to_datetime(data.index)
-    data = data.resample(freq).ffill()
+    if not(freq == '1D'):
+       data = data.resample(freq).ffill()
     data = data.pct_change(1)
     data.dropna(inplace=True)
     return data
