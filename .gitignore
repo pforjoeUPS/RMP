@@ -1,8 +1,8 @@
 ### EquityHedging ###
 EquityHedging/reports/*.xlsx
-EquityHedging/scripts/add_data_temp.py
+#EquityHedging/scripts/add_data_temp.py
 EquityHedging/data/new_strats/*.xlsx
-EquityHedging/data/update_strats/*.xlsx
+#EquityHedging/data/update_strats/*.xlsx
 desktop.ini
 
 ### JupyterNotebooks ###
