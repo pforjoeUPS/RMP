@@ -252,6 +252,8 @@ def get_hedge_metrics(df_returns, freq="1M"):
         
     return hedge_dict
 
+#TODO: rather than calling get_hedge_metrics, call get benefit stats, get reliability stats etc and create into a data frame 
+#TODO: include an input where weighted=True or False and make if statement to only compute weighted hedges if true
 def get_hedge_metrics_to_normalize(returns, equity_bmk, notional_weights):
     '''
     Parameters
@@ -275,11 +277,11 @@ def get_hedge_metrics_to_normalize(returns, equity_bmk, notional_weights):
     #Create data frame of hedge metrics from the dictionary hedge_met
     df_hedge_metrics = pd.DataFrame(hedge_met, 
                                       index =['Benefit Count', 'Benefit Median', 
-                                           'Benefit Mean','Benefit Cum', 
-                                           'Downside Reliability','Upside Reliability',
+                                           'Benefit Mean','Benefit', 
+                                           'Down Reliability','Up Reliability',
                                            'Convexity Count', 'Convexity Median',
-                                           'Convexity Mean','Convexity Cum','Cost Count',
-                                           'Cost Median','Cost Mean','Cost Cum', 'Decay Days (50% retrace)',
+                                           'Convexity Mean','Convexity ','Cost Count',
+                                           'Cost Median','Cost Mean','Cost ', 'Decay',
                                            'Decay Days (25% retrace)', 'Decay Days (10% retrace)'])
     
     #drop equity benchmark and metrics not used in normalization
@@ -287,5 +289,6 @@ def get_hedge_metrics_to_normalize(returns, equity_bmk, notional_weights):
     df_hedge_metrics.drop(['Benefit Count', 'Benefit Median','Benefit Mean','Convexity Count', 'Convexity Median',
                                                'Convexity Mean','Cost Count','Cost Median','Cost Mean',
                                                'Decay Days (25% retrace)', 'Decay Days (10% retrace)'],axis = 0, inplace = True)
+
     df = df_hedge_metrics.transpose()
     return df

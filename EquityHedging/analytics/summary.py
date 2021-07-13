@@ -14,6 +14,7 @@ from .corr_stats import get_corr_analysis
 from .historical_selloffs import get_hist_sim_table
 from .rolling_cum import get_rolling_cum
 
+
 def get_analysis(df_returns, notional_weights=[], include_fi=False, new_strat=False, freq='1M', weighted = False):
     """
     Returns a dictionary of dataframes containing:
@@ -538,3 +539,5 @@ def get_weighted_data(df_returns, notional_weights=[], include_fi=False, new_str
     df_weighted_returns = pd.merge(df_weighted_returns, df_weighted_hedges, left_index=True, 
                                    right_index=True, how='outer')
     return df_weighted_returns
+
+#TODO: create function that calls get_hedge_metrics_to_normalize, convert neg to positive, and get normalized data to return just the normalized data

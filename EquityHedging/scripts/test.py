@@ -28,16 +28,8 @@ fmt.get_notional_styler(df_weights)
 #get hedge metrics data frame
 df = hm.get_hedge_metrics_to_normalize(returns, equity_bmk, notional_weights)
 
-def get_normalized_data(df):
-    from sklearn.preprocessing import MinMaxScaler
-    scaler= MinMaxScaler()
-    df_normal = pd.DataFrame(scaler.fit_transform(df), columns = df.columns, index = df.index )
-    df_normal= df_normal.transpose()
 
-    return df_normal
-
-
-df_normal = get_normalized_data(df)
+df_normal = summary.get_normalized_data(df)
 
 import plotly.graph_objects as go
 met= list(df_normal.index)

@@ -8,6 +8,7 @@ Created on Thu Apr 22 00:02:00 2021
 import pandas as pd
 import numpy as np
 from ..datamanager.data_manager import get_notional_weights
+from sklearn.preprocessing import MinMaxScaler
 
 def get_pos_neg_df(return_series, pos=True):
     """
@@ -319,3 +320,15 @@ def decile_bucket(x):
         return '9th'
     else:
         return 'Top'
+
+
+def get_normalized_data(df):
+    scaler= MinMaxScaler()
+    df_normal = pd.DataFrame(scaler.fit_transform(df), columns = df.columns, index = df.index )
+    df_normal= df_normal.transpose()
+
+    return df_normal
+
+#TODO: create function that converts dictionaries to data frames ex: convert_dict_to_df(index=[], dict)
+
+#TODO: create a function that converts downside reliability to positive numbers 
