@@ -8,6 +8,7 @@ Created on Tue Oct  1 17:59:28 2019
 import pandas as pd
 from ..datamanager import data_manager as dm
 from .hedge_metrics import get_hedge_metrics
+from EquityHedging.analytics import hedge_metrics as hm
 from .import util
 from .returns_stats import get_return_stats
 from .corr_stats import get_corr_analysis
@@ -540,4 +541,32 @@ def get_weighted_data(df_returns, notional_weights=[], include_fi=False, new_str
                                    right_index=True, how='outer')
     return df_weighted_returns
 
-#TODO: create function that calls get_hedge_metrics_to_normalize, convert neg to positive, and get normalized data to return just the normalized data
+def get_normalized_hedge_metrics(returns, equity_bmk, notional_weights, weighted_hedge = False):
+    '''
+    
+
+    Parameters
+    ----------
+    returns : dict
+        returns data
+    equity_bmk : string
+        choose a bmk: SPTR, M1WD, SPX
+    notional_weights : list
+        list with notional weights for each strategu
+
+    Returns
+    -------
+    norm : data frame
+        includes the normalized data for all strategies in the Strategy and Allocation Equity Hedge Portfolio
+
+    '''
+    #calculates hedgemetrics 
+    df = hm.get_hedge_metrics_to_normalize(returns, equity_bmk, notional_weights, weighted_hedge = weighted_hedge)
+    
+    #converts down reliability metrics from negative to positive in order to correctly rank them
+    df_1 = util.convert_down_reliability_to_positive(df)
+    
+    #normalizes the data
+    norm = util.get_normalized_data(df_1)
+    
+    return norm

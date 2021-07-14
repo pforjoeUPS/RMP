@@ -2,7 +2,7 @@
 """
 Created on Thu Apr 22 00:02:00 2021
 
-@author: Powis Forjoe
+@author: Powis Forjoe and Maddie Choi
 """
 
 import pandas as pd
@@ -323,12 +323,71 @@ def decile_bucket(x):
 
 
 def get_normalized_data(df):
+    '''
+
+    Parameters
+    ----------
+    df : data frame
+        data frame of returns data for a given frequency
+
+    Returns
+    -------
+    df_normal : data frame
+        normalizes data to be within the range 0 to 1
+
+    '''
     scaler= MinMaxScaler()
+    
+    #creates data frame with normalized data
     df_normal = pd.DataFrame(scaler.fit_transform(df), columns = df.columns, index = df.index )
+    
+    #transpose the data
     df_normal= df_normal.transpose()
 
     return df_normal
 
-#TODO: create function that converts dictionaries to data frames ex: convert_dict_to_df(index=[], dict)
 
-#TODO: create a function that converts downside reliability to positive numbers 
+
+def convert_dict_to_df(dict={},index=[]):
+    '''
+    
+
+    Parameters
+    ----------
+    dict : dictionary
+        Input a dictionary that will be turned into a data frame. The default is {}.
+    index : list
+        Index (aka row) names. The default is [].
+    
+   ** Note the data frame column names will be the keys in the dictionary **
+   
+   Returns
+    -------
+    Data Frame
+    
+    '''
+    
+    df=pd.DataFrame(dict, index = index, )
+
+    return df
+
+
+def convert_down_reliability_to_positive(df):
+    '''
+    
+
+    Parameters
+    ----------
+    df : data frame
+
+    Returns
+    -------
+    df_1 : data frame
+        same data frame as in the input, but with downside reliability terms as positive.
+
+    '''
+    if 'Down Reliability' in df.columns:
+        df_1 = df.copy()
+        for x in df_1.index:
+            df_1['Down Reliability'][x] = -(df_1['Down Reliability'][x])
+    return df

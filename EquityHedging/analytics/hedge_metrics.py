@@ -5,11 +5,11 @@ Created on Tue Oct  1 17:59:28 2019
 @author: Powis Forjoe, Maddie Choi, and Zach Wells
 """
 
-from ..datamanager import data_manager as dm
-from .decay import get_decay_days
-from .util import get_pos_neg_df
+from EquityHedging.datamanager import data_manager as dm
+from EquityHedging.analytics.decay import get_decay_days
+from EquityHedging.analytics.util import get_pos_neg_df
 from EquityHedging.analytics import  util
-import pandas as pd
+
 def get_benefit_stats(df_returns, col_name):
     """
     Return count, mean, mode and cumulative of all positive returns
@@ -252,9 +252,8 @@ def get_hedge_metrics(df_returns, freq="1M"):
         
     return hedge_dict
 
-#TODO: rather than calling get_hedge_metrics, call get benefit stats, get reliability stats etc and create into a data frame 
-#TODO: include an input where weighted=True or False and make if statement to only compute weighted hedges if true
-def get_hedge_metrics_to_normalize(returns, equity_bmk, notional_weights):
+
+def get_hedge_metrics_to_normalize(returns, equity_bmk, notional_weights, weighted_hedge = False):
     '''
     Parameters
     ----------
@@ -269,26 +268,30 @@ def get_hedge_metrics_to_normalize(returns, equity_bmk, notional_weights):
     '''
     #Index weekly returns and obtain weighted hedges
     weekly_ret = returns['Weekly'].copy()
-    weekly_ret = util.get_weighted_hedges(weekly_ret, notional_weights)
     
-    #Calculate hedge metrics
-    hedge_met=get_hedge_metrics(weekly_ret)
+    if weighted_hedge == True:
+        weekly_ret = util.get_weighted_hedges(weekly_ret, notional_weights)
+        
+    #create empty dictionary
+    hedge_dict = {}
     
-    #Create data frame of hedge metrics from the dictionary hedge_met
-    df_hedge_metrics = pd.DataFrame(hedge_met, 
-                                      index =['Benefit Count', 'Benefit Median', 
-                                           'Benefit Mean','Benefit', 
-                                           'Down Reliability','Up Reliability',
-                                           'Convexity Count', 'Convexity Median',
-                                           'Convexity Mean','Convexity ','Cost Count',
-                                           'Cost Median','Cost Mean','Cost ', 'Decay',
-                                           'Decay Days (25% retrace)', 'Decay Days (10% retrace)'])
+    #Calculate only the hedge metrics needed in normalization and ranking
+    for col in weekly_ret.columns:
+        benefit = get_benefit_stats(weekly_ret, col)['cumulative']
+        reliability = get_reliability_stats(weekly_ret, col)
+        convexity = get_convexity_stats(weekly_ret, col)['cumulative']
+        cost = get_cost_stats(weekly_ret, col)['cumulative']
+        decay = get_decay_stats(weekly_ret, col, freq='1W')['half']
+        
+        hedge_dict[col] = [benefit,
+                          reliability['down'],reliability['up'],
+                          convexity, cost, decay]
     
-    #drop equity benchmark and metrics not used in normalization
-    df_hedge_metrics.drop(equity_bmk,axis=1, inplace=True)
-    df_hedge_metrics.drop(['Benefit Count', 'Benefit Median','Benefit Mean','Convexity Count', 'Convexity Median',
-                                               'Convexity Mean','Cost Count','Cost Median','Cost Mean',
-                                               'Decay Days (25% retrace)', 'Decay Days (10% retrace)'],axis = 0, inplace = True)
-
+    #Converts hedge_dict to a data grame
+    df_hedge_metrics = util.convert_dict_to_df(dict=hedge_dict,index=['Benefit','Down Reliability','Up Reliability','Convexity','Cost',
+                                               'Decay'])
+    
+    #drop the equity benchmark
+    df_hedge_metrics.drop(equity_bmk, axis = 1, inplace = True)
     df = df_hedge_metrics.transpose()
     return df
