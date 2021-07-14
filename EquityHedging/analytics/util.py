@@ -268,6 +268,7 @@ def get_weighted_hedges(df_returns, notional_weights, include_fi=False, new_stra
     
     #get weighted hedges
     df_weighted_hedges = df_returns.copy()
+    notional_weights = check_notional(df_weighted_hedges,notional_weights)
     strat_weights = get_strat_weights(notional_weights, include_fi)
     df_weighted_hedges['Weighted Hedges'] = df_weighted_hedges.dot(tuple(strat_weights))
     
@@ -348,14 +349,13 @@ def get_normalized_data(df):
 
 
 
-def convert_dict_to_df(dict={},index=[]):
+def convert_dict_to_df(dict,index = []):
     '''
-    
 
     Parameters
     ----------
     dict : dictionary
-        Input a dictionary that will be turned into a data frame. The default is {}.
+        Input a dictionary that will be turned into a data frame. 
     index : list
         Index (aka row) names. The default is [].
     
@@ -367,12 +367,12 @@ def convert_dict_to_df(dict={},index=[]):
     
     '''
     
-    df=pd.DataFrame(dict, index = index, )
+    df=pd.DataFrame(dict, index = index )
 
     return df
 
-
-def convert_down_reliability_to_positive(df):
+#todo: change mult cols
+def reverse_signs_in_col(df, col_name):
     '''
     
 
@@ -382,12 +382,13 @@ def convert_down_reliability_to_positive(df):
 
     Returns
     -------
-    df_1 : data frame
+    df_reverse : data frame
         same data frame as in the input, but with downside reliability terms as positive.
 
     '''
-    if 'Down Reliability' in df.columns:
-        df_1 = df.copy()
-        for x in df_1.index:
-            df_1['Down Reliability'][x] = -(df_1['Down Reliability'][x])
-    return df
+    df_reverse = df.copy()
+    if col_name in df.columns:
+        for x in df_reverse.index:
+            df_reverse[col_name][x] = -(df_reverse[col_name][x])
+            
+    return df_reverse
