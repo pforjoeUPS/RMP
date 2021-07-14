@@ -564,9 +564,9 @@ def get_normalized_hedge_metrics(returns, equity_bmk, notional_weights, weighted
     df = hm.get_hedge_metrics_to_normalize(returns, equity_bmk, notional_weights, weighted_hedge = weighted_hedge)
     
     #converts down reliability metrics from negative to positive in order to correctly rank them
-    df_1 = util.convert_down_reliability_to_positive(df)
+    df_reverse = util.reverse_signs_in_col(df,'Downside Reliability')
     
     #normalizes the data
-    norm = util.get_normalized_data(df_1)
+    norm = util.get_normalized_data(df_reverse)
     
     return norm

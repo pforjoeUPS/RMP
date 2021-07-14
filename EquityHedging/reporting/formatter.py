@@ -98,6 +98,7 @@ def format_hedge_metrics(anayltics_df, freq='1M'):
              }
     return formatters    
 
+#TODO: create seperate formatters for normalizing and hedge metrics for normalizing (one formatter w if else statement)
 def format_notional_weights(df_weights):
     """
     Formats the portfolio weightings

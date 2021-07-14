@@ -342,8 +342,6 @@ def get_normalized_data(df):
     #creates data frame with normalized data
     df_normal = pd.DataFrame(scaler.fit_transform(df), columns = df.columns, index = df.index )
     
-    #transpose the data
-    df_normal= df_normal.transpose()
 
     return df_normal
 

@@ -252,7 +252,7 @@ def get_hedge_metrics(df_returns, freq="1M"):
         
     return hedge_dict
 
-
+#TODO: format data to match data 
 def get_hedge_metrics_to_normalize(returns, equity_bmk, notional_weights, weighted_hedge = False):
     '''
     Parameters
@@ -288,7 +288,7 @@ def get_hedge_metrics_to_normalize(returns, equity_bmk, notional_weights, weight
                           convexity, cost, decay]
     
     #Converts hedge_dict to a data grame
-    df_hedge_metrics = util.convert_dict_to_df(dict=hedge_dict,index=['Benefit','Down Reliability','Up Reliability','Convexity','Cost',
+    df_hedge_metrics = util.convert_dict_to_df(dict=hedge_dict,index=['Benefit','Downside Reliability','Upside Reliability','Convexity','Cost',
                                                'Decay'])
     
     #drop the equity benchmark
