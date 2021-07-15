@@ -49,28 +49,18 @@ def get_analysis(df_returns, notional_weights=[], include_fi=False, new_strat=Fa
     """
     
     col_list = list(df_returns.columns)
-    analysis_dict = {}
+    # analysis_dict = {}
     
     #if weighted, compute weighted hedges and strats
     if weighted:
         df_weighted_returns = get_weighted_data(df_returns,notional_weights,include_fi,new_strat)
         
-        #generate return statistics for each strategy
-        analysis_dict = get_return_stats(df_weighted_returns, freq)
+        # Create pandas DataFrame for return statistics
+        df_return_stats = get_return_stats(df_weighted_returns, freq)
     else:
-        #generate return statistics for each strategy
-        analysis_dict = get_return_stats(df_returns, freq)
+        # Create pandas DataFrame for return statistics
+        df_return_stats = get_return_stats(df_returns, freq)
         
-    # Create pandas DataFrame for return statistics
-    df_return_stats = pd.DataFrame(analysis_dict, 
-                               index = ['Annualized Ret', 
-                                        'Annualized Vol','Ret/Vol', 
-                                        'Max DD','Ret/Max DD','Max 1M DD',
-                                        'Max 1M DD Date', 'Ret/Max 1M DD','Max 3M DD', 
-                                        'Max 3M DD Date','Ret/Max 3M DD', 'Skew',
-                                        'Avg Pos Ret/Avg Neg Ret',
-                                        'Downside Deviation',
-                                        'Sortino Ratio'])
         
     # remove the weighted strats from the dataframe
     if weighted:
@@ -90,17 +80,8 @@ def get_analysis(df_returns, notional_weights=[], include_fi=False, new_strat=Fa
     if include_fi:
         hedge_returns.drop([col_list[1]],axis=1,inplace=True)
     
-    #generate hedge metrics for each strategy
-    hedge_dict = get_hedge_metrics(hedge_returns,freq)
     # Create pandas DataFrame for hedge metrics
-    df_hedge_metrics = pd.DataFrame(hedge_dict, 
-                                  index = ['Benefit Count', 'Benefit Median', 
-                                           'Benefit Mean','Benefit Cum', 
-                                           'Downside Reliability','Upside Reliability',
-                                           'Convexity Count', 'Convexity Median',
-                                           'Convexity Mean','Convexity Cum','Cost Count',
-                                           'Cost Median','Cost Mean','Cost Cum', 'Decay Days (50% retrace)',
-                                           'Decay Days (25% retrace)', 'Decay Days (10% retrace)'])
+    df_hedge_metrics = get_hedge_metrics(hedge_returns,freq)
     
     #remove equity col
     df_hedge_metrics.drop([col_list[0]],axis=1,inplace=True)

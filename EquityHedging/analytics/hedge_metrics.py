@@ -9,8 +9,19 @@ from EquityHedging.datamanager import data_manager as dm
 from EquityHedging.analytics.decay import get_decay_days
 from EquityHedging.analytics.util import get_pos_neg_df
 from EquityHedging.analytics import  util
-from EquityHedging.reporting import formatter as fmt
 
+HEDGE_METRICS_INDEX = ['Benefit Count','Benefit Median','Benefit Mean','Benefit Cum', 
+                       'Downside Reliability','Upside Reliability',
+                       'Convexity Count','Convexity Median','Convexity Mean','Convexity Cum',
+                       'Cost Count','Cost Median','Cost Mean','Cost Cum',
+                       'Decay Days (50% retrace)','Decay Days (25% retrace)','Decay Days (10% retrace)']
+
+def get_hm_index_list(full_list=True):
+    if full_list:
+        return HEDGE_METRICS_INDEX
+    else:
+        return ['Benefit','Downside Reliability','Upside Reliability','Convexity','Cost', 'Decay']
+    
 def get_benefit_stats(df_returns, col_name):
     """
     Return count, mean, mode and cumulative of all positive returns
@@ -217,7 +228,7 @@ def get_reliability_stats(df_returns, col_name):
 
 def get_hedge_metrics(df_returns, freq="1M"):
     """
-    Return a dict of hedge metrics
+    Return a dataframe of hedge metrics
 
     Parameters
     ----------
@@ -227,9 +238,8 @@ def get_hedge_metrics(df_returns, freq="1M"):
 
     Returns
     -------
-    hedge_dict : dictionary
-        {key: column name, value: hedge metrics}
-
+    df_hedge_metrics : dataframe
+        
     """
     
     #create empty dictionary
@@ -250,8 +260,9 @@ def get_hedge_metrics(df_returns, freq="1M"):
                           convexity['mean'],convexity['cumulative'], cost['count'],
                           cost['median'], cost['mean'], cost['cumulative'], decay['half'], 
                           decay['quarter'],decay['tenth']]
-        
-    return hedge_dict
+    #Converts hedge_dict to a data grame
+    df_hedge_metrics = util.convert_dict_to_df(hedge_dict, get_hm_index_list())
+    return df_hedge_metrics
 
 #TODO: format data to match data 
 def get_hedge_metrics_to_normalize(returns, equity_bmk, notional_weights, weighted_hedge = False):
@@ -289,8 +300,7 @@ def get_hedge_metrics_to_normalize(returns, equity_bmk, notional_weights, weight
                           convexity, cost, decay]
     
     #Converts hedge_dict to a data grame
-    df_hedge_metrics = util.convert_dict_to_df(dict=hedge_dict,index=['Benefit','Downside Reliability','Upside Reliability','Convexity','Cost',
-                                               'Decay'])
+    df_hedge_metrics = util.convert_dict_to_df(hedge_dict,get_hm_index_list(False))
     
     
     
@@ -298,7 +308,5 @@ def get_hedge_metrics_to_normalize(returns, equity_bmk, notional_weights, weight
     df_hedge_metrics.drop(equity_bmk, axis = 1, inplace = True)
     
     df = df_hedge_metrics.transpose()
-    
-
-    
     return df
+
