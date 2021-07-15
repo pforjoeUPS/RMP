@@ -5,7 +5,6 @@ Created on Wed Nov 18 17:15:17 2020
 @author: Powis Forjoe
 """
 
-import pandas as pd
 from ..datamanager import data_manager as dm
 from .import util
 
@@ -144,5 +143,5 @@ def get_hist_sim_table(df_returns, notional_weights=[], weighted=False):
         hist_dict[col] = temp_col
     
     #convert dictionary to dataframe
-    df_hist = pd.DataFrame(hist_dict, index = periods)
+    df_hist = util.convert_dict_to_df(hist_dict, periods)
     return df_hist
