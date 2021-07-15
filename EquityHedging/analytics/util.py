@@ -9,6 +9,7 @@ import pandas as pd
 import numpy as np
 from ..datamanager.data_manager import get_notional_weights
 from sklearn.preprocessing import MinMaxScaler
+from EquityHedging.reporting import formatter as fmt
 
 def get_pos_neg_df(return_series, pos=True):
     """
@@ -341,7 +342,6 @@ def get_normalized_data(df):
     
     #creates data frame with normalized data
     df_normal = pd.DataFrame(scaler.fit_transform(df), columns = df.columns, index = df.index )
-    
 
     return df_normal
 
@@ -390,3 +390,46 @@ def reverse_signs_in_col(df, col_name):
             df_reverse[col_name][x] = -(df_reverse[col_name][x])
             
     return df_reverse
+
+def get_symbols(df_normal, weighted_hedge = True):
+    '''
+    Obtains a list of symbols and index's the corresponding amount of strategies
+
+    Parameters
+    ----------
+    df_normal : data frame
+        data frame 
+    weighted_hedge : boolean
+        is weighted hedge included in your data
+
+    Returns
+    -------
+    symbols : data frame
+        data frame with strategy names assigned to a number that corresponds to a symbol
+
+    '''
+    #get length of columns
+    n=len(df_normal.columns)
+    
+    #get column names of df_normal
+    c=list(df_normal.columns)
+    
+    #creates a list of the corresponding number of the symbols we want
+    a=list(range(0,33))
+    b=list(range(46,51))
+    for i in b: 
+        a.append(i)
+        
+    if weighted_hedge == True:
+        symbol_list= a[0:n-1]
+        #weighted hedge wil always be symbol 236
+        symbol_list.append(236)
+    else:
+        symbol_list= a[0:n]
+
+    #Creates a data frame that assigns each strategy with a symbol
+    symbols=pd.DataFrame(columns=c,index=[0])
+    
+    symbols.iloc[0] = symbol_list
+    
+    return symbols
