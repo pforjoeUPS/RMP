@@ -99,6 +99,56 @@ def format_hedge_metrics(anayltics_df, freq='1M'):
     return formatters    
 
 #TODO: create seperate formatters for normalizing and hedge metrics for normalizing (one formatter w if else statement)
+def format_hm_to_normalize(df):
+    '''
+    
+
+    Parameters
+    ----------
+    df : data frame
+        data from hm.get_hedge_metrics_to_normalize
+
+    Returns
+    -------
+    data : data frame
+        formatted data
+
+    '''
+
+    formatters = {"Benefit":lambda x: f"{x:.2%}"
+                  ,"Downside Reliability":lambda x: f"{x:.2f}"
+                  ,"Upside Reliability":lambda x: f"{x:.2f}"                      
+                  ,"Convexity":lambda x: f"{x:.2%}"
+                  ,"Cost":lambda x: f"{x:.2%}"
+                  ,"Decay":lambda x: f"{x:.0f}"
+                  }
+        
+    data= df.copy()
+    for col in data.columns:
+        data[col] = data[col].apply(formatters[col])
+    return data
+
+def format_normalized_data(df_normal):
+    '''
+    
+
+    Parameters
+    ----------
+    df_normal : data frame
+
+    Returns
+    -------
+    df_normal : data frame
+        rounds data to 2 decimal points
+
+    '''
+
+    for col in df_normal.columns:
+        df_normal[col] = df_normal[col].apply(lambda x:round(x,2) )
+    
+    return df_normal
+
+     
 def format_notional_weights(df_weights):
     """
     Formats the portfolio weightings
