@@ -416,14 +416,14 @@ def get_symbols(df_normal, weighted_hedge = True):
     
     #creates a list of the corresponding number of the symbols we want
     a=list(range(0,33))
-    b=list(range(46,51))
+    b=list(range(46,52))
     for i in b: 
         a.append(i)
         
     if weighted_hedge == True:
         symbol_list= a[0:n-1]
         #weighted hedge wil always be symbol 236
-        symbol_list.append(236)
+        symbol_list.append(224)
     else:
         symbol_list= a[0:n]
 
