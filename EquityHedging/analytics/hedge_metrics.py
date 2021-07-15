@@ -226,7 +226,7 @@ def get_reliability_stats(df_returns, col_name):
     
     return reliability
 
-def get_hedge_metrics(df_returns, freq="1M"):
+def get_hedge_metrics(df_returns, freq="1M", full_list=True):
     """
     Return a dataframe of hedge metrics
 
@@ -235,6 +235,7 @@ def get_hedge_metrics(df_returns, freq="1M"):
     df_returns : dataframe
     freq : string, optional
         Frequency. The default is "1M".
+    full_list: boolean, optional
 
     Returns
     -------
@@ -245,23 +246,35 @@ def get_hedge_metrics(df_returns, freq="1M"):
     #create empty dictionary
     hedge_dict = {}
     
-    #loop through columns in df_returns to compute and store the hedge metrics for each strategy
-    for col in df_returns.columns:
-        benefit = get_benefit_stats(df_returns, col)
-        reliability = get_reliability_stats(df_returns, col)
-        convexity = get_convexity_stats(df_returns, col)
-        cost = get_cost_stats(df_returns, col)
-        decay = get_decay_stats(df_returns, col, freq)
-        
-        hedge_dict[col] = [benefit['count'], benefit['median'],
-                          benefit['mean'], benefit['cumulative'],
-                          reliability['down'],reliability['up'],
-                          convexity['count'], convexity['median'],
-                          convexity['mean'],convexity['cumulative'], cost['count'],
-                          cost['median'], cost['mean'], cost['cumulative'], decay['half'], 
-                          decay['quarter'],decay['tenth']]
+    if full_list:
+        #loop through columns in df_returns to compute and store the hedge 
+        #metrics for each strategy
+        for col in df_returns.columns:
+            benefit = get_benefit_stats(df_returns, col)
+            reliability = get_reliability_stats(df_returns, col)
+            convexity = get_convexity_stats(df_returns, col)
+            cost = get_cost_stats(df_returns, col)
+            decay = get_decay_stats(df_returns, col, freq)
+            
+            hedge_dict[col] = [benefit['count'],benefit['median'],benefit['mean'],
+                               benefit['cumulative'],reliability['down'],reliability['up'],
+                               convexity['count'],convexity['median'],convexity['mean'],
+                               convexity['cumulative'],cost['count'],cost['median'],cost['mean'], 
+                               cost['cumulative'],decay['half'],decay['quarter'],decay['tenth']]
+    else:
+        for col in df_returns.columns:
+            benefit = get_benefit_stats(df_returns, col)
+            reliability = get_reliability_stats(df_returns, col)
+            convexity = get_convexity_stats(df_returns, col)
+            cost = get_cost_stats(df_returns, col)
+            decay = get_decay_days(df_returns, col, freq)
+            
+            hedge_dict[col] = [benefit['cumulative'],
+                              reliability['down'],reliability['up'],
+                              convexity['cumulative'], cost['cumulative'], decay]
+    
     #Converts hedge_dict to a data grame
-    df_hedge_metrics = util.convert_dict_to_df(hedge_dict, get_hm_index_list())
+    df_hedge_metrics = util.convert_dict_to_df(hedge_dict, get_hm_index_list(full_list))
     return df_hedge_metrics
 
 #TODO: format data to match data 
@@ -305,6 +318,7 @@ def get_hedge_metrics_to_normalize(returns, equity_bmk, notional_weights, weight
     
     
     #drop the equity benchmark
+    #NOTES: Don't need to specifiy equity bmk
     df_hedge_metrics.drop(equity_bmk, axis = 1, inplace = True)
     
     df = df_hedge_metrics.transpose()

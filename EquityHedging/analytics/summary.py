@@ -522,6 +522,9 @@ def get_weighted_data(df_returns, notional_weights=[], include_fi=False, new_str
                                    right_index=True, how='outer')
     return df_weighted_returns
 
+
+#TODO: use get_hedge_metrics method instead oif get_hedge_metrics_to_normalize
+#TODO: change method to compute weighted hedges here, drop the equity bmk as well as transpose 
 def get_normalized_hedge_metrics(returns, equity_bmk, notional_weights, weighted_hedge = False):
     '''
     
