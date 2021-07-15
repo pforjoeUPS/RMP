@@ -9,7 +9,6 @@ import pandas as pd
 import numpy as np
 from ..datamanager.data_manager import get_notional_weights
 from sklearn.preprocessing import MinMaxScaler
-from EquityHedging.reporting import formatter as fmt
 
 def get_pos_neg_df(return_series, pos=True):
     """
@@ -356,13 +355,13 @@ def convert_dict_to_df(dict,index = []):
         Input a dictionary that will be turned into a data frame. 
     index : list
         Index (aka row) names. The default is [].
+     
+    ** Note the data frame column names will be the keys in the dictionary **
     
-   ** Note the data frame column names will be the keys in the dictionary **
-   
-   Returns
+    Returns
     -------
     Data Frame
-    
+ 
     '''
     
     df=pd.DataFrame(dict, index = index )
