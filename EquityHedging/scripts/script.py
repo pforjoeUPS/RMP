@@ -44,8 +44,13 @@ plots.draw_corrplot(corr_df)
 plots.draw_heatmap(corr_df, False)
 
 #compute analytics
+import time
+
+start = time.time()
 analytics_freq_list = ['Weekly', 'Monthly']
 analytics_dict = summary.get_analytics_data(returns,analytics_freq_list,weighted,notional_weights,include_fi,new_strat)
+end = time.time()
+print(end - start)
 
 #compute historical selloffs
 hist_dict = summary.get_hist_data(returns,notional_weights, weighted)
@@ -59,4 +64,7 @@ annual_dollar_returns = summary.get_annual_dollar_returns(returns, notional_weig
 #run report
 equity_hedge_report = 'check'
 selloffs = True
+start = time.time()
 rp.get_equity_hedge_report(equity_hedge_report, returns, notional_weights, include_fi, new_strat, weighted[0], selloffs)
+end = time.time()
+print(end - start)
