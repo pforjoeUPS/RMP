@@ -9,6 +9,7 @@ from EquityHedging.datamanager import data_manager as dm
 from EquityHedging.analytics.decay import get_decay_days
 from EquityHedging.analytics.util import get_pos_neg_df
 from EquityHedging.analytics import  util
+from EquityHedging.reporting import formatter as fmt
 
 def get_benefit_stats(df_returns, col_name):
     """
@@ -291,7 +292,13 @@ def get_hedge_metrics_to_normalize(returns, equity_bmk, notional_weights, weight
     df_hedge_metrics = util.convert_dict_to_df(dict=hedge_dict,index=['Benefit','Downside Reliability','Upside Reliability','Convexity','Cost',
                                                'Decay'])
     
+    
+    
     #drop the equity benchmark
     df_hedge_metrics.drop(equity_bmk, axis = 1, inplace = True)
+    
     df = df_hedge_metrics.transpose()
+    
+
+    
     return df
