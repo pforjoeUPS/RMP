@@ -561,12 +561,12 @@ def get_normalized_hedge_metrics(returns, equity_bmk, notional_weights, weighted
 
     '''
     #calculates hedgemetrics 
-    df = hm.get_hedge_metrics_to_normalize(returns, equity_bmk, notional_weights, weighted_hedge = weighted_hedge)
+    df_hm = hm.get_hedge_metrics_to_normalize(returns, equity_bmk, notional_weights, weighted_hedge = weighted_hedge)
     
     #converts down reliability metrics from negative to positive in order to correctly rank them
-    df_reverse = util.reverse_signs_in_col(df,'Downside Reliability')
-    
+    df_reverse = util.reverse_signs_in_col(df_hm,'Downside Reliability')
+
     #normalizes the data
     norm = util.get_normalized_data(df_reverse)
-    
-    return norm
+    #create dict with hedge met and normalized data
+    return {'Hedge Metrics': df_hm, 'Normalized Data': norm}
