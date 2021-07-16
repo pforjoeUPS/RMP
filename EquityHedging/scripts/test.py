@@ -26,8 +26,22 @@ df_weights = get_df_weights(notional_weights, list(returns['Monthly'].columns), 
 fmt.get_notional_styler(df_weights)
 
 #get hedge metrics data frame
-df = hm.get_hedge_metrics_to_normalize(returns, equity_bmk, notional_weights)
-df
+import time
+
+start = time.time()
+df = hm.get_hedge_metrics_to_normalize(returns, equity_bmk, notional_weights,True)
+end = time.time()
+print(end - start)
+
+start = time.time()
+df_returns = returns['Weekly'].copy()
+df_weighted_ret = util.get_weighted_hedges(df_returns, notional_weights)
+df_1 = hm.get_hedge_metrics(df_weighted_ret,'1W', False)
+end = time.time()
+print(end - start)
+
+# df
+
 
 df_normal = util.get_normalized_data(df)
 

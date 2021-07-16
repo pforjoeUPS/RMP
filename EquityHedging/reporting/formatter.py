@@ -352,6 +352,23 @@ def highlight_max(s):
     is_max = s == s.max()
     return ['background-color: yellow' if v else '' for v in is_max]
 
+def highlight_min(s):
+    """
+    Highlight the maximum in a Series yellow
+
+    Parameters
+    ----------
+    s : series
+
+    Returns
+    -------
+    list
+
+    """
+    
+    is_min = s == s.min()
+    return ['background-color: red' if v else '' for v in is_min]
+    
 def get_dollar_ret_styler(dollar_returns):
     """
     Returns styler for returns dataframe
