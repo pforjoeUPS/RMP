@@ -523,9 +523,8 @@ def get_weighted_data(df_returns, notional_weights=[], include_fi=False, new_str
     return df_weighted_returns
 
 
-#TODO: use get_hedge_metrics method instead oif get_hedge_metrics_to_normalize
-#TODO: change method to compute weighted hedges here, drop the equity bmk as well as transpose 
-def get_normalized_hedge_metrics(returns, equity_bmk, notional_weights, weighted_hedge = False):
+
+def get_normalized_hedge_metrics(df_returns, equity_bmk, notional_weights, weighted_hedge = False):
     '''
     
 
@@ -544,8 +543,14 @@ def get_normalized_hedge_metrics(returns, equity_bmk, notional_weights, weighted
         includes the normalized data for all strategies in the Strategy and Allocation Equity Hedge Portfolio
 
     '''
+    
+    if weighted_hedge == True:
+         df_returns = util.get_weighted_hedges(df_returns, notional_weights)
+         
     #calculates hedgemetrics 
-    df_hm = hm.get_hedge_metrics_to_normalize(returns, equity_bmk, notional_weights, weighted_hedge = weighted_hedge)
+    df_hm = get_hedge_metrics(df_returns, freq="1M", full_list=False)
+    df_hm.drop(equity_bmk, axis = 1, inplace = True)
+    df_hm= df_hm.transpose()
     
     #converts down reliability metrics from negative to positive in order to correctly rank them
     df_reverse = util.reverse_signs_in_col(df_hm,'Downside Reliability')
