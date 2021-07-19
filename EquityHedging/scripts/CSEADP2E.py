@@ -33,13 +33,18 @@ sheet_name = 'Sheet1'
 new_strategy = dm.get_new_strategy_returns_data(filename, sheet_name, strategy)
 new_strategy_dict = dm.get_data_dict(new_strategy, data_type='index')
 
+strategy = []
+filename = 'cs_euro_data.xlsx'
+sheet_name = 'data'
+new_strategy_2 = dm.get_new_strategy_returns_data(filename, sheet_name, strategy)
+new_strategy_dict_2 = dm.get_data_dict(new_strategy_2, data_type='index')
+
 
 
 #merging returns dictionary and def var returns dictionary 
 #returns = dm.merge_dicts(returns, new_strategy_dict)
 
-#TODO: make this into a loop
-#TODO: then make a method
+
 new_ret_dict = {}
 
 for key in returns:
@@ -47,6 +52,11 @@ for key in returns:
     new_strat = new_strategy_dict[key].copy()
     ret['Dynamic Put Spread'] = new_strat['Dynamic Put Spread']
     new_ret_dict[key] = ret
+    
+for key in returns:
+    new_ret_dict[key] = returns[key].copy() 
+    new_strat = new_strategy_dict_2[key].copy()
+    new_ret_dict[key]['FVA'] = new_strat['FVA']
     
 #seperating each frequency from the dictionary into a data frame
 monthly_ret = returns['Monthly'].copy()
@@ -96,12 +106,13 @@ def create_report(report_name, returns_dict):
     for key in returns_dict:
         sheets.set_hist_return_sheet(writer, returns_dict[key], key)
     writer.save()
-    
-#create method where I call new_ret_dict, should 
+     
 
-def returns_data_loop(returns):
+def add_strategy(returns, col_name, strat_dict):
+    new_ret_dict = {}
     for key in returns:
-        ret = returns[key].copy()
-        new_strat = new_strategy_dict[key].copy()
-        ret['Dynamic Put Spread'] = new_strat['Dynamic Put Spread']
-        new_ret_dict[key] = ret
+        new_ret_dict[key] = returns[key].copy()
+        new_strat = strat_dict[key].copy()
+        new_ret_dict[key][col_name] = new_strat[col_name]
+
+    return new_ret_dict    

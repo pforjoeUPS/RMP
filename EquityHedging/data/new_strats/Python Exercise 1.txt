@@ -1,0 +1,13 @@
+Python Exercise 1
+1. import bmks and puts sheets inot separate dataframes (bmks, puts)
+2. convert the bmks and puts to daily, monthly and weekly returns:
+	bmks_d, bmks_w, bmks_m
+	puts_d, puts_w, puts_m
+3. create dictionaries from bmks and puts to have daily, weekly, monhtly, quarterly and yearly data
+	bmks_dict, puts_dict
+4. merge bmks and puts into 1 dataframe called intl_hedge:
+	make bmks the first dataframe
+5 convert intl_hedge to daily, monthly and weekly returns:
+	intl_hedge_d, intl_hedge_w, intl_hedge_m
+6. create a dictionary from intl_hedge callled intl_hedge_dict
+7. merge bmks_dict and puts_dict to intl_hedge_dict_2
