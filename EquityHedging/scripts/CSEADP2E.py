@@ -42,6 +42,12 @@ new_strategy_dict = dm.get_data_dict(new_strategy, data_type='index')
 #TODO: then make a method
 new_ret_dict = {}
 
+for key in returns:
+    ret = returns[key].copy()
+    new_strat = new_strategy_dict[key].copy()
+    ret['Dynamic Put Spread'] = new_strat['Dynamic Put Spread']
+    new_ret_dict[key] = ret
+    
 #seperating each frequency from the dictionary into a data frame
 monthly_ret = returns['Monthly'].copy()
 monthly_new_strat = new_strategy_dict['Monthly'].copy()
@@ -90,3 +96,12 @@ def create_report(report_name, returns_dict):
     for key in returns_dict:
         sheets.set_hist_return_sheet(writer, returns_dict[key], key)
     writer.save()
+    
+#create method where I call new_ret_dict, should 
+
+def returns_data_loop(returns):
+    for key in returns:
+        ret = returns[key].copy()
+        new_strat = new_strategy_dict[key].copy()
+        ret['Dynamic Put Spread'] = new_strat['Dynamic Put Spread']
+        new_ret_dict[key] = ret
