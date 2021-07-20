@@ -157,6 +157,23 @@ def get_analysis_sheet_data(df_returns, notional_weights=[], include_fi=False, n
     
     return {'df_list': df_list,'title_list': title_list}
 
+
+
+def get_normal_sheet_data(df_returns,equity_bmk,  notional_weights=[], weighted=False):
+
+    #get notional weights for weighted strategy returns if not accurate
+    if weighted:
+        notional_weights = util.check_notional(df_returns, notional_weights)
+    
+    #normal data
+    normal_dict = get_normalized_hedge_metrics(df_returns, equity_bmk, notional_weights)
+    #store analytics and respective titles in lists
+    df_list = [normal_dict['Hedge Metrics'], normal_dict['Normalized Data']]
+    
+    title_list = ['Hedging Framework Metrics', 'Ranked Strategies']
+    
+    return {'df_list': df_list,'title_list': title_list}
+
 def get_data(returns_dict, notional_weights,weighted,freq_list=['Monthly', 'Weekly'],include_fi=False, new_strat=False):
     """
     Returns a dictionary containing:

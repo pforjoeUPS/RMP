@@ -214,7 +214,7 @@ def set_hist_return_sheet(writer,df_returns, sheet_name):
     worksheet.conditional_format(row,col, row_dim, col,{'type':'no_blanks',
                                   'format':date_fmt})
     return 0
-
+#TODO: MAKE NEW METHODS sheets.set_normal_sheet and sheets. set_normal_return sheet
 def set_sgi_vrr_sheet(writer,df, sheet_name):
     """
     Create excel sheet for vrr returns

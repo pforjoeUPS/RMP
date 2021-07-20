@@ -36,7 +36,7 @@ def get_report_path(report_name):
     file_name = report_name +'.xlsx'
     return cwd + reports_fp + file_name
     
-def get_equity_hedge_report(report_name, returns_dict, notional_weights=[],include_fi=False, new_strat=False, weighted=False, selloffs=False):
+def get_equity_hedge_report(report_name, returns_dict, equity_bmk, notional_weights=[],include_fi=False, new_strat=False, weighted=False, selloffs=False):
     """
     Generate equity hedge analysis report
     
@@ -105,7 +105,12 @@ def get_equity_hedge_report(report_name, returns_dict, notional_weights=[],inclu
         #create sheets
         sheets.set_hist_sheet(writer, hist_df)
         sheets.set_hist_return_sheet(writer, daily_returns, 'Daily Historical Returns')
-        
+    
+    #get ranked strategies
+    #weekly_returns = returns_dict['Weekly'].copy()
+    #normal_data = summary.get_normal_sheet_data(weekly_returns, equity_bmk, notional_weights, weighted)
+    #add sheets.set_normal_sheet and sheets. set_normal_return sheet
+    
     print_report_info(report_name, file_path)
     writer.save()
 
