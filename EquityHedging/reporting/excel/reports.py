@@ -107,8 +107,10 @@ def get_equity_hedge_report(report_name, returns_dict, equity_bmk, notional_weig
         sheets.set_hist_return_sheet(writer, daily_returns, 'Daily Historical Returns')
     
     #get ranked strategies
-    #weekly_returns = returns_dict['Weekly'].copy()
-    #normal_data = summary.get_normal_sheet_data(weekly_returns, equity_bmk, notional_weights, weighted)
+# =============================================================================
+#     weekly_returns = returns_dict['Weekly'].copy()
+#     normal_data = summary.get_normal_sheet_data(weekly_returns, equity_bmk, notional_weights, weighted)
+# =============================================================================
     #add sheets.set_normal_sheet and sheets. set_normal_return sheet
     
     print_report_info(report_name, file_path)
