@@ -39,7 +39,10 @@ put_spread = put_spread.iloc[1:,]
 put_spread = put_spread[['99%/90% Put Spread']]
 # put_spread.drop(['99 Rep', 'Short Put'], axis=1, inplace=True)
 
+#converts returns data to price data
 put_spread_price = dm.get_prices_df(put_spread)
+
+#creates dictionary of returns
 put_spread_dict = dm.get_data_dict(put_spread_price)
 
 #merge vrr and put spread dicts to the new_data dict
