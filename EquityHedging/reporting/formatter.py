@@ -98,7 +98,6 @@ def format_hedge_metrics(anayltics_df, freq='1M'):
              }
     return formatters    
 
-#TODO: create seperate formatters for normalizing and hedge metrics for normalizing (one formatter w if else statement)
 def format_hm_to_normalize(df):
     '''
     
@@ -142,11 +141,21 @@ def format_normalized_data(df_normal):
         rounds data to 2 decimal points
 
     '''
-
-    for col in df_normal.columns:
-        df_normal[col] = df_normal[col].apply(lambda x:round(x,2) )
     
-    return df_normal
+    formatter = {}
+    col_list = list(df_normal.columns)
+    # col=0
+    # for col in col_list:
+    #     df_normal[col] = df_normal[col].apply(lambda x:round(x,2) )
+        
+    for strat in col_list:
+        formatter[strat] = "{:.2f}"
+        
+    return df_normal.style.\
+            apply(highlight_min, subset = pd.IndexSlice[:,col_list[0:]]).\
+            apply(highlight_max, subset = pd.IndexSlice[:,col_list[0:]]).\
+            format(formatter)
+
 
      
 def format_notional_weights(df_weights):
@@ -354,7 +363,7 @@ def highlight_max(s):
 
 def highlight_min(s):
     """
-    Highlight the maximum in a Series yellow
+    Highlight the minimum in a Series red
 
     Parameters
     ----------

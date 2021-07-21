@@ -174,6 +174,8 @@ def get_normal_sheet_data(df_returns,equity_bmk,  notional_weights=[], weighted=
     
     return {'df_list': df_list,'title_list': title_list}
 
+
+
 def get_data(returns_dict, notional_weights,weighted,freq_list=['Monthly', 'Weekly'],include_fi=False, new_strat=False):
     """
     Returns a dictionary containing:
