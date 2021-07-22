@@ -200,39 +200,73 @@ def set_normal_sheet(writer, data_dict, sheet_name, spaces):
     #create writer and workbook
     workbook = writer.book
     
-    #digits format
-    digits_fmt = formats.set_number_format(workbook,num_format='0.00')
-    
     #pull out lists from data_dict
     df_list = data_dict['df_list']
     title_list = data_dict['title_list']
-    
+     
     #format background color of worksheet to white
     cell_format = formats.set_worksheet_format(workbook)
     df_empty = pd.DataFrame()
     df_empty.to_excel(writer, sheet_name=sheet_name, startrow=0, startcol=0)
     worksheet = writer.sheets[sheet_name]
     worksheet.set_column(0, 1000, 22, cell_format)
+    row = 2
+    col = 1
     
-    row=df_list[2].index
-    row=len(row)
-    column=df_list[2].columns
-    column=len(column)
-    
-    worksheet.conditional_format(1,1, row+1, column+1,{'type':'no_blanks',
-                                  'format':digits_fmt})
+    #get formats for worksheet
+    #title format
+    title_format = formats.set_title_format(workbook)
+    #digits format
+    digits_fmt = formats.set_number_format(workbook,num_format='0.00')
+    #percent format
+    pct_fmt = formats.set_number_format(workbook,num_format='0.00%')
+
+    int_fmt = formats.set_number_format(workbook, num_format='0')
         
-def set_normal_return_sheet(writer, df_returns, sheet_name):
-    workbook = writer.book
-    cell_format = formats.set_worksheet_format(workbook)
-    df_empty = pd.DataFrame()
-    df_empty.to_excel(writer, sheet_name=sheet_name, startrow=0, startcol=0)
-    worksheet = writer.sheets[sheet_name]
-    worksheet.set_column(0, 1000, 21, cell_format)
-    row = 0
-    col = 0
+    for n in range(0,len(df_list)):
+        try:
+            row_dim = row + df_list[n].shape[0]
+            col_dim = col + df_list[n].shape[1]
+            worksheet.write(row-1, 1, title_list[n], title_format)
+            
+            #write data into worksheet
+            df_list[n].to_excel(writer, sheet_name=sheet_name, startrow=row , startcol=1)   
+        except AttributeError:
+            pass
+        
+        if n==1:
+            #format all the normalized data to 2 decimals
+            worksheet.conditional_format(row+1,col+1, row_dim, col_dim,{'type':'no_blanks',
+                                      'format':digits_fmt})
+        else:
+ 
+            #format benefit cumulitive to percent
+            worksheet.conditional_format(row+1,col+1, row_dim, col+1,{'type':'no_blanks',
+                                      'format':pct_fmt})
+            
+            #format reliability up and down to digits
+            worksheet.conditional_format(row+1,col+2, row_dim, col+3,{'type':'no_blanks',
+                                      'format':digits_fmt})
+            
+            #format convexity cumulitive to percent
+            worksheet.conditional_format(row+1,col+4, row_dim, col+4,{'type':'no_blanks',
+                                      'format':pct_fmt})
+            
+            #format cost cumulitive to percent
+            worksheet.conditional_format(row+1,col+5, row_dim, col+5,{'type':'no_blanks',
+                                      'format':pct_fmt})
+            
+            #format decay days to int
+            worksheet.conditional_format(row+1,col+6, row_dim, col+6,{'type':'no_blanks',
+                                      'format':int_fmt})
+            
+
+            row = row_dim + spaces + 1
     
-def set_hist_return_sheet(writer,df_returns, sheet_name):
+    return 0
+        
+    
+def set_hist_return_sheet(writer,df_returns,sheet_name):
     """
     Create excel sheet for historical returns
     
@@ -266,16 +300,7 @@ def set_hist_return_sheet(writer,df_returns, sheet_name):
     worksheet.conditional_format(row,col, row_dim, col,{'type':'no_blanks',
                                   'format':date_fmt})
     return 0
-#TODO: MAKE NEW METHODS sheets.set_normal_sheet and sheets. set_normal_return sheet
 
-
-    
-    
-    
-    
-    
-    
-    
     
     
 def set_sgi_vrr_sheet(writer,df, sheet_name):
