@@ -250,6 +250,7 @@ def generate_hs_report(report_name, returns_dict, notional_weights=[], weighted=
     sheets.set_hist_return_sheet(writer, daily_returns, 'Daily Historical Returns')
         
     writer.save()
+
 def get_returns_report(report_name, returns_dict):
     """
     Generates historical returns spreadsheet containing returns for different frequencies

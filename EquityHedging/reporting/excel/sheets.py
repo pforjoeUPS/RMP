@@ -179,14 +179,11 @@ def set_analysis_sheet(writer, data_dict, sheet_name, spaces):
         row = row_dim + spaces + 1
     
     return 0
+
 def set_normal_sheet(writer, data_dict, sheet_name, spaces):
     """
     Create excel sheet with:
-    Correlation Matrices
-    Portfolio Weightings
-    Return Statistics
-    Hedge Metrics
-
+    
     Parameters:
     writer - ExcelWriter
     data_dict -- list

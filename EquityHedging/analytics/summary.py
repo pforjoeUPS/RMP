@@ -8,7 +8,6 @@ Created on Tue Oct  1 17:59:28 2019
 import pandas as pd
 from ..datamanager import data_manager as dm
 from .hedge_metrics import get_hedge_metrics
-from EquityHedging.analytics import hedge_metrics as hm
 from .import util
 from .returns_stats import get_return_stats
 from .corr_stats import get_corr_analysis
@@ -157,8 +156,6 @@ def get_analysis_sheet_data(df_returns, notional_weights=[], include_fi=False, n
     
     return {'df_list': df_list,'title_list': title_list}
 
-
-
 def get_normal_sheet_data(df_returns,equity_bmk,  notional_weights=[], weighted=False, weighted_hedge = False):
 
     #get notional weights for weighted strategy returns if not accurate
@@ -180,8 +177,6 @@ def get_normal_sheet_data(df_returns,equity_bmk,  notional_weights=[], weighted=
     title_list = ['Hedging Framework Metrics', 'Normalized Hedge Metrics']
     
     return {'df_list': df_list,'title_list': title_list}
-
-
 
 def get_data(returns_dict, notional_weights,weighted,freq_list=['Monthly', 'Weekly'],include_fi=False, new_strat=False):
     """
@@ -229,7 +224,6 @@ def get_data(returns_dict, notional_weights,weighted,freq_list=['Monthly', 'Week
     #return a dictionary containing the data
     return {'corr':corr_dict, 'analytics':analytics_dict, 'hist':hist_dict,
             'quintile': quintile_df, 'annual_returns':annual_df}
-
 
 def get_percentile(df , bucket_format , group='Quintile', bucket_size = 5):
     """
@@ -298,8 +292,6 @@ def get_grouped_data(returns_dict, notional_weights=[], weighted=False, group='Q
         decile = get_percentile(df, util.decile_bucket , group, 10)
         return decile
     
-    
-
 def get_corr_data(returns_dict, freq_list=['Monthly', 'Weekly'], weighted=[False], notional_weights=[], include_fi = False):
     """
     Returns a dataframe containing correlations data
@@ -548,8 +540,6 @@ def get_weighted_data(df_returns, notional_weights=[], include_fi=False, new_str
                                    right_index=True, how='outer')
     return df_weighted_returns
 
-
-
 def get_normalized_hedge_metrics(df_returns, equity_bmk, notional_weights, weighted_hedge = False):
     '''
     
@@ -576,7 +566,7 @@ def get_normalized_hedge_metrics(df_returns, equity_bmk, notional_weights, weigh
     #calculates hedgemetrics 
     df_hm = get_hedge_metrics(df_returns, freq="1M", full_list=False)
     df_hm.drop(equity_bmk, axis = 1, inplace = True)
-    df_hm= df_hm.transpose()
+    df_hm = df_hm.transpose()
     
     #converts down reliability metrics from negative to positive in order to correctly rank them
     df_reverse = util.reverse_signs_in_col(df_hm,'Downside Reliability')

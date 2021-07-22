@@ -48,7 +48,6 @@ def draw_heatmap(corr_df, half=True):
                 ,cbar=False
                )
 
-#plot
 def plot_heatmap(corr,filename,title='Correlation Analysis',cmap=CMAP_DEFAULT):
     """
     Return a half diagonal correlation matrix heat map
@@ -79,7 +78,6 @@ def plot_heatmap(corr,filename,title='Correlation Analysis',cmap=CMAP_DEFAULT):
     plt.savefig(filename +'.png')
     return plt
 
-#plot
 def plot_corr(df_returns, notional_weights=[], include_fi=False):
     """"
     Plot crrelation matrices
@@ -90,7 +88,6 @@ def plot_corr(df_returns, notional_weights=[], include_fi=False):
     for key,value in corr_dict.items():
         plot_heatmap(value[0], key, value[1], cmap='coolwarm')
    
-
 def get_symbols(df_normal, weighted_hedge = True):
     '''
     Obtains a list of symbols and index's the corresponding amount of strategies
