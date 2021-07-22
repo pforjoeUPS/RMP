@@ -39,10 +39,7 @@ put_spread = put_spread.iloc[1:,]
 put_spread = put_spread[['99%/90% Put Spread']]
 # put_spread.drop(['99 Rep', 'Short Put'], axis=1, inplace=True)
 
-#converts returns data to price data
 put_spread_price = dm.get_prices_df(put_spread)
-
-#creates dictionary of returns
 put_spread_dict = dm.get_data_dict(put_spread_price)
 
 #merge vrr and put spread dicts to the new_data dict
@@ -58,11 +55,26 @@ for key in new_data_dict:
     
 #clean up new_data_dict before adding to returns    
 
-#remove first 3 rows from daily dataframe
-new_data_dict['Daily'] = new_data_dict['Daily'].iloc[3:,]
+#remove first n rows from daily dataframe
+n = 1
+new_data_dict['Daily'] = new_data_dict['Daily'].iloc[n:,]
+
+#remove first n rows from weekly dataframe
+n = 1
+new_data_dict['Weekly'] = new_data_dict['Weekly'].iloc[n:,]
+
+#remove first n rows from monthly dataframe
+n = 3
+new_data_dict['Monthly'] = new_data_dict['Monthly'].iloc[n:,]
+
+#remove first n rows from quarterly dataframe
+n = 1
+new_data_dict['Quarterly'] = new_data_dict['Quarterly'].iloc[n:,]
 
 #remove yearly dataframe from dict
 new_data_dict.pop('Yearly')
+
+
 
 #remove last row from weekly dataframe
 new_data_dict['Weekly'] = new_data_dict['Weekly'][:-1]
