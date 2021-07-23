@@ -36,7 +36,7 @@ def get_report_path(report_name):
     file_name = report_name +'.xlsx'
     return cwd + reports_fp + file_name
     
-def get_equity_hedge_report(report_name, returns_dict, equity_bmk, notional_weights=[],include_fi=False, new_strat=False, weighted=False, selloffs=False):
+def get_equity_hedge_report(report_name, returns_dict, equity_bmk = False, notional_weights=[],include_fi=False, new_strat=False, weighted=False, selloffs=False):
     """
     Generate equity hedge analysis report
     
@@ -113,7 +113,7 @@ def get_equity_hedge_report(report_name, returns_dict, equity_bmk, notional_weig
     weekly_returns = returns_dict['Weekly'].copy()
     
     #Compute hedge metrics and normalize them
-    normal_data = summary.get_normal_sheet_data(weekly_returns, equity_bmk, notional_weights, weighted, weighted_hedge=True)
+    normal_data = summary.get_normal_sheet_data(weekly_returns, equity_bmk = equity_bmk, notional_weights = notional_weights, weighted = weighted)
    
     #Create Sheet
     sheets.set_normal_sheet(writer, normal_data, 'Hedge Metric Framework', spaces)
@@ -154,7 +154,7 @@ def get_rolling_cum_ret_report(report_name, df_returns, freq, notional_weights):
     print_report_info(report_name, file_path)
     writer.save()
 
-def generate_strat_report(report_name, returns_dict, selloffs=False):
+def generate_strat_report(report_name, returns_dict, equity_bmk = False, selloffs=False):
     """
     Generate strat analysis report
     
@@ -208,6 +208,17 @@ def generate_strat_report(report_name, returns_dict, selloffs=False):
         #create sheets
         sheets.set_hist_sheet(writer, hist_df)
         sheets.set_hist_return_sheet(writer, daily_returns, 'Daily Historical Returns')
+     #Get Normalized Hedge Metrics 
+    print("Normalizing Hedge Metrics...")
+    
+    #get weekly returns
+    weekly_returns = returns_dict['Weekly'].copy()
+    
+    #Compute hedge metrics and normalize them
+    normal_data = summary.get_normal_sheet_data(weekly_returns, equity_bmk = equity_bmk, weighted = False)
+   
+    #Create Sheet
+    sheets.set_normal_sheet(writer, normal_data, 'Hedge Metric Framework', spaces)
     #TODO: add normalized data sheet    
     print_report_info(report_name, file_path)
     writer.save()
