@@ -65,6 +65,6 @@ annual_dollar_returns = summary.get_annual_dollar_returns(returns, notional_weig
 equity_hedge_report = 'check'
 selloffs = True
 start = time.time()
-rp.get_equity_hedge_report(equity_hedge_report, returns, equity_bmk, notional_weights, include_fi, new_strat, weighted[0], selloffs)
+rp.get_equity_hedge_report(equity_hedge_report, returns, True, notional_weights, include_fi, new_strat, weighted[0], selloffs)
 end = time.time()
 print(end - start)

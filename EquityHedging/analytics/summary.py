@@ -156,23 +156,18 @@ def get_analysis_sheet_data(df_returns, notional_weights=[], include_fi=False, n
     
     return {'df_list': df_list,'title_list': title_list}
 
-def get_normal_sheet_data(df_returns,equity_bmk,  notional_weights=[], weighted=False, weighted_hedge = False):
+#TODO: Ask powis if this makes sense bc notional only when weighted so do we need to have  2 seperate normal_dict
+def get_normal_sheet_data(df_returns, equity_bmk=False,  notional_weights=[], weighted=False):
 
     #get notional weights for weighted strategy returns if not accurate
-    if weighted:
+    if weighted == True:
         notional_weights = util.check_notional(df_returns, notional_weights)
     
-    if weighted_hedge == False:
-        #normal data
-        normal_dict = get_normalized_hedge_metrics(df_returns, equity_bmk, notional_weights, weighted_hedge=False)
-        #store analytics and respective titles in lists
-        df_list = [normal_dict['Hedge Metrics'], normal_dict['Normalized Data']]
+    normal_dict = get_normalized_hedge_metrics(df_returns, equity_bmk = equity_bmk, notional_weights = notional_weights, weighted =  weighted)
     
-    elif weighted_hedge == True:
-       #normal data
-       normal_dict = get_normalized_hedge_metrics(df_returns, equity_bmk, notional_weights, weighted_hedge=True)
-       #store analytics and respective titles in lists
-       df_list = [normal_dict['Hedge Metrics'], normal_dict['Normalized Data']]
+    #store analytics and respective titles in lists
+    df_list = [normal_dict['Hedge Metrics'], normal_dict['Normalized Data']]
+ 
     
     title_list = ['Hedging Framework Metrics', 'Normalized Hedge Metrics']
     
@@ -540,7 +535,7 @@ def get_weighted_data(df_returns, notional_weights=[], include_fi=False, new_str
                                    right_index=True, how='outer')
     return df_weighted_returns
 
-def get_normalized_hedge_metrics(df_returns, equity_bmk, notional_weights, weighted_hedge = False):
+def get_normalized_hedge_metrics(df_returns, equity_bmk=False, notional_weights=[], weighted = False):
     '''
     
 
@@ -560,12 +555,16 @@ def get_normalized_hedge_metrics(df_returns, equity_bmk, notional_weights, weigh
 
     '''
     
-    if weighted_hedge == True:
+    if weighted == True:
          df_returns = util.get_weighted_hedges(df_returns, notional_weights)
          
     #calculates hedgemetrics 
     df_hm = get_hedge_metrics(df_returns, freq="1M", full_list=False)
-    df_hm.drop(equity_bmk, axis = 1, inplace = True)
+    
+    #drop the first column (aka the benchmark) if equity_bmk==True
+    if equity_bmk == True:
+        df_hm.drop(df_hm.columns[0], axis = 1,inplace=True)
+
     df_hm = df_hm.transpose()
     
     #converts down reliability metrics from negative to positive in order to correctly rank them
