@@ -14,6 +14,7 @@ RETURNS_DATA_FP = CWD +'\\EquityHedging\\data\\'
 EQUITY_HEDGING_RETURNS_DATA = RETURNS_DATA_FP + 'ups_equity_hedge\\returns_data.xlsx'
 NEW_DATA = RETURNS_DATA_FP + 'new_strats\\'
 UPDATE_DATA = RETURNS_DATA_FP + 'update_strats\\'
+EQUITY_HEDGE_DATA = RETURNS_DATA_FP + 'ups_equity_hedge\\'
 
 def merge_dicts(main_dict, new_dict):
     """
