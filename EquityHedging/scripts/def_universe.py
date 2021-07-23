@@ -42,9 +42,9 @@ for sheet in sheet_list:
     temp_df = pd.read_excel('def_strats_index.xlsx', sheet_name=sheet, index_col=0)
     df_dict[sheet] = temp_df.copy()
 
+
 DEF_UNI_TICKERS=['GSVILP01 Index','TLT Equity','IEF US Equity','UX1 Index','XAU Curncy']
 DEF_UNI_ALIAS =['SPX ATM PUT', '20+ Yr Rates', '10+ Yr Rates', 'VIX Calls', 'Gold']
-
 
 
 
