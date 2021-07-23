@@ -133,7 +133,7 @@ def get_symbols(df_normal, unique= True):
     
         else:
             symbol_list= a[0:n]
-    #get same symbol for each strategy        
+            
     else: 
         symbol_list = [201 for i in list(range(0,n))]
         
