@@ -8,7 +8,7 @@ Created on Tue Oct  1 17:59:28 2019
 import pandas as pd
 from .import formats
 
-def set_analysis_sheet(writer, data_dict, sheet_name, spaces):
+def set_analysis_sheet(writer, data_dict, sheet_name, spaces=3):
     """
     Create excel sheet with:
     Correlation Matrices
@@ -180,7 +180,7 @@ def set_analysis_sheet(writer, data_dict, sheet_name, spaces):
     
     return 0
 
-def set_normal_sheet(writer, data_dict, sheet_name, spaces):
+def set_normal_sheet(writer, data_dict, sheet_name='Hedgging Framework Metrics', spaces=3):
     """
     Create excel sheet with:
     
@@ -261,9 +261,8 @@ def set_normal_sheet(writer, data_dict, sheet_name, spaces):
             row = row_dim + spaces + 1
     
     return 0
-        
-    
-def set_hist_return_sheet(writer,df_returns,sheet_name):
+            
+def set_hist_return_sheet(writer,df_returns,sheet_name='Daily Historical Returns'):
     """
     Create excel sheet for historical returns
     
@@ -297,9 +296,7 @@ def set_hist_return_sheet(writer,df_returns,sheet_name):
     worksheet.conditional_format(row,col, row_dim, col,{'type':'no_blanks',
                                   'format':date_fmt})
     return 0
-
-    
-    
+        
 def set_sgi_vrr_sheet(writer,df, sheet_name):
     """
     Create excel sheet for vrr returns
