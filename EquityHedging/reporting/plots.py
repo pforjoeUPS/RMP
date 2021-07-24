@@ -88,6 +88,7 @@ def plot_corr(df_returns, notional_weights=[], include_fi=False):
     for key,value in corr_dict.items():
         plot_heatmap(value[0], key, value[1], cmap='coolwarm')
    
+#TODO: rename variables in this method
 def get_symbols(df_normal, unique= True):
     '''
     Obtains a list of symbols and index's the corresponding amount of strategies
