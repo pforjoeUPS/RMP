@@ -21,13 +21,13 @@ new_strat = False
 returns= dm.get_equity_hedge_returns(equity_bmk, include_fi, strat_drop_list)
 
 #Add new strat
-strategy_list = ['both']
-filename = '2021.06.08 - Short 1W Var+Pulse Combination Tracks.xlsx'
-sheet_name = 'data'
+strategy_list = ['JPM Skew','CITI Put Ratio']
+filename = 'JPM_Skew_and_CITI_Put.xlsx'
+sheet_name = 'Sheet1'
 new_strategy = dm.get_new_strategy_returns_data(filename, sheet_name, strategy_list)
 new_strategy_dict = dm.get_data_dict(new_strategy, data_type='index')
 returns = dm.merge_dicts(returns, new_strategy_dict)
-new_strat=True
+new_strat=False
 #returns['Weekly'] = returns['Weekly'][:-1]
 
 #get notional weights
@@ -62,7 +62,7 @@ quintile_df = summary.get_quintile_data(returns, notional_weights,weighted=True)
 annual_dollar_returns = summary.get_annual_dollar_returns(returns, notional_weights)
 
 #run report
-equity_hedge_report = 'check'
+equity_hedge_report = 'equity_hedge_analysis_JPM_Skew_and_CITI_PR'
 selloffs = True
 start = time.time()
 rp.get_equity_hedge_report(equity_hedge_report, returns, equity_bmk, notional_weights, include_fi, new_strat, weighted[0], selloffs)
