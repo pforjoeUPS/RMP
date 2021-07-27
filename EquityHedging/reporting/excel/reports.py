@@ -36,7 +36,7 @@ def get_report_path(report_name):
     file_name = report_name +'.xlsx'
     return cwd + reports_fp + file_name
     
-def get_equity_hedge_report(report_name, returns_dict, equity_bmk, notional_weights=[],include_fi=False, new_strat=False, weighted=False, selloffs=False):
+def get_equity_hedge_report(report_name, returns_dict, notional_weights=[],include_fi=False, new_strat=False, weighted=False, selloffs=False):
     """
     Generate equity hedge analysis report
     
@@ -86,10 +86,9 @@ def get_equity_hedge_report(report_name, returns_dict, equity_bmk, notional_weig
         
         corr_sheet =  freq + ' Analysis'
         return_sheet = freq + ' Historical Returns'
-        spaces = 3
         
         #create sheets
-        sheets.set_analysis_sheet(writer,analysis_data, corr_sheet, spaces)
+        sheets.set_analysis_sheet(writer,analysis_data, corr_sheet)
         sheets.set_hist_return_sheet(writer,df_weighted_returns, return_sheet)
     
     #get historical selloffs data if selloffs == True
@@ -97,26 +96,31 @@ def get_equity_hedge_report(report_name, returns_dict, equity_bmk, notional_weig
         print("Computing Historical SellOffs...")
         
         #get daily returns
-        daily_returns = returns_dict['Daily'].copy()
+        try:
+            daily_returns = returns_dict['Daily'].copy()
         
-        #compute historical selloffs
-        hist_df = summary.get_hist_sim_table(daily_returns, notional_weights, weighted)
-        
-        #create sheets
-        sheets.set_hist_sheet(writer, hist_df)
-        sheets.set_hist_return_sheet(writer, daily_returns, 'Daily Historical Returns')
-
+            #compute historical selloffs
+            hist_df = summary.get_hist_sim_table(daily_returns, notional_weights, weighted)
+            
+            #create sheets
+            sheets.set_hist_sheet(writer, hist_df)
+            sheets.set_hist_return_sheet(writer, daily_returns)
+        except KeyError():
+            print('Skipping Historical SellOffs, no daily data in returns dictionary')
+            pass
+    
     #Get Normalized Hedge Metrics 
-    print("Normalizing Hedge Metrics...")
-    
-    #get weekly returns
-    weekly_returns = returns_dict['Weekly'].copy()
-    
-    #Compute hedge metrics and normalize them
-    normal_data = summary.get_normal_sheet_data(weekly_returns, equity_bmk, notional_weights, weighted, weighted_hedge=True)
-   
-    #Create Sheet
-    sheets.set_normal_sheet(writer, normal_data, 'Hedge Metric Framework', spaces)
+    if 'Weekly' in returns_dict.keys():
+        print("Computing Normalized Hedge Metrics...")
+        
+        #get weekly returns
+        weekly_returns = returns_dict['Weekly'].copy()
+        
+        #Compute hedge metrics and normalize them
+        normal_data = summary.get_normal_sheet_data(weekly_returns, notional_weights, drop_bmk=True, weighted=False)
+       
+        #Create Sheet
+        sheets.set_normal_sheet(writer, normal_data)
 
     print_report_info(report_name, file_path)
     writer.save()
@@ -200,15 +204,32 @@ def generate_strat_report(report_name, returns_dict, selloffs=False):
         print("Computing Historical SellOffs...")
         
         #get daily returns
-        daily_returns = returns_dict['Daily'].copy()
+        try:
+            daily_returns = returns_dict['Daily'].copy()
         
-        #compute historical selloffs
-        hist_df = get_hist_sim_table(daily_returns)
+            #compute historical selloffs
+            hist_df = summary.get_hist_sim_table(daily_returns)
+            
+            #create sheets
+            sheets.set_hist_sheet(writer, hist_df)
+            sheets.set_hist_return_sheet(writer, daily_returns)
+        except KeyError():
+            print('Skipping Historical SellOffs, no daily data in returns dictionary')
+            pass
+    
+    #Get Normalized Hedge Metrics 
+    if 'Weekly' in returns_dict.keys():
+        print("Computing Normalized Hedge Metrics...")
         
-        #create sheets
-        sheets.set_hist_sheet(writer, hist_df)
-        sheets.set_hist_return_sheet(writer, daily_returns, 'Daily Historical Returns')
-    #TODO: add normalized data sheet    
+        #get weekly returns
+        weekly_returns = returns_dict['Weekly'].copy()
+        
+        #Compute hedge metrics and normalize them
+        normal_data = summary.get_normal_sheet_data(weekly_returns)
+       
+        #Create Sheet
+        sheets.set_normal_sheet(writer, normal_data)
+    
     print_report_info(report_name, file_path)
     writer.save()
 
@@ -240,16 +261,21 @@ def generate_hs_report(report_name, returns_dict, notional_weights=[], weighted=
     print("Computing Historical SellOffs...")
     
     #get daily returns
-    daily_returns = returns_dict['Daily'].copy()
+    try:
+        daily_returns = returns_dict['Daily'].copy()
     
-    #compute historical selloffs
-    hist_df = get_hist_sim_table(daily_returns, notional_weights, weighted)
-    
-    #create sheets
-    sheets.set_hist_sheet(writer, hist_df)
-    sheets.set_hist_return_sheet(writer, daily_returns, 'Daily Historical Returns')
+        #compute historical selloffs
+        hist_df = get_hist_sim_table(daily_returns, notional_weights, weighted)
         
-    writer.save()
+        #create sheets
+        sheets.set_hist_sheet(writer, hist_df)
+        sheets.set_hist_return_sheet(writer, daily_returns)
+            
+        writer.save()
+    except KeyError:
+        print('Skipping Historical SellOffs, no daily data in returns dictionary')
+        pass
+
 def get_returns_report(report_name, returns_dict):
     """
     Generates historical returns spreadsheet containing returns for different frequencies

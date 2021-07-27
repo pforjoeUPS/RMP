@@ -8,8 +8,6 @@ Created on Mon Mar 29 12:30:00 2021
 import pandas as pd
 from ..datamanager.data_manager import switch_freq_int
 
-#TODO: separate code into dataframe stylers vs formats
-#TODO: Update to include new analytics once code merged
 def format_return_stats(anayltics_df):
     """
     Formats the return stats analytics
@@ -43,7 +41,6 @@ def format_return_stats(anayltics_df):
                   }
     return formatters 
 
-#TODO: Update to include new analytics once code merged
 def format_hedge_metrics(anayltics_df, freq='1M'):
     """
     Formats the hedge metrics analytics
@@ -98,7 +95,7 @@ def format_hedge_metrics(anayltics_df, freq='1M'):
              }
     return formatters    
 
-def format_hm_to_normalize(df):
+def format_hm_to_normalize(hm_df):
     '''
     
 
@@ -109,8 +106,7 @@ def format_hm_to_normalize(df):
 
     Returns
     -------
-    data : data frame
-        formatted data
+    styler
 
     '''
 
@@ -122,10 +118,8 @@ def format_hm_to_normalize(df):
                   ,"Decay":lambda x: f"{x:.0f}"
                   }
         
-    data= df.copy()
-    for col in data.columns:
-        data[col] = data[col].apply(formatters[col])
-    return data
+    return hm_df.style.\
+            format(formatters)
 
 def format_normalized_data(df_normal):
     '''
@@ -144,10 +138,7 @@ def format_normalized_data(df_normal):
     
     formatter = {}
     col_list = list(df_normal.columns)
-    # col=0
-    # for col in col_list:
-    #     df_normal[col] = df_normal[col].apply(lambda x:round(x,2) )
-        
+    
     for strat in col_list:
         formatter[strat] = "{:.2f}"
         

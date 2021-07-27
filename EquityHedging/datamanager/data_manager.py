@@ -14,6 +14,7 @@ RETURNS_DATA_FP = CWD +'\\EquityHedging\\data\\'
 EQUITY_HEDGING_RETURNS_DATA = RETURNS_DATA_FP + 'ups_equity_hedge\\returns_data.xlsx'
 NEW_DATA = RETURNS_DATA_FP + 'new_strats\\'
 UPDATE_DATA = RETURNS_DATA_FP + 'update_strats\\'
+EQUITY_HEDGE_DATA = RETURNS_DATA_FP + 'ups_equity_hedge\\'
 
 def merge_dicts(main_dict, new_dict):
     """
@@ -64,7 +65,8 @@ def format_data(df_index, freq="1M"):
     """
     data = df_index.copy()
     data.index = pd.to_datetime(data.index)
-    data = data.resample(freq).ffill()
+    if not(freq == '1D'):
+       data = data.resample(freq).ffill()
     data = data.pct_change(1)
     data.dropna(inplace=True)
     data = data.loc[(data!=0).any(1)]
