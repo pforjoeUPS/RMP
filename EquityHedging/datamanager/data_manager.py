@@ -376,3 +376,145 @@ def get_new_strategy_returns_data(report_name, sheet_name, strategy_list=[]):
         new_strategy_returns = df_strategy.pct_change(1)
     new_strategy_returns.dropna(inplace=True)
     return new_strategy_returns
+
+def get_data_to_update(col_list, filename, sheet_name = 'data', put_spread=False):
+    '''
+    Update data to dictionary
+
+    Parameters
+    ----------
+    col_list : list
+        List of columns for dict
+    filename : string        
+    sheet_name : string
+        The default is 'data'.
+    put_spread : boolean
+        Describes whether a put spread strategy is used. The default is False.
+
+    Returns
+    -------
+    data_dict : dictionary
+        dictionary of the updated data.
+
+    '''
+    #read excel file to dataframe
+    data = pd.read_excel(UPDATE_DATA + filename, sheet_name= sheet_name, index_col=0)
+    
+    #rename column(s) in dataframe
+    data.columns = col_list
+    
+    if put_spread:
+        #remove the first row of dataframe
+        data = data.iloc[1:,]
+    
+        #add column into dataframe
+        data = data[['99%/90% Put Spread']]
+    
+        #add price into dataframe
+        data = get_prices_df(data)
+    
+    data_dict = get_data_dict(data)
+    return data_dict
+
+def add_bps(vrr_dict, add_back=.0025):
+    '''
+    Adds bips back to the returns for the vrr strategy
+
+    Parameters
+    ----------
+    vrr_dict : dictionary
+        DESCRIPTION.
+    add_back : float
+        DESCRIPTION. The default is .0025.
+
+    Returns
+    -------
+    temp_dict : dictionary
+        dictionary of VRR returns with bips added to it
+
+    '''
+    #create empty dictionary
+    temp_dict = {}
+    
+    #iterate through keys of a dictionary
+    for key in vrr_dict:
+        
+        #set dataframe equal to dictionary's key
+        temp_df = vrr_dict[key].copy()
+        
+        #set variable equaly to the frequency of key
+        freq = switch_string_freq(key)
+        
+        #add to dataframe
+        temp_df['VRR'] += add_back/(switch_freq_int(freq))
+        
+        #add value to the temp dictionary
+        temp_dict[key] = temp_df
+    return temp_dict
+
+def merge_data_dicts(main_dict, dict_list):
+    '''
+    merge main dictionary with a dictionary list
+
+    Parameters
+    ----------
+    main_dict : dictionary
+    dict_list : list
+
+    Returns
+    -------
+    main_dict : dictionary
+        new dictionary created upon being merged with a list
+
+    '''
+    #iterate through dictionary 
+    for dicts in dict_list:
+        
+        #merge each dictionary in the list of dictionaries to the main
+        main_dict = merge_dicts(main_dict, dicts)
+    return main_dict
+
+def match_dict_columns(main_dict, new_dict):
+    '''
+    
+
+    Parameters
+    ----------
+    main_dict : dictionary
+    original dictionary
+    new_dict : dictionary
+    dictionary that needs to have columns matched to main_dict
+    Returns
+    -------
+    new_dict : dictionary
+        dictionary with matched columns
+
+    '''
+    
+    #iterate through keys in dictionary
+    for key in new_dict:
+        
+        #set column in the new dictionary equal to that of the main
+        new_dict[key] = new_dict[key][list(main_dict[key].columns)]
+    return new_dict  
+
+def append_dict(main_dict, new_dict):
+    '''
+    update an original dictionary by adding information from a new one
+
+    Parameters
+    ----------
+    main_dict : dictionary      
+    new_dict : dictionary        
+
+    Returns
+    -------
+    main_dict : dictionary
+
+    '''
+    #iterate through keys in dictionary
+    for key in new_dict:
+        
+        #add value from new_dict to main_dict
+        main_dict[key] = main_dict[key].append(new_dict[key])
+    return main_dict    
