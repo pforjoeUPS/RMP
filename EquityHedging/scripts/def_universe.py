@@ -4,28 +4,38 @@ Created on Tue Jul 20 14:11:19 2021
 
 @author: Powis Forjoe
 """
+import os
+
+os.chdir('..\..')
 
 from EquityHedging.datamanager import bbg_manager as bbg
 from EquityHedging.datamanager import data_manager as dm
-from EquityHedging.reporting.excel import reports as rp
-from EquityHedging.analytics import util
-from EquityHedging.analytics import hedge_metrics as hm
+import pandas as pd
 
-def_uni = bbg.get_price_data(['PUT Index','TLT Equity', 'UBCITCCC Index', 'IEF US Equity','UX1 Index','XAU Curncy'], '2007-12-28','2021-03-31')
-def_uni.columns = ['SPX PUT', '20+ Yr Rates', 'Commdty Curve Carry', '10+ Yr Rates', 'VIX Calls', 'Gold']
-def_uni = dm.get_data_dict(def_uni)
-rp.get_returns_report('def_uni',def_uni)
+jpm = pd.read_excel(dm.NEW_DATA+'def_strats.xlsx',sheet_name='JPM')
+jpm_tickers = jpm['Ticker'].tolist()
+jpm_alias = jpm['Alias'].tolist()
+cs = pd.read_excel(dm.NEW_DATA+'def_strats.xlsx',sheet_name='CS')
+cs_tickers = cs['Ticker'].tolist()
+cs_alias = cs['Alias'].tolist()
+ubs = pd.read_excel(dm.NEW_DATA+'def_strats.xlsx',sheet_name='UBS')
+ubs_alias = ubs['Alias'].tolist()
+ubs_tickers = ubs['Ticker'].tolist()
 
-strategy_list = []
-filename = 'def_uni.xlsx'
-sheet_name = 'Weekly'
-new_strategy = dm.get_new_strategy_returns_data(filename, sheet_name, strategy_list)
-returns_dict = dm.get_equity_hedge_returns(all_data=True)
-weekly_ret = returns_dict['Weekly'].copy()
-weekly_ret = dm.merge_data_frames(weekly_ret,new_strategy)
+def_tickers=['GSVILP01 Index','TLT Equity','IEF US Equity','UX1 Index','XAU Curncy']
+def_alias =['SPX ATM PUT', '20+ Yr Rates', '10+ Yr Rates', 'VIX Calls', 'Gold']
+    
+jpm_uni = bbg.get_price_data(jpm_tickers, '2007-12-20','2021-06-30')
+cs_uni = bbg.get_price_data(cs_tickers, '2007-12-28','2021-06-30')
+ubs_uni = bbg.get_price_data(ubs_tickers, '2007-12-20','2021-06-30')
+def_uni = bbg.get_price_data(def_tickers, '2007-12-28','2021-06-30')
 
-hm_df = hm.get_hedge_metrics(weekly_ret,'1W', False)
-norm_df = util.get_normalized_data(hm_df.transpose())
-norm_df = util.reverse_signs_in_col(hm_df.transpose(), 'Downside Reliability')
-norm_df = util.get_normalized_data(norm_df)
+file_path = 'def_strats_index.xlsx'
+writer = pd.ExcelWriter(file_path,engine='xlsxwriter')
+jpm_uni.to_excel(writer,sheet_name='jpm')
+cs_uni.to_excel(writer,sheet_name='cs')
+ubs_uni.to_excel(writer,sheet_name='ubs')
+def_uni.to_excel(writer,sheet_name='def')
+writer.save()
+
 
