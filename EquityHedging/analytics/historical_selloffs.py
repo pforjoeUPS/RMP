@@ -131,17 +131,41 @@ def get_hist_sim_table(df_returns, notional_weights=[], weighted=False):
     hist_dict['Start'] = separate_events(EVENTS)['Start']
     hist_dict['End'] = separate_events(EVENTS)['End']
     
+    #remove_dict and period_list for data to removed from hist_dict
+    remove_dict = {}
+    period_list = []
+        
+        
     #loop through columns to create dictionary
     for col in df_index.columns:
         strat_df = dm.remove_na(df_index, col)
+        
+        #temp_col to store strategy selloff data
         temp_col = []
+        
         for event in EVENTS:
             start = event['start']
             end = event['end']
-            event_return = compute_event_ret(strat_df, col, start, end)
-            temp_col.append(event_return)
+            try:
+                event_return = compute_event_ret(strat_df, col, start, end)
+                temp_col.append(event_return)
+            except KeyError:
+                #check if event is in temp_list to prevent repetitve printouts
+                if event['period'] not in period_list:
+                    print('Skipping {} selloff event'.format(event['period']))
+                    period_list.append(event['period'])
+                #add period to dictionary to remove after looping through columns
+                remove_dict[event['period']]= (start,end)
+                pass
         hist_dict[col] = temp_col
     
+    #remove event data from hist_dict if event was skipped
+    if remove_dict:
+        for key in remove_dict:
+            hist_dict['Start'].remove(remove_dict[key][0])
+            hist_dict['End'].remove(remove_dict[key][1])
+            periods.remove(key)
+
     #convert dictionary to dataframe
     df_hist = util.convert_dict_to_df(hist_dict, periods)
     return df_hist

@@ -4,12 +4,12 @@ Created on Tue Jul 20 14:11:19 2021
 
 @author: Powis Forjoe
 """
+import os
+
+os.chdir('..\..')
 
 from EquityHedging.datamanager import bbg_manager as bbg
 from EquityHedging.datamanager import data_manager as dm
-from EquityHedging.reporting.excel import reports as rp
-from EquityHedging.analytics import util
-from EquityHedging.analytics import hedge_metrics as hm
 import pandas as pd
 
 jpm = pd.read_excel(dm.NEW_DATA+'def_strats.xlsx',sheet_name='JPM')
@@ -37,33 +37,3 @@ cs_uni.to_excel(writer,sheet_name='cs')
 ubs_uni.to_excel(writer,sheet_name='ubs')
 def_uni.to_excel(writer,sheet_name='def')
 writer.save()
-
-for sheet in sheet_list:
-    temp_df = pd.read_excel('def_strats_index.xlsx', sheet_name=sheet, index_col=0)
-    df_dict[sheet] = temp_df.copy()
-
-DEF_UNI_TICKERS=['GSVILP01 Index','TLT Equity','IEF US Equity','UX1 Index','XAU Curncy']
-DEF_UNI_ALIAS =['SPX ATM PUT', '20+ Yr Rates', '10+ Yr Rates', 'VIX Calls', 'Gold']
-
-
-
-
-
-def_uni = bbg.get_price_data(['GSVILP01 Index','TLT Equity', 'UBCITCCC Index', 'IEF US Equity','UX1 Index','XAU Curncy'], '2007-12-28','2021-03-31')
-def_uni.columns = ['SPX ATM PUT', '20+ Yr Rates', 'Commdty Curve Carry', '10+ Yr Rates', 'VIX Calls', 'Gold']
-def_uni = dm.get_data_dict(def_uni)
-rp.get_returns_report('def_uni',def_uni)
-
-strategy_list = []
-filename = 'def_uni.xlsx'
-sheet_name = 'Weekly'
-new_strategy = dm.get_new_strategy_returns_data(filename, sheet_name, strategy_list)
-returns_dict = dm.get_equity_hedge_returns(all_data=True)
-weekly_ret = returns_dict['Weekly'].copy()
-weekly_ret = dm.merge_data_frames(weekly_ret,new_strategy)
-
-hm_df = hm.get_hedge_metrics(weekly_ret,'1W', False)
-norm_df = util.get_normalized_data(hm_df.transpose())
-norm_df = util.reverse_signs_in_col(hm_df.transpose(), 'Downside Reliability')
-norm_df = util.get_normalized_data(norm_df)
-
