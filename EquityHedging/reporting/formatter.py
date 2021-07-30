@@ -95,7 +95,7 @@ def format_hedge_metrics(anayltics_df, freq='1M'):
              }
     return formatters    
 
-def format_hm_to_normalize(hm_df):
+def format_hm_to_normalize(hm_df, more_metrics=False):
     '''
     
 
@@ -110,9 +110,21 @@ def format_hm_to_normalize(hm_df):
 
     '''
 
-    formatters = {"Benefit":lambda x: f"{x:.2%}"
-                  ,"Downside Reliability":lambda x: f"{x:.2f}"
-                  ,"Upside Reliability":lambda x: f"{x:.2f}"                      
+    if more_metrics:
+        formatters = {"Benefit":lambda x: f"{x:.2%}"
+                  ,"Downside Reliability":lambda x: f"{x:.4f}"
+                  ,"Upside Reliability":lambda x: f"{x:.4f}"                      
+                  ,"Convexity":lambda x: f"{x:.2%}"
+                  ,"Cost":lambda x: f"{x:.2%}"
+                  ,"Decay":lambda x: f"{x:.0f}"
+                  ,"Average Return":lambda x: f"{x:.2%}"
+                  ,"Tail Reliability":lambda x: f"{x:.4f}"
+                  ,"Non Tail Reliability":lambda x: f"{x:.4f}"                      
+                  }
+    else:
+        formatters = {"Benefit":lambda x: f"{x:.2%}"
+                  ,"Downside Reliability":lambda x: f"{x:.4f}"
+                  ,"Upside Reliability":lambda x: f"{x:.4f}"                      
                   ,"Convexity":lambda x: f"{x:.2%}"
                   ,"Cost":lambda x: f"{x:.2%}"
                   ,"Decay":lambda x: f"{x:.0f}"
@@ -140,7 +152,7 @@ def format_normalized_data(df_normal):
     col_list = list(df_normal.columns)
     
     for strat in col_list:
-        formatter[strat] = "{:.2f}"
+        formatter[strat] = "{:.4f}"
         
     return df_normal.style.\
             apply(highlight_min, subset = pd.IndexSlice[:,col_list[0:]]).\
@@ -350,8 +362,25 @@ def highlight_max(s):
     """
     
     is_max = s == s.max()
-    return ['background-color: yellow' if v else '' for v in is_max]
+    return ['background-color: green' if v else '' for v in is_max]
+    
+def highlight_max_ret(s):
+    """
+    Highlight the maximum in a Series yellow
 
+    Parameters
+    ----------
+    s : series
+
+    Returns
+    -------
+    list
+
+    """
+    
+    is_max = s == s.max()
+    return ['background-color: yellow' if v else '' for v in is_max]
+  
 def highlight_min(s):
     """
     Highlight the minimum in a Series red
@@ -398,5 +427,5 @@ def get_dollar_ret_styler(dollar_returns):
     #return styler
     return data.style.\
             applymap(color_neg_pos).\
-            apply(highlight_max, subset = pd.IndexSlice[:,col_list[1:]]).\
+            apply(highlight_max_ret, subset = pd.IndexSlice[:,col_list[1:]]).\
             format(formatter)
