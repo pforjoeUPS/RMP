@@ -66,7 +66,7 @@ if check_hs:
 #get quintile dataframe
 check_quint = False
 if check_quint:
-    quintile_df = summary.get_quintile_data(returns, notional_weights,weighted=True)
+    quintile_df = summary.get_grouped_data(returns, notional_weights, True, group='Quintile')
 
 #get annual dollar returns dataframe
 check_ann = False
