@@ -15,6 +15,9 @@ EQUITY_HEDGING_RETURNS_DATA = RETURNS_DATA_FP + 'ups_equity_hedge\\returns_data.
 NEW_DATA = RETURNS_DATA_FP + 'new_strats\\'
 UPDATE_DATA = RETURNS_DATA_FP + 'update_strats\\'
 EQUITY_HEDGE_DATA = RETURNS_DATA_FP + 'ups_equity_hedge\\'
+NEW_DATA_COL_LIST = ['SPTR', 'SX5T','M1WD', 'Long Corp', 'STRIPS', 'Down Var',
+                    'Vortex', 'VOLA I', 'VOLA II','Dynamic Put Spread',
+                    'GW Dispersion', 'Corr Hedge','Def Var (Mon)', 'Def Var (Fri)', 'Def Var (Wed)']
 
 def merge_dicts(main_dict, new_dict):
     """
@@ -517,4 +520,38 @@ def append_dict(main_dict, new_dict):
         
         #add value from new_dict to main_dict
         main_dict[key] = main_dict[key].append(new_dict[key])
-    return main_dict    
+    return main_dict
+
+def create_update_dict():
+    '''
+    Create a dictionary that updates returns data
+
+    Returns
+    -------
+    new_data_dict : Dictionary
+        Contains the updated information after adding new returns data
+
+    '''
+    #Import data from bloomberg into dataframe and create dictionary with different frequencies
+    new_data_dict = get_data_to_update(NEW_DATA_COL_LIST, 'ups_data.xlsx')
+    
+    #get vrr data
+    vrr_dict = get_data_to_update(['VRR'], 'vrr_tracks_data.xlsx')
+    
+    #add back 25 bps
+    vrr_dict = add_bps(vrr_dict)
+    
+    #get put spread data
+    put_spread_dict = get_data_to_update(['99 Rep', 'Short Put', '99%/90% Put Spread'], 'put_spread_data.xlsx', 'Daily', put_spread = True)
+    
+    #merge vrr and put spread dicts to the new_data dict
+    new_data_dict = merge_data_dicts(new_data_dict,[put_spread_dict, vrr_dict])
+    
+    #get data from returns_data.xlsx into dictionary
+    returns_dict = get_equity_hedge_returns(all_data=True)
+    
+    #set columns in new_data_dict to be in the same order as returns_dict
+    new_data_dict = match_dict_columns(returns_dict, new_data_dict)
+        
+    #return a dictionary
+    return new_data_dict

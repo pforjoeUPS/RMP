@@ -9,31 +9,13 @@ os.chdir("..\..")
 from EquityHedging.datamanager import data_manager as dm
 from EquityHedging.reporting.excel import reports as rp
 
-new_data_col_list = ['SPTR', 'SX5T','M1WD', 'Long Corp', 'STRIPS', 'Down Var',
-                    'Vortex', 'VOLA I', 'VOLA II','Dynamic Put Spread',
-                    'GW Dispersion', 'Corr Hedge','Def Var (Mon)', 'Def Var (Fri)', 'Def Var (Wed)']
 
-#Import data from bloomberg into dataframe and create dictionary with different frequencies
-new_data_dict = dm.get_data_to_update(new_data_col_list, 'ups_data.xlsx')
-
-#get vrr data
-vrr_dict = dm.get_data_to_update(['VRR'], 'vrr_tracks_data.xlsx')
-
-#add back 25 bps
-vrr_dict = dm.add_bps(vrr_dict)
-
-#get put spread data
-ps_col_list = ['99 Rep', 'Short Put', '99%/90% Put Spread']
-put_spread_dict = dm.get_data_to_update(ps_col_list, 'put_spread_data.xlsx', 'Daily', put_spread = True)
-
-#merge vrr and put spread dicts to the new_data dict
-new_data_dict =dm.merge_data_dicts(new_data_dict,[put_spread_dict, vrr_dict])
 
 #get data from returns_data.xlsx into dictionary
 returns_dict = dm.get_equity_hedge_returns(all_data=True)
 
-#set columns in new_data_dict to be in the same order as returns_dict
-new_data_dict = dm.match_dict_columns(returns_dict, new_data_dict)    
+#create dictionary that contains updated returns
+new_data_dict = dm.create_update_dict()
 
 # #remove first n rows from daily dataframe
 # n = 64
