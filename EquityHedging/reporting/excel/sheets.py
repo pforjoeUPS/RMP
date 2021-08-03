@@ -288,7 +288,7 @@ def set_grouped_data_sheet(writer, quintile_df, decile_df, sheet_name = 'Grouped
 
     
            
-    for n in range(0,len(df_list)-1):
+    for n in range(0,len(df_list)):
         try:
             row_dim = row + df_list[n].shape[0]
             col_dim = col + df_list[n].shape[1]
