@@ -261,7 +261,56 @@ def set_normal_sheet(writer, data_dict, sheet_name='Hedgging Framework Metrics',
             row = row_dim + spaces + 1
     
     return 0
+
+def set_grouped_data_sheet(writer, quintile_df, decile_df, sheet_name = 'Grouped Data', spaces = 3):
+    
+    #create writer and workbook
+    workbook = writer.book
+    
+    #pull out lists from data_dict
+    df_list = [quintile_df, decile_df]
+    title_list = ['Quintile', 'Decile']
+     
+    #format background color of worksheet to white
+    cell_format = formats.set_worksheet_format(workbook)
+    df_empty = pd.DataFrame()
+    df_empty.to_excel(writer, sheet_name=sheet_name, startrow=0, startcol=0)
+    worksheet = writer.sheets[sheet_name]
+    worksheet.set_column(0, 1000, 22, cell_format)
+    row = 2
+    col = 1
+    
+    #get formats for worksheet
+    #title format
+    title_format = formats.set_title_format(workbook)
+    #percent format
+    pct_fmt = formats.set_number_format(workbook,num_format='0.00%')
+
+    
+           
+    for n in range(0,len(df_list)):
+        try:
+            row_dim = row + df_list[n].shape[0]
+            col_dim = col + df_list[n].shape[1]
+            worksheet.write(row-1, 1, title_list[n], title_format)
             
+            #write data into worksheet
+            df_list[n].to_excel(writer, sheet_name=sheet_name, startrow=row , startcol=1)   
+        except AttributeError:
+            pass
+        
+        if n==1:
+            #format all the normalized data to 2 decimals
+            worksheet.conditional_format(row+1,col+1, row_dim, col_dim,{'type':'no_blanks',
+                                      'format':pct_fmt})
+        else:
+            #format all the normalized data to 2 decimals
+            worksheet.conditional_format(row+1,col+1, row_dim, col_dim,{'type':'no_blanks',
+                                      'format':pct_fmt})     
+            row = row_dim + spaces + 1
+    
+    return 0
+    
 def set_hist_return_sheet(writer,df_returns,sheet_name='Daily Historical Returns'):
     """
     Create excel sheet for historical returns
