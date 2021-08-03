@@ -121,7 +121,12 @@ def get_equity_hedge_report(report_name, returns_dict, notional_weights=[],inclu
        
         #Create Sheet
         sheets.set_normal_sheet(writer, normal_data)
-
+        
+    quintile_df = summary.get_grouped_data(returns_dict, notional_weights, weighted = True, group = 'Quintile')
+    decile_df = summary.get_grouped_data(returns_dict, notional_weights, weighted = True, group = 'Decile')
+    
+    sheets.set_grouped_data_sheet(writer, quintile_df, decile_df)
+    
     print_report_info(report_name, file_path)
     writer.save()
 

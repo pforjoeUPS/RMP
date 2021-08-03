@@ -31,12 +31,12 @@ def merge_dicts(main_dict, new_dict):
     dictionary
     """
     
-    freq_list = ['Daily', 'Weekly', 'Monthly', 'Quarterly', 'Yearly']
+    # freq_list = ['Daily', 'Weekly', 'Monthly', 'Quarterly', 'Yearly']
     merged_dict = {}
-    for freq in freq_list:
-        df_main = main_dict[freq]
-        df_new = new_dict[freq]
-        merged_dict[freq] = merge_data_frames(df_main, df_new)
+    for key in main_dict:
+        df_main = main_dict[key]
+        df_new = new_dict[key]
+        merged_dict[key] = merge_data_frames(df_main, df_new)
     return merged_dict
 
 def merge_data_frames(df_main, df_new):

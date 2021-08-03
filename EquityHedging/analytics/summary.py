@@ -535,7 +535,7 @@ def get_weighted_data(df_returns, notional_weights=[], include_fi=False, new_str
                                    right_index=True, how='outer')
     return df_weighted_returns
 
-def get_norm_hedge_metrics(df_returns, notional_weights=[], freq='1W', drop_bmk=True, weighted=False):
+def get_norm_hedge_metrics(df_returns, notional_weights=[], freq='1W', drop_bmk=True, weighted=False, more_metrics=False):
     """
     Returns dictionary with hedge metrics and normalized scores
 
@@ -567,10 +567,20 @@ def get_norm_hedge_metrics(df_returns, notional_weights=[], freq='1W', drop_bmk=
 
     df_hm = df_hm.transpose()
     
+    col_to_reverse = ['Downside Reliability','Tail Reliability','Non Tail Reliability']
+    
     #converts down reliability metrics from negative to positive in order to correctly rank them
-    df_reverse = util.reverse_signs_in_col(df_hm,'Downside Reliability')
-
+    if more_metrics:
+        df_norm_hm = df_hm.copy()
+        for col in col_to_reverse:
+            df_norm_hm = util.reverse_signs_in_col(df_norm_hm,col)
+    else:
+        df_norm_hm = util.reverse_signs_in_col(df_hm,'Downside Reliability')
+        df_norm_hm.drop(['Average Return','Tail Reliability','Non Tail Reliability'], axis=1, inplace=True)
+        df_hm.drop(['Average Return','Tail Reliability','Non Tail Reliability'], axis=1, inplace=True)
+    
     #normalizes the data
-    df_norm_hm = util.get_normalized_data(df_reverse)
+    df_norm_hm = util.get_normalized_data(df_norm_hm)
+    
     #create dict with hedge met and normalized data
     return {'Hedge Metrics': df_hm, 'Normalized Data': df_norm_hm}
