@@ -10,30 +10,32 @@ os.chdir('..\..')
 
 from EquityHedging.datamanager import bbg_manager as bbg
 from EquityHedging.datamanager import data_manager as dm
+from EquityHedging.reporting.excel import reports as rp
 import pandas as pd
 
 cs_list = ['cs_2','cs_3','cs_4','cs_5']
-bar_list = ['bar_1','bar_2','bar_3','bar_4','bar_5','bar_6','bar_7']
+bar_list = ['bar_2','bar_3','bar_4','bar_5','bar_6','bar_7']
 ubs_list = ['ubs', 'ubs def ports']
 
-cs = pd.read_excel(dm.EQUITY_HEDGE_DATA+'def_uni_final.xlsx', sheet_name='cs_1', index_col=0)
+cs = pd.read_excel(dm.UPDATE_DATA+'def_uni_final.xlsx', sheet_name='cs_1', index_col=0)
 for sheet in cs_list:
-    temp_df = pd.read_excel(dm.EQUITY_HEDGE_DATA+'def_uni_final.xlsx', sheet_name=sheet, index_col=0)
+    temp_df = pd.read_excel(dm.UPDATE_DATA+'def_uni_final.xlsx', sheet_name=sheet, index_col=0)
     temp_df = dm.get_real_cols(temp_df)
     cs = dm.merge_data_frames(cs, temp_df)
 
-bar = pd.read_excel(dm.EQUITY_HEDGE_DATA+'def_uni_final.xlsx', sheet_name='bar_1', index_col=0)
+bar = pd.read_excel(dm.UPDATE_DATA+'def_uni_final.xlsx', sheet_name='bar_1', index_col=0)
 for sheet in bar_list:
+    temp_df = pd.read_excel(dm.UPDATE_DATA+'def_uni_final.xlsx', sheet_name=sheet, index_col=0)
     temp_df = dm.get_real_cols(temp_df)
     bar = dm.merge_data_frames(bar, temp_df)
 
-ubs = pd.read_excel(dm.EQUITY_HEDGE_DATA+'def_uni_final.xlsx', sheet_name='ubs', index_col=0)
-temp_df = pd.read_excel(dm.EQUITY_HEDGE_DATA+'def_uni_final.xlsx', sheet_name='cs_2', index_col=0)
+ubs = pd.read_excel(dm.UPDATE_DATA+'def_uni_final.xlsx', sheet_name='ubs', index_col=0)
+temp_df = pd.read_excel(dm.UPDATE_DATA+'def_uni_final.xlsx', sheet_name='ubs def ports', index_col=0)
 ubs = dm.merge_data_frames(ubs, temp_df)
 
-sg = pd.read_excel(dm.EQUITY_HEDGE_DATA+'def_uni_final.xlsx', sheet_name='sg', index_col=0)
+sg = pd.read_excel(dm.UPDATE_DATA+'def_uni_final.xlsx', sheet_name='sg', index_col=0)
 
-jpm = pd.read_excel(dm.EQUITY_HEDGE_DATA+'def_uni_final.xlsx', sheet_name='jpm', index_col=0)
+jpm = pd.read_excel(dm.UPDATE_DATA+'def_uni_final.xlsx', sheet_name='jpm', index_col=0)
 
 jpm = pd.read_excel(dm.NEW_DATA+'def_strats.xlsx',sheet_name='JPM')
 jpm_tickers = jpm['Ticker'].tolist()
@@ -47,11 +49,19 @@ ubs_tickers = ubs['Ticker'].tolist()
 
 def_tickers=['GSVILP01 Index','TLT Equity','IEF US Equity','UX1 Index','XAU Curncy']
 def_alias =['SPX ATM PUT', '20+ Yr Rates', '10+ Yr Rates', 'VIX Calls', 'Gold']
-    
+
 jpm_uni = bbg.get_price_data(jpm_tickers, '2007-12-20','2021-06-30')
 cs_uni = bbg.get_price_data(cs_tickers, '2007-12-28','2021-06-30')
 ubs_uni = bbg.get_price_data(ubs_tickers, '2007-12-20','2021-06-30')
 def_uni = bbg.get_price_data(def_tickers, '2007-12-28','2021-06-30')
+def_uni.columns = def_alias
+
+df_list = [bar,cs,jpm,put_spread_price,sg,ubs]
+for df in df_list:
+    def_uni = dm.merge_data_frames(def_uni,df)
+    
+def_uni_dict = dm.get_data_dict(def_uni)
+rp.get_returns_report('def_uni_final', def_uni_dict)    
 
 file_path = 'def_strats_index.xlsx'
 writer = pd.ExcelWriter(file_path,engine='xlsxwriter')

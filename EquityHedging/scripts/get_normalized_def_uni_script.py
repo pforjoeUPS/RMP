@@ -28,7 +28,7 @@ df_weighted_hedges = util.get_weighted_hedges(weekly_ret, notional_weights)
 #get def universe
 print('get def universe')
 def_uni = pd.read_excel(dm.EQUITY_HEDGE_DATA+'def_uni.xlsx',sheet_name='Weekly', index_col=0)
-def_uni.drop(['VIX Calls'], axis=1, inplace=True)
+def_uni.drop(['VIX Calls','SG Inflation Proxy'], axis=1, inplace=True)
 
 #merge with equity portfolio data
 print('merge with equity portfolio data')
@@ -36,12 +36,12 @@ def_data = dm.merge_data_frames(df_weighted_hedges, def_uni)
 
 #compute raw and normalized scores
 print('compute raw and normalized scores')
-def_dict = summary.get_norm_hedge_metrics(def_data)
+def_dict = summary.get_norm_hedge_metrics(def_data, more_metrics=True)
 
 #store in excel
 print('store in excel')
-file_path = dm.EQUITY_HEDGE_DATA+'def_uni_hedge_metrics.xlsx'
+file_path = dm.EQUITY_HEDGE_DATA+'def_uni_hedge_metrics_1.xlsx'
 writer = pd.ExcelWriter(file_path,engine='xlsxwriter')
-def_dict['Hedge Metrics'].to_excel(writer,sheet_name='Hedge Metrics')
-def_dict['Normalized Data'].to_excel(writer,sheet_name='Normalized Data')
+def_dict['Hedge Metrics'].to_excel(writer,sheet_name='Hedge Metrics_more')
+def_dict['Normalized Data'].to_excel(writer,sheet_name='Normalized Data_more')
 writer.save()
