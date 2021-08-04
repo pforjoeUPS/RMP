@@ -8,8 +8,6 @@ Created on Mon Mar 29 12:30:00 2021
 import pandas as pd
 from ..datamanager.data_manager import switch_freq_int
 
-#TODO: separate code into dataframe stylers vs formats
-#TODO: Update to include new analytics once code merged
 def format_return_stats(anayltics_df):
     """
     Formats the return stats analytics
@@ -43,7 +41,6 @@ def format_return_stats(anayltics_df):
                   }
     return formatters 
 
-#TODO: Update to include new analytics once code merged
 def format_hedge_metrics(anayltics_df, freq='1M'):
     """
     Formats the hedge metrics analytics
@@ -98,8 +95,7 @@ def format_hedge_metrics(anayltics_df, freq='1M'):
              }
     return formatters    
 
-#TODO: create seperate formatters for normalizing and hedge metrics for normalizing (one formatter w if else statement)
-def format_hm_to_normalize(df):
+def format_hm_to_normalize(hm_df, more_metrics=False):
     '''
     
 
@@ -110,23 +106,32 @@ def format_hm_to_normalize(df):
 
     Returns
     -------
-    data : data frame
-        formatted data
+    styler
 
     '''
 
-    formatters = {"Benefit":lambda x: f"{x:.2%}"
-                  ,"Downside Reliability":lambda x: f"{x:.2f}"
-                  ,"Upside Reliability":lambda x: f"{x:.2f}"                      
+    if more_metrics:
+        formatters = {"Benefit":lambda x: f"{x:.2%}"
+                  ,"Downside Reliability":lambda x: f"{x:.4f}"
+                  ,"Upside Reliability":lambda x: f"{x:.4f}"                      
+                  ,"Convexity":lambda x: f"{x:.2%}"
+                  ,"Cost":lambda x: f"{x:.2%}"
+                  ,"Decay":lambda x: f"{x:.0f}"
+                  ,"Average Return":lambda x: f"{x:.2%}"
+                  ,"Tail Reliability":lambda x: f"{x:.4f}"
+                  ,"Non Tail Reliability":lambda x: f"{x:.4f}"                      
+                  }
+    else:
+        formatters = {"Benefit":lambda x: f"{x:.2%}"
+                  ,"Downside Reliability":lambda x: f"{x:.4f}"
+                  ,"Upside Reliability":lambda x: f"{x:.4f}"                      
                   ,"Convexity":lambda x: f"{x:.2%}"
                   ,"Cost":lambda x: f"{x:.2%}"
                   ,"Decay":lambda x: f"{x:.0f}"
                   }
         
-    data= df.copy()
-    for col in data.columns:
-        data[col] = data[col].apply(formatters[col])
-    return data
+    return hm_df.style.\
+            format(formatters)
 
 def format_normalized_data(df_normal):
     '''
@@ -142,11 +147,18 @@ def format_normalized_data(df_normal):
         rounds data to 2 decimal points
 
     '''
-
-    for col in df_normal.columns:
-        df_normal[col] = df_normal[col].apply(lambda x:round(x,2) )
     
-    return df_normal
+    formatter = {}
+    col_list = list(df_normal.columns)
+    
+    for strat in col_list:
+        formatter[strat] = "{:.4f}"
+        
+    return df_normal.style.\
+            apply(highlight_min, subset = pd.IndexSlice[:,col_list[0:]]).\
+            apply(highlight_max, subset = pd.IndexSlice[:,col_list[0:]]).\
+            format(formatter)
+
 
      
 def format_notional_weights(df_weights):
@@ -350,11 +362,28 @@ def highlight_max(s):
     """
     
     is_max = s == s.max()
-    return ['background-color: yellow' if v else '' for v in is_max]
-
-def highlight_min(s):
+    return ['background-color: green' if v else '' for v in is_max]
+    
+def highlight_max_ret(s):
     """
     Highlight the maximum in a Series yellow
+
+    Parameters
+    ----------
+    s : series
+
+    Returns
+    -------
+    list
+
+    """
+    
+    is_max = s == s.max()
+    return ['background-color: yellow' if v else '' for v in is_max]
+  
+def highlight_min(s):
+    """
+    Highlight the minimum in a Series red
 
     Parameters
     ----------
@@ -398,5 +427,5 @@ def get_dollar_ret_styler(dollar_returns):
     #return styler
     return data.style.\
             applymap(color_neg_pos).\
-            apply(highlight_max, subset = pd.IndexSlice[:,col_list[1:]]).\
+            apply(highlight_max_ret, subset = pd.IndexSlice[:,col_list[1:]]).\
             format(formatter)

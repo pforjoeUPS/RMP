@@ -20,7 +20,8 @@ def get_hm_index_list(full_list=True):
     if full_list:
         return HEDGE_METRICS_INDEX
     else:
-        return ['Benefit','Downside Reliability','Upside Reliability','Convexity','Cost', 'Decay']
+        return ['Benefit','Downside Reliability','Upside Reliability','Convexity','Cost', 'Decay',
+                'Average Return', 'Tail Reliability', 'Non Tail Reliability']
     
 def get_benefit_stats(df_returns, col_name):
     """
@@ -185,7 +186,7 @@ def get_cost_stats(df_returns, col_name):
     
     return cost
 
-def get_reliability_stats(df_returns, col_name):
+def get_reliability_stats(df_returns, col_name, tail=False):
     """
     Return correlation of strategy to equity bencmark downside returns and upside returns
     
@@ -223,6 +224,18 @@ def get_reliability_stats(df_returns, col_name):
     #create reliability dictionary
     reliability={'down': reliability_d,
                  'up':reliability_u}
+    
+    #compute tail & non tail reliability
+    if tail:
+        percentile = equity_down[equity_id].quantile(.1)
+        tail_index = equity_down.index[equity_down[equity_id]<percentile]
+        tail_df = equity_down.loc[tail_index]
+        non_tail_index = equity_down.index[equity_down[equity_id]>percentile]
+        non_tail_df = equity_down.loc[non_tail_index]
+        corr_tail = tail_df.corr()
+        reliability['tail'] = corr_tail[col_name].iloc[0]
+        corr_non_tail = non_tail_df.corr()
+        reliability['non_tail'] = corr_non_tail[col_name].iloc[0]
     
     return reliability
 
@@ -264,66 +277,17 @@ def get_hedge_metrics(df_returns, freq="1M", full_list=True):
     else:
         for col in df_returns.columns:
             benefit = get_benefit_stats(df_returns, col)
-            reliability = get_reliability_stats(df_returns, col)
+            reliability = get_reliability_stats(df_returns, col,True)
             convexity = get_convexity_stats(df_returns, col)
             cost = get_cost_stats(df_returns, col)
             decay = get_decay_days(df_returns, col, freq)
+            avg_ret = benefit['cumulative']+ convexity['cumulative'] + cost['cumulative']
             
             hedge_dict[col] = [benefit['cumulative'],
                               reliability['down'],reliability['up'],
-                              convexity['cumulative'], cost['cumulative'], decay]
+                              convexity['cumulative'], cost['cumulative'], decay,
+                              avg_ret, reliability['tail'],reliability['non_tail']]
     
     #Converts hedge_dict to a data grame
     df_hedge_metrics = util.convert_dict_to_df(hedge_dict, get_hm_index_list(full_list))
     return df_hedge_metrics
-
-#TODO: format data to match data 
-# =============================================================================
-# def get_hedge_metrics_to_normalize(returns, equity_bmk, notional_weights, weighted_hedge = False):
-#     '''
-#     Parameters
-#     ----------
-#     returns : dict
-#         dictionary containing returns data of strategies across different frequencies
-#     equity_bmk : string
-#         SPTR, M1WD, SPX
-# 
-#     Returns
-#     -------
-#     Data Frame with specified hedge metrics of strategies. 
-#     '''
-#     #Index weekly returns and obtain weighted hedges
-#     weekly_ret = returns['Weekly'].copy()
-#     
-#     if weighted_hedge == True:
-#         weekly_ret = util.get_weighted_hedges(weekly_ret, notional_weights)
-#         
-#     #create empty dictionary
-#     hedge_dict = {}
-#     
-#     #Calculate only the hedge metrics needed in normalization and ranking
-#     for col in weekly_ret.columns:
-#         benefit = get_benefit_stats(weekly_ret, col)['cumulative']
-#         reliability = get_reliability_stats(weekly_ret, col)
-#         convexity = get_convexity_stats(weekly_ret, col)['cumulative']
-#         cost = get_cost_stats(weekly_ret, col)['cumulative']
-#         decay = get_decay_stats(weekly_ret, col, freq='1W')['half']
-#         
-#         hedge_dict[col] = [benefit,
-#                           reliability['down'],reliability['up'],
-#                           convexity, cost, decay]
-#     
-#     #Converts hedge_dict to a data grame
-#     df_hedge_metrics = util.convert_dict_to_df(hedge_dict,get_hm_index_list(False))
-#     
-#     
-#     
-#     #drop the equity benchmark
-#     #NOTES: Don't need to specifiy equity bmk
-#     df_hedge_metrics.drop(equity_bmk, axis = 1, inplace = True)
-#     
-#     df = df_hedge_metrics.transpose()
-#     return df
-# 
-# 
-# =============================================================================

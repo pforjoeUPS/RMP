@@ -55,11 +55,26 @@ for key in new_data_dict:
     
 #clean up new_data_dict before adding to returns    
 
-#remove first 3 rows from daily dataframe
-new_data_dict['Daily'] = new_data_dict['Daily'].iloc[3:,]
+#remove first n rows from daily dataframe
+n = 1
+new_data_dict['Daily'] = new_data_dict['Daily'].iloc[n:,]
+
+#remove first n rows from weekly dataframe
+n = 1
+new_data_dict['Weekly'] = new_data_dict['Weekly'].iloc[n:,]
+
+#remove first n rows from monthly dataframe
+n = 3
+new_data_dict['Monthly'] = new_data_dict['Monthly'].iloc[n:,]
+
+#remove first n rows from quarterly dataframe
+n = 1
+new_data_dict['Quarterly'] = new_data_dict['Quarterly'].iloc[n:,]
 
 #remove yearly dataframe from dict
 new_data_dict.pop('Yearly')
+
+
 
 #remove last row from weekly dataframe
 new_data_dict['Weekly'] = new_data_dict['Weekly'][:-1]

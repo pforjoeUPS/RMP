@@ -8,7 +8,6 @@ Created on Tue Oct  1 17:59:28 2019
 import pandas as pd
 from ..datamanager import data_manager as dm
 from .hedge_metrics import get_hedge_metrics
-from EquityHedging.analytics import hedge_metrics as hm
 from .import util
 from .returns_stats import get_return_stats
 from .corr_stats import get_corr_analysis
@@ -157,20 +156,20 @@ def get_analysis_sheet_data(df_returns, notional_weights=[], include_fi=False, n
     
     return {'df_list': df_list,'title_list': title_list}
 
-
-
-def get_normal_sheet_data(df_returns,equity_bmk,  notional_weights=[], weighted=False):
+#TODO: Ask powis if this makes sense bc notional only when weighted so do we need to have  2 seperate normal_dict
+def get_normal_sheet_data(df_returns, notional_weights=[], freq='1W', drop_bmk=True, weighted=False):
 
     #get notional weights for weighted strategy returns if not accurate
     if weighted:
         notional_weights = util.check_notional(df_returns, notional_weights)
     
-    #normal data
-    normal_dict = get_normalized_hedge_metrics(df_returns, equity_bmk, notional_weights)
+    normal_dict = get_norm_hedge_metrics(df_returns, notional_weights, freq, drop_bmk, weighted)
+    
     #store analytics and respective titles in lists
     df_list = [normal_dict['Hedge Metrics'], normal_dict['Normalized Data']]
+ 
     
-    title_list = ['Hedging Framework Metrics', 'Ranked Strategies']
+    title_list = ['Hedging Framework Metrics', 'Normalized Hedge Metrics']
     
     return {'df_list': df_list,'title_list': title_list}
 
@@ -220,7 +219,6 @@ def get_data(returns_dict, notional_weights,weighted,freq_list=['Monthly', 'Week
     #return a dictionary containing the data
     return {'corr':corr_dict, 'analytics':analytics_dict, 'hist':hist_dict,
             'quintile': quintile_df, 'annual_returns':annual_df}
-
 
 def get_percentile(df , bucket_format , group='Quintile', bucket_size = 5):
     """
@@ -289,8 +287,6 @@ def get_grouped_data(returns_dict, notional_weights=[], weighted=False, group='Q
         decile = get_percentile(df, util.decile_bucket , group, 10)
         return decile
     
-    
-
 def get_corr_data(returns_dict, freq_list=['Monthly', 'Weekly'], weighted=[False], notional_weights=[], include_fi = False):
     """
     Returns a dataframe containing correlations data
@@ -539,40 +535,52 @@ def get_weighted_data(df_returns, notional_weights=[], include_fi=False, new_str
                                    right_index=True, how='outer')
     return df_weighted_returns
 
-
-
-def get_normalized_hedge_metrics(df_returns, equity_bmk, notional_weights, weighted_hedge = False):
-    '''
-    
+def get_norm_hedge_metrics(df_returns, notional_weights=[], freq='1W', drop_bmk=True, weighted=False, more_metrics=False):
+    """
+    Returns dictionary with hedge metrics and normalized scores
 
     Parameters
     ----------
-    returns : dict
-        returns data
-    equity_bmk : string
-        choose a bmk: SPTR, M1WD, SPX
-    notional_weights : list
-        list with notional weights for each strategu
+    df_returns : dataframe
+    drop_bmk : boolean, optional
+        drop benchmark or not. The default is False.
+    notional_weights : list, optional
+        List with notional weights for each strategy. The default is [].
+    weighted : boolean, optional
+        The default is False.
 
     Returns
     -------
-    norm : data frame
-        includes the normalized data for all strategies in the Strategy and Allocation Equity Hedge Portfolio
-
-    '''
+    dictionary
     
-    if weighted_hedge == True:
+    """
+    
+    if weighted:
          df_returns = util.get_weighted_hedges(df_returns, notional_weights)
          
     #calculates hedgemetrics 
-    df_hm = get_hedge_metrics(df_returns, freq="1M", full_list=False)
-    df_hm.drop(equity_bmk, axis = 1, inplace = True)
-    df_hm= df_hm.transpose()
+    df_hm = get_hedge_metrics(df_returns, freq, full_list=False)
+    
+    #drop the first column (aka the benchmark) if drop_bmk=True
+    if drop_bmk:
+        df_hm.drop(df_hm.columns[0], axis = 1,inplace=True)
+
+    df_hm = df_hm.transpose()
+    
+    col_to_reverse = ['Downside Reliability','Tail Reliability','Non Tail Reliability']
     
     #converts down reliability metrics from negative to positive in order to correctly rank them
-    df_reverse = util.reverse_signs_in_col(df_hm,'Downside Reliability')
-
+    if more_metrics:
+        df_norm_hm = df_hm.copy()
+        for col in col_to_reverse:
+            df_norm_hm = util.reverse_signs_in_col(df_norm_hm,col)
+    else:
+        df_norm_hm = util.reverse_signs_in_col(df_hm,'Downside Reliability')
+        df_norm_hm.drop(['Average Return','Tail Reliability','Non Tail Reliability'], axis=1, inplace=True)
+        df_hm.drop(['Average Return','Tail Reliability','Non Tail Reliability'], axis=1, inplace=True)
+    
     #normalizes the data
-    norm = util.get_normalized_data(df_reverse)
+    df_norm_hm = util.get_normalized_data(df_norm_hm)
+    
     #create dict with hedge met and normalized data
-    return {'Hedge Metrics': df_hm, 'Normalized Data': norm}
+    return {'Hedge Metrics': df_hm, 'Normalized Data': df_norm_hm}
