@@ -455,13 +455,12 @@ def add_bps(vrr_dict, add_back=.0025):
         temp_dict[key] = temp_df
     return temp_dict
 
-def merge_data_dicts(main_dict, dict_list):
+def merge_dicts_list(dict_list):
     '''
     merge main dictionary with a dictionary list
 
     Parameters
     ----------
-    main_dict : dictionary
     dict_list : list
 
     Returns
@@ -470,11 +469,13 @@ def merge_data_dicts(main_dict, dict_list):
         new dictionary created upon being merged with a list
 
     '''
+    main_dict = dict_list[0]
+    dict_list.remove(main_dict)
     #iterate through dictionary 
     for dicts in dict_list:
         
         #merge each dictionary in the list of dictionaries to the main
-        main_dict = merge_dicts(main_dict, dicts)
+        main_dict = merge_dicts(main_dict,dicts)
     return main_dict
 
 def match_dict_columns(main_dict, new_dict):
@@ -545,7 +546,7 @@ def create_update_dict():
     put_spread_dict = get_data_to_update(['99 Rep', 'Short Put', '99%/90% Put Spread'], 'put_spread_data.xlsx', 'Daily', put_spread = True)
     
     #merge vrr and put spread dicts to the new_data dict
-    new_data_dict = merge_data_dicts(new_data_dict,[put_spread_dict, vrr_dict])
+    new_data_dict = merge_dicts_list([new_data_dict,put_spread_dict, vrr_dict])
     
     #get data from returns_data.xlsx into dictionary
     returns_dict = get_equity_hedge_returns(all_data=True)
