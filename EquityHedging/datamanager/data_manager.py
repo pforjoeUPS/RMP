@@ -238,9 +238,10 @@ def create_copy_with_fi(df_returns, equity = 'SPTR', freq='1M', include_fi=False
     """
     strategy_returns = df_returns.copy()
     
+    strategy_returns['VOLA'] = strategy_returns['Dynamic VOLA']
+    strategy_returns['Def Var']=strategy_returns['Def Var (Fri)']*.4 + strategy_returns['Def Var (Mon)']*.3+strategy_returns['Def Var (Wed)']*.3
+        
     if freq == '1W' or freq == '1M':
-        strategy_returns['VOLA'] = (strategy_returns['VOLA I'] + strategy_returns['VOLA II'])/2
-        strategy_returns['Def Var']=strategy_returns['Def Var (Fri)']*.6 + strategy_returns['Def Var (Mon)']*.2+strategy_returns['Def Var (Wed)']*.2
         if include_fi:
             strategy_returns['FI Benchmark'] = (strategy_returns['Long Corp'] + strategy_returns['STRIPS'])/2
             strategy_returns = strategy_returns[[equity, 'FI Benchmark', '99%/90% Put Spread', 
@@ -251,9 +252,6 @@ def create_copy_with_fi(df_returns, equity = 'SPTR', freq='1M', include_fi=False
                                                  'Down Var', 'Vortex', 'VOLA','Dynamic Put Spread',
                                                  'VRR', 'GW Dispersion', 'Corr Hedge','Def Var']]
     else:
-        strategy_returns['VOLA'] = (strategy_returns['VOLA I'] + strategy_returns['VOLA II'])/2
-        strategy_returns['Def Var']=strategy_returns['Def Var (Fri)']*.6 + strategy_returns['Def Var (Mon)']*.2+strategy_returns['Def Var (Wed)']*.2
-
         strategy_returns = strategy_returns[[equity, '99%/90% Put Spread', 'Down Var', 'Vortex',
                                              'VOLA','Dynamic Put Spread','VRR', 
                                              'GW Dispersion', 'Corr Hedge','Def Var']]
