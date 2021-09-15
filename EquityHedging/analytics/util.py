@@ -245,7 +245,7 @@ def get_weighted_strats_df(df_returns, notional_weights=[], include_fi=False, ne
     
     return df_weighted_strats
 
-def get_weighted_hedges(df_returns, notional_weights, include_fi=False, new_strat=False):
+def get_weighted_hedges(df_returns, notional_weights, include_fi=False, new_strat=False, weight_col = 'Weighted Hedges'):
     """
     Return dataframe of weighted hedge returns, with and without newest strategy
 
@@ -270,7 +270,7 @@ def get_weighted_hedges(df_returns, notional_weights, include_fi=False, new_stra
     df_weighted_hedges = df_returns.copy()
     notional_weights = check_notional(df_weighted_hedges,notional_weights)
     strat_weights = get_strat_weights(notional_weights, include_fi)
-    df_weighted_hedges['Weighted Hedges'] = df_weighted_hedges.dot(tuple(strat_weights))
+    df_weighted_hedges[weight_col] = df_weighted_hedges.dot(tuple(strat_weights))
     
     #get weighted hedges w/o new strategy
     if new_strat:
@@ -278,7 +278,7 @@ def get_weighted_hedges(df_returns, notional_weights, include_fi=False, new_stra
         temp_weights = notional_weights.copy()
         temp_weights[len(temp_weights)-1] = 0
         temp_strat_weights = get_strat_weights(temp_weights, include_fi)
-        wgt_hedge_wo_name = 'Weighted Hedges w/o ' + col_list[len(col_list)-1]
+        wgt_hedge_wo_name = weight_col +' w/o ' + col_list[len(col_list)-1]
         df_weighted_hedges[wgt_hedge_wo_name] = df_returns.dot(tuple(temp_strat_weights))
 
     return df_weighted_hedges
@@ -322,7 +322,7 @@ def decile_bucket(x):
     else:
         return 'Top'
 
-
+   
 def get_normalized_data(df):
     '''
 
@@ -387,5 +387,27 @@ def reverse_signs_in_col(df, col_name):
     if col_name in df.columns:
         for x in df_reverse.index:
             df_reverse[col_name][x] = -(df_reverse[col_name][x])
+            
+    return df_reverse
+
+def change_to_neg(df):
+    '''
+    
+
+    Parameters
+    ----------
+    df : data frame
+
+    Returns
+    -------
+    df_reverse : data frame
+        same data frame as in the input, but with downside reliability terms as positive.
+
+    '''
+    df_reverse = df.copy()
+    for col_name in df.columns:
+        for x in df_reverse.index:
+            if df_reverse[col_name][x] > 0:
+                df_reverse[col_name][x] = -(df_reverse[col_name][x])
             
     return df_reverse
