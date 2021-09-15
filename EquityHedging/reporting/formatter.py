@@ -93,6 +93,42 @@ def format_hedge_metrics(anayltics_df, freq='1M'):
                       ,"Decay Days (25% retrace)":lambda x: f"{x:.0f}"
                       ,"Decay Days (10% retrace)":lambda x: f"{x:.0f}"
              }
+    return formatters
+    
+def format_premia_metrics(anayltics_df):
+    """
+    Formats the hedge metrics analytics
+
+    Parameters
+    ----------
+    anayltics_df : dataframe
+        dataframe containing hedge metrics
+    freq : string, optional
+        frequency of hedge metrics computed. The default is '1M'.
+
+    Returns
+    -------
+    formatters : formatter
+
+    """
+    
+   
+    formatters = {"Benefit Count":lambda x: f"{x:.0f}"
+                  ,"Benefit Median":lambda x: f"{x:.2%}"
+                  ,"Benefit Mean":lambda x: f"{x:.2%}"
+                  ,"Benefit Cum":lambda x: f"{x:.2%}"
+                  ,"Correlation to Equity":lambda x: f"{x:.4f}"
+                  ,"Correlation to Rates":lambda x: f"{x:.4f}"
+                  ,"Convexity Count":lambda x: f"{x:.0f}"
+                  ,"Convexity Median":lambda x: f"{x:.2%}"
+                  ,"Convexity Mean":lambda x: f"{x:.2%}"
+                  ,"Convexity Cum":lambda x: f"{x:.2%}"
+                  ,"Cost Count":lambda x: f"{x:.0f}"
+                  ,"Cost Median":lambda x: f"{x:.2%}"
+                  ,"Cost Mean":lambda x: f"{x:.2%}" 
+                  ,"Cost Cum":lambda x: f"{x:.2%}"
+                  ,"Recovery":lambda x: f"{x:.2%}"
+         }
     return formatters    
 
 def format_hm_to_normalize(hm_df, more_metrics=False):
@@ -132,6 +168,32 @@ def format_hm_to_normalize(hm_df, more_metrics=False):
         
     return hm_df.style.\
             format(formatters)
+            
+def format_pm_to_normalize(pm_df):
+    '''
+    
+
+    Parameters
+    ----------
+    df : data frame
+        data from hm.get_hedge_metrics_to_normalize
+
+    Returns
+    -------
+    styler
+
+    '''
+
+    formatters = {"Benefit":lambda x: f"{x:.2%}"
+                  ,"Correlation to Equity":lambda x: f"{x:.4f}"
+                  ,"Correlation to Rates":lambda x: f"{x:.4f}"                  
+                  ,"Convexity":lambda x: f"{x:.2%}"
+                  ,"Cost":lambda x: f"{x:.2%}"
+                  ,"Recovery":lambda x: f"{x:.2%}"
+                  }
+        
+    return pm_df.style.\
+            format(formatters)
 
 def format_normalized_data(df_normal):
     '''
@@ -159,8 +221,6 @@ def format_normalized_data(df_normal):
             apply(highlight_max, subset = pd.IndexSlice[:,col_list[0:]]).\
             format(formatter)
 
-
-     
 def format_notional_weights(df_weights):
     """
     Formats the portfolio weightings
@@ -232,6 +292,10 @@ def get_analytics_styler(analytics_dict, stats='return_stats', freq='1M'):
     elif stats == 'hedge_metrics':
         hedge_formatter = format_hedge_metrics(stats_df, freq)
         analytics_styler = format_row_wise(stats_df.style, hedge_formatter)
+    elif stats == 'premia_metrics':
+        premia_formatter = format_premia_metrics(stats_df)
+        analytics_styler = format_row_wise(stats_df.style, premia_formatter)
+    
     return analytics_styler
 
 def get_notional_styler(df_weights):

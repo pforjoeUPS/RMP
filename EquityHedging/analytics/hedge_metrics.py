@@ -5,10 +5,11 @@ Created on Tue Oct  1 17:59:28 2019
 @author: Powis Forjoe, Maddie Choi, and Zach Wells
 """
 
-from EquityHedging.datamanager import data_manager as dm
-from EquityHedging.analytics.decay import get_decay_days
-from EquityHedging.analytics.util import get_pos_neg_df
-from EquityHedging.analytics import  util
+from ..datamanager import data_manager as dm
+from .decay import get_decay_days
+from .util import get_pos_neg_df
+from .import  util
+from .recovery import compute_decay_pct
 
 HEDGE_METRICS_INDEX = ['Benefit Count','Benefit Median','Benefit Mean','Benefit Cum', 
                        'Downside Reliability','Upside Reliability',
@@ -151,6 +152,31 @@ def get_decay_stats(df_returns, col_name, freq):
     
     return decay_dict
 
+def get_decay_stats_2(df_returns, col_name, freq):
+    """
+    Return decay stats of returns
+
+    Parameters
+    ----------
+    df_returns : dataframe
+    col_name : string
+        strategy name in df_returns.
+    freq : string
+        frequency.
+
+    Returns
+    -------
+    decay_dict : dictionary
+        {key: decay_percent, value: int)
+
+    """
+    
+    #Compute decay values only if data is daily or weekly
+    if dm.switch_freq_int(freq) >= 12:
+        return compute_decay_pct(df_returns, col_name,freq)
+    else:
+        return 0
+    
 def get_cost_stats(df_returns, col_name):
     """
     Return count, mean, mode and cumulative of all negative returns
@@ -281,6 +307,59 @@ def get_hedge_metrics(df_returns, freq="1M", full_list=True):
             convexity = get_convexity_stats(df_returns, col)
             cost = get_cost_stats(df_returns, col)
             decay = get_decay_days(df_returns, col, freq)
+            avg_ret = benefit['cumulative']+ convexity['cumulative'] + cost['cumulative']
+            
+            hedge_dict[col] = [benefit['cumulative'],
+                              reliability['down'],reliability['up'],
+                              convexity['cumulative'], cost['cumulative'], decay,
+                              avg_ret, reliability['tail'],reliability['non_tail']]
+    
+    #Converts hedge_dict to a data grame
+    df_hedge_metrics = util.convert_dict_to_df(hedge_dict, get_hm_index_list(full_list))
+    return df_hedge_metrics
+
+def get_hedge_metrics_2(df_returns, freq="1M", full_list=True):
+    """
+    Return a dataframe of hedge metrics
+
+    Parameters
+    ----------
+    df_returns : dataframe
+    freq : string, optional
+        Frequency. The default is "1M".
+    full_list: boolean, optional
+
+    Returns
+    -------
+    df_hedge_metrics : dataframe
+        
+    """
+    
+    #create empty dictionary
+    hedge_dict = {}
+    
+    if full_list:
+        #loop through columns in df_returns to compute and store the hedge 
+        #metrics for each strategy
+        for col in df_returns.columns:
+            benefit = get_benefit_stats(df_returns, col)
+            reliability = get_reliability_stats(df_returns, col)
+            convexity = get_convexity_stats(df_returns, col)
+            cost = get_cost_stats(df_returns, col)
+            decay = get_decay_stats_2(df_returns, col, freq)
+            
+            hedge_dict[col] = [benefit['count'],benefit['median'],benefit['mean'],
+                               benefit['cumulative'],reliability['down'],reliability['up'],
+                               convexity['count'],convexity['median'],convexity['mean'],
+                               convexity['cumulative'],cost['count'],cost['median'],cost['mean'], 
+                               cost['cumulative'],decay]
+    else:
+        for col in df_returns.columns:
+            benefit = get_benefit_stats(df_returns, col)
+            reliability = get_reliability_stats(df_returns, col,True)
+            convexity = get_convexity_stats(df_returns, col)
+            cost = get_cost_stats(df_returns, col)
+            decay = get_decay_stats_2(df_returns, col, freq)
             avg_ret = benefit['cumulative']+ convexity['cumulative'] + cost['cumulative']
             
             hedge_dict[col] = [benefit['cumulative'],

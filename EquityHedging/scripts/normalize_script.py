@@ -10,13 +10,14 @@ from EquityHedging.analytics import summary
 import pandas as pd
 
 equity_bmk = 'SPTR'
-strat_drop_list = ['99%/90% Put Spread', 'Vortex']
+strat_drop_list = ['99%/90% Put Spread']
 returns = dm.get_equity_hedge_returns(equity_bmk, strat_drop_list = strat_drop_list)
 weekly_ret=returns['Weekly'].copy()
 
 notional_weights = dm.get_notional_weights(returns['Weekly'])
 
-hmf_dict = summary.get_norm_hedge_metrics(weekly_ret, notional_weights, weighted=True)
+hmf_dict_1 = summary.get_norm_hedge_metrics(weekly_ret, notional_weights, weighted=True)
+hmf_dict_2 = summary.get_norm_hedge_metrics_2(weekly_ret, notional_weights, weighted=True)
 
 df_weighted_hedges = util.get_weighted_hedges(weekly_ret, notional_weights)
 def_uni = pd.read_excel(dm.EQUITY_HEDGE_DATA+'def_uni.xlsx',sheet_name='Weekly', index_col=0)
