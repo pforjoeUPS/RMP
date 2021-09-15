@@ -151,7 +151,7 @@ def get_avg_pos_neg(return_series):
     avg_pos = pos_ret.mean()
     avg_neg = neg_ret.mean()
     
-    return avg_pos/avg_neg
+    return avg_pos/abs(avg_neg)
 
 def get_down_stddev(return_series, freq='1M', target=0):
     """
