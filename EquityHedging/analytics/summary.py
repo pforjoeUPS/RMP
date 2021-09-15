@@ -8,6 +8,8 @@ Created on Tue Oct  1 17:59:28 2019
 import pandas as pd
 from ..datamanager import data_manager as dm
 from .hedge_metrics import get_hedge_metrics
+from .hedge_metrics import get_hedge_metrics_2
+from .import premia_metrics as pm
 from .import util
 from .returns_stats import get_return_stats
 from .corr_stats import get_corr_analysis
@@ -220,7 +222,7 @@ def get_data(returns_dict, notional_weights,weighted,freq_list=['Monthly', 'Week
     return {'corr':corr_dict, 'analytics':analytics_dict, 'hist':hist_dict,
             'quintile': quintile_df, 'annual_returns':annual_df}
 
-def get_percentile(df , bucket_format , group='Quintile', bucket_size = 5):
+def get_percentile(returns_df , bucket_format=util.bucket , group='Quintile', bucket_size = 5, strat='equity'):
     """
     Computes Quintile or Decile based  on the given input. 
     
@@ -241,14 +243,20 @@ def get_percentile(df , bucket_format , group='Quintile', bucket_size = 5):
         DESCRIPTION.
 
     """
+    df = returns_df.copy()
     col_list = list(df.columns)
-    equity = col_list[0]
-    df['percentile'] = df[equity].rank(pct = True).mul(bucket_size)
+    if strat == 'equity':
+        strat = col_list[0]
+    else:
+        col_list.remove(strat)
+        col_list = [strat]+col_list
+        df = df[col_list]
+    df['percentile'] = df[strat].rank(pct = True).mul(bucket_size)
     df[group] = df['percentile'].apply(bucket_format)
     groups= df.groupby(group).mean()
-    groups = groups.sort_values(by=[equity], ascending=True)
+    groups = groups.sort_values(by=[strat], ascending=True)
     groups.drop(['percentile'], axis=1, inplace=True)
-    groups.index.names = [equity + ' Monthly Returns Ranking']
+    groups.index.names = [strat + ' Monthly Returns Ranking']
     return groups
 
 #TODO: Add frequency (Monthly, Weekly)  
@@ -280,7 +288,7 @@ def get_grouped_data(returns_dict, notional_weights=[], weighted=False, group='Q
         df = util.get_weighted_hedges(df, notional_weights)
             
     if group == 'Quintile':       
-        quintile = get_percentile(df, util.bucket, group, 5)
+        quintile = get_percentile(df)
         return quintile
     
     elif group == 'Decile':
@@ -584,3 +592,103 @@ def get_norm_hedge_metrics(df_returns, notional_weights=[], freq='1W', drop_bmk=
     
     #create dict with hedge met and normalized data
     return {'Hedge Metrics': df_hm, 'Normalized Data': df_norm_hm}
+
+def get_norm_hedge_metrics_2(df_returns, notional_weights=[], freq='1W', drop_bmk=True, weighted=False, more_metrics=False):
+    """
+    Returns dictionary with hedge metrics and normalized scores
+
+    Parameters
+    ----------
+    df_returns : dataframe
+    drop_bmk : boolean, optional
+        drop benchmark or not. The default is False.
+    notional_weights : list, optional
+        List with notional weights for each strategy. The default is [].
+    weighted : boolean, optional
+        The default is False.
+
+    Returns
+    -------
+    dictionary
+    
+    """
+    
+    if weighted:
+         df_returns = util.get_weighted_hedges(df_returns, notional_weights)
+         
+    #calculates hedgemetrics 
+    df_hm = get_hedge_metrics_2(df_returns, freq, full_list=False)
+    
+    #drop the first column (aka the benchmark) if drop_bmk=True
+    if drop_bmk:
+        df_hm.drop(df_hm.columns[0], axis = 1,inplace=True)
+
+    df_hm = df_hm.transpose()
+    
+    col_to_reverse = ['Downside Reliability','Tail Reliability','Non Tail Reliability']
+    
+    #converts down reliability metrics from negative to positive in order to correctly rank them
+    if more_metrics:
+        df_norm_hm = df_hm.copy()
+        for col in col_to_reverse:
+            df_norm_hm = util.reverse_signs_in_col(df_norm_hm,col)
+    else:
+        df_norm_hm = util.reverse_signs_in_col(df_hm,'Downside Reliability')
+        df_norm_hm.drop(['Average Return','Tail Reliability','Non Tail Reliability'], axis=1, inplace=True)
+        df_hm.drop(['Average Return','Tail Reliability','Non Tail Reliability'], axis=1, inplace=True)
+    
+    #normalizes the data
+    df_norm_hm = util.get_normalized_data(df_norm_hm)
+    
+    #create dict with hedge met and normalized data
+    return {'Hedge Metrics': df_hm, 'Normalized Data': df_norm_hm}
+
+def get_norm_premia_metrics(df_returns, notional_weights=[], freq='1W', drop_bmk=True, weighted=False, more_metrics=False):
+    """
+    Returns dictionary with hedge metrics and normalized scores
+
+    Parameters
+    ----------
+    df_returns : dataframe
+    drop_bmk : boolean, optional
+        drop benchmark or not. The default is False.
+    notional_weights : list, optional
+        List with notional weights for each strategy. The default is [].
+    weighted : boolean, optional
+        The default is False.
+
+    Returns
+    -------
+    dictionary
+    
+    """
+    
+    if weighted:
+         df_returns = util.get_weighted_hedges(df_returns, notional_weights)
+         
+    #calculates hedgemetrics 
+    df_pm = pm.get_premia_metrics(df_returns, freq, full_list=False)
+    
+    #drop the first column (aka the benchmark) if drop_bmk=True
+    if drop_bmk:
+        df_pm.drop(df_pm.columns[0], axis = 1,inplace=True)
+        df_pm.drop(df_pm.columns[0], axis = 1,inplace=True)
+        
+    df_pm = df_pm.transpose()
+    df_premia = df_pm.copy()
+    df_premia_corr = df_pm.copy()
+    df_premia_corr = df_premia_corr[['Correlation to Equity','Correlation to Rates']]
+    df_premia = df_premia[['Benefit', 'Convexity', 'Cost', 'Recovery']]
+    
+    df_premia_corr = util.change_to_neg(df_premia_corr)
+    df_norm_premia_corr = util.get_normalized_data(df_premia_corr)
+    
+    # df_premia = util.reverse_signs_in_col(df_premia,'Recovery')
+    df_norm_premia = util.get_normalized_data(df_premia)
+    
+    df_norm_pm = dm.merge_data_frames(df_norm_premia, df_norm_premia_corr)
+    df_norm_pm = df_norm_pm[pm.get_premia_index_list(False)]
+    
+    
+    #create dict with hedge met and normalized data
+    return {'Premia Metrics': df_pm, 'Normalized Data': df_norm_pm}
