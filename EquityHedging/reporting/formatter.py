@@ -8,8 +8,6 @@ Created on Mon Mar 29 12:30:00 2021
 import pandas as pd
 from ..datamanager.data_manager import switch_freq_int
 
-#TODO: separate code into dataframe stylers vs formats
-#TODO: Update to include new analytics once code merged
 def format_return_stats(anayltics_df):
     """
     Formats the return stats analytics
@@ -43,7 +41,6 @@ def format_return_stats(anayltics_df):
                   }
     return formatters 
 
-#TODO: Update to include new analytics once code merged
 def format_hedge_metrics(anayltics_df, freq='1M'):
     """
     Formats the hedge metrics analytics
@@ -98,6 +95,72 @@ def format_hedge_metrics(anayltics_df, freq='1M'):
              }
     return formatters    
 
+def format_hm_to_normalize(hm_df, more_metrics=False):
+    '''
+    
+
+    Parameters
+    ----------
+    df : data frame
+        data from hm.get_hedge_metrics_to_normalize
+
+    Returns
+    -------
+    styler
+
+    '''
+
+    if more_metrics:
+        formatters = {"Benefit":lambda x: f"{x:.2%}"
+                  ,"Downside Reliability":lambda x: f"{x:.4f}"
+                  ,"Upside Reliability":lambda x: f"{x:.4f}"                      
+                  ,"Convexity":lambda x: f"{x:.2%}"
+                  ,"Cost":lambda x: f"{x:.2%}"
+                  ,"Decay":lambda x: f"{x:.0f}"
+                  ,"Average Return":lambda x: f"{x:.2%}"
+                  ,"Tail Reliability":lambda x: f"{x:.4f}"
+                  ,"Non Tail Reliability":lambda x: f"{x:.4f}"                      
+                  }
+    else:
+        formatters = {"Benefit":lambda x: f"{x:.2%}"
+                  ,"Downside Reliability":lambda x: f"{x:.4f}"
+                  ,"Upside Reliability":lambda x: f"{x:.4f}"                      
+                  ,"Convexity":lambda x: f"{x:.2%}"
+                  ,"Cost":lambda x: f"{x:.2%}"
+                  ,"Decay":lambda x: f"{x:.0f}"
+                  }
+        
+    return hm_df.style.\
+            format(formatters)
+
+def format_normalized_data(df_normal):
+    '''
+    
+
+    Parameters
+    ----------
+    df_normal : data frame
+
+    Returns
+    -------
+    df_normal : data frame
+        rounds data to 2 decimal points
+
+    '''
+    
+    formatter = {}
+    col_list = list(df_normal.columns)
+    
+    for strat in col_list:
+        formatter[strat] = "{:.4f}"
+        
+    return df_normal.style.\
+            apply(highlight_min, subset = pd.IndexSlice[:,col_list[0:]]).\
+            apply(highlight_max, subset = pd.IndexSlice[:,col_list[0:]]).\
+            format(formatter)
+
+
+     
 def format_notional_weights(df_weights):
     """
     Formats the portfolio weightings
@@ -229,6 +292,7 @@ def color_neg_red(val):
     color = 'red' if val < 0 else 'black'
     return 'color: %s' % color
 
+#TODO:fix bug with daily data
 def get_returns_styler(df_returns):
     """
     Returns styler for returns dataframe
@@ -238,7 +302,7 @@ def get_returns_styler(df_returns):
     df_returns : dataframe
 
     Returns
-    -------
+    -------                           
     styler
 
     """
@@ -299,8 +363,42 @@ def highlight_max(s):
     """
     
     is_max = s == s.max()
-    return ['background-color: yellow' if v else '' for v in is_max]
+    return ['background-color: green' if v else '' for v in is_max]
+    
+def highlight_max_ret(s):
+    """
+    Highlight the maximum in a Series yellow
 
+    Parameters
+    ----------
+    s : series
+
+    Returns
+    -------
+    list
+
+    """
+    
+    is_max = s == s.max()
+    return ['background-color: yellow' if v else '' for v in is_max]
+  
+def highlight_min(s):
+    """
+    Highlight the minimum in a Series red
+
+    Parameters
+    ----------
+    s : series
+
+    Returns
+    -------
+    list
+
+    """
+    
+    is_min = s == s.min()
+    return ['background-color: red' if v else '' for v in is_min]
+    
 def get_dollar_ret_styler(dollar_returns):
     """
     Returns styler for returns dataframe
@@ -330,5 +428,5 @@ def get_dollar_ret_styler(dollar_returns):
     #return styler
     return data.style.\
             applymap(color_neg_pos).\
-            apply(highlight_max, subset = pd.IndexSlice[:,col_list[1:]]).\
+            apply(highlight_max_ret, subset = pd.IndexSlice[:,col_list[1:]]).\
             format(formatter)
