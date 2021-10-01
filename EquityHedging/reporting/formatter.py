@@ -292,6 +292,7 @@ def color_neg_red(val):
     color = 'red' if val < 0 else 'black'
     return 'color: %s' % color
 
+#TODO:fix bug with daily data
 def get_returns_styler(df_returns):
     """
     Returns styler for returns dataframe
