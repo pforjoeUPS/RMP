@@ -361,7 +361,7 @@ def compute_recovery_pct(price_series, freq='1W', look_fwd_days=60, look_fwd_day
         #compute mean of recovery list
         return 1-np.mean(recovery_list)
 
-def compute_decay_pct(df_returns,col, freq='1W', look_fwd_days=60, look_fwd_days_2=120, du_range = 260,days=[20,60,120]):
+def compute_decay_pct(df_returns,col, freq='1W', look_fwd_days=60, look_fwd_days_2=120, du_range = 260,days=[20,40,60,80,100,120]):
     """
     Compute decay percent given a price series
 
