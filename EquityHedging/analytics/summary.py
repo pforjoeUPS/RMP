@@ -220,7 +220,7 @@ def get_data(returns_dict, notional_weights,weighted,freq_list=['Monthly', 'Week
     return {'corr':corr_dict, 'analytics':analytics_dict, 'hist':hist_dict,
             'quintile': quintile_df, 'annual_returns':annual_df}
 
-def get_percentile(df , bucket_format , group='Quintile', bucket_size = 5):
+def get_percentile(returns_df , bucket_format=util.bucket , group='Quintile', bucket_size = 5, strat='equity'):
     """
     Computes Quintile or Decile based  on the given input. 
     
@@ -241,14 +241,20 @@ def get_percentile(df , bucket_format , group='Quintile', bucket_size = 5):
         DESCRIPTION.
 
     """
+    df = returns_df.copy()
     col_list = list(df.columns)
-    equity = col_list[0]
-    df['percentile'] = df[equity].rank(pct = True).mul(bucket_size)
+    if strat == 'equity':
+        strat = col_list[0]
+    else:
+        col_list.remove(strat)
+        col_list = [strat]+col_list
+        df = df[col_list]
+    df['percentile'] = df[strat].rank(pct = True).mul(bucket_size)
     df[group] = df['percentile'].apply(bucket_format)
     groups= df.groupby(group).mean()
-    groups = groups.sort_values(by=[equity], ascending=True)
+    groups = groups.sort_values(by=[strat], ascending=True)
     groups.drop(['percentile'], axis=1, inplace=True)
-    groups.index.names = [equity + ' Monthly Returns Ranking']
+    groups.index.names = [strat + ' Monthly Returns Ranking']
     return groups
 
 #TODO: Add frequency (Monthly, Weekly)  
@@ -280,7 +286,7 @@ def get_grouped_data(returns_dict, notional_weights=[], weighted=False, group='Q
         df = util.get_weighted_hedges(df, notional_weights)
             
     if group == 'Quintile':       
-        quintile = get_percentile(df, util.bucket, group, 5)
+        quintile = get_percentile(df)
         return quintile
     
     elif group == 'Decile':
