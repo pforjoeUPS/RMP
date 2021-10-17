@@ -146,10 +146,10 @@ def get_analysis_sheet_data(df_returns, notional_weights=[], include_fi=False, n
         weightings_title = 'Portfolio Weightings'
     
     #store analytics and respective titles in lists
-    df_list = [corr_dict['full'][0], corr_dict["equity_down"][0], 
+    df_list = [corr_dict["full"][0], corr_dict["equity_down"][0], 
                corr_dict["equity_up"][0], df_weights, analytics_dict['return_stats'],analytics_dict['hedge_metrics']]
     
-    title_list = [corr_dict['corr'][1], corr_dict["equity_down"][1], 
+    title_list = [corr_dict["full"][1], corr_dict["equity_down"][1], 
                corr_dict["equity_up"][1], weightings_title,
                'Return Statistics ({} Returns)'.format(freq_string),
                'Hedging Framework Metrics ({} Returns)'.format(freq_string)]
@@ -258,7 +258,7 @@ def get_percentile(returns_df , bucket_format=util.bucket , group='Quintile', bu
     return groups
 
 #TODO: Add frequency (Monthly, Weekly)  
-def get_grouped_data(returns_dict, notional_weights=[], weighted=False, group='Quintile'):
+def get_grouped_data(returns_dict, notional_weights=[], weighted=False, group='Quintile', strat='equity'):
     """
     Returns a dataframe containing average returns of each strategy grouped 
     into quintiles based on the equity returns ranking.
@@ -286,11 +286,11 @@ def get_grouped_data(returns_dict, notional_weights=[], weighted=False, group='Q
         df = util.get_weighted_hedges(df, notional_weights)
             
     if group == 'Quintile':       
-        quintile = get_percentile(df)
+        quintile = get_percentile(df, strat=strat)
         return quintile
     
     elif group == 'Decile':
-        decile = get_percentile(df, util.decile_bucket , group, 10)
+        decile = get_percentile(df, util.decile_bucket , group, 10,strat)
         return decile
     
 def get_corr_data(returns_dict, freq_list=['Monthly', 'Weekly'], weighted=[False], notional_weights=[], include_fi = False):
