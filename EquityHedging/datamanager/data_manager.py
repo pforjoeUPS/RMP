@@ -52,7 +52,8 @@ def merge_data_frames(df_main, df_new):
     """
     
     df = pd.merge(df_main, df_new, left_index=True, right_index=True, how='outer')
-    df.dropna(inplace=True)
+    df = df.fillna(0)
+    # df.dropna(inplace=True)
     return df
 
 def format_data(df_index, freq="1M"):
