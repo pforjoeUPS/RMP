@@ -36,10 +36,13 @@ def merge_dicts(main_dict, new_dict):
     for key in main_dict:
         df_main = main_dict[key]
         df_new = new_dict[key]
-        merged_dict[key] = merge_data_frames(df_main, df_new)
+        if key == 'Daily':
+            merged_dict[key] = merge_data_frames(df_main, df_new, True)
+        else:
+            merged_dict[key] = merge_data_frames(df_main, df_new)
     return merged_dict
 
-def merge_data_frames(df_main, df_new):
+def merge_data_frames(df_main, df_new,fillzeros=False):
     """
     Merge df_new to df_main and drop na values
     
@@ -52,8 +55,10 @@ def merge_data_frames(df_main, df_new):
     """
     
     df = pd.merge(df_main, df_new, left_index=True, right_index=True, how='outer')
-    df = df.fillna(0)
-    # df.dropna(inplace=True)
+    if fillzeros:
+        df = df.fillna(0)
+    else:
+        df.dropna(inplace=True)
     return df
 
 def format_data(df_index, freq="1M"):
