@@ -37,7 +37,7 @@ def get_report_path(report_name):
     return cwd + reports_fp + file_name
     
 def get_equity_hedge_report(report_name, returns_dict, notional_weights=[],
-                            include_fi=False, new_strat=False, weighted=False, selloffs=False):
+                            include_fi=False, new_strat=False, weighted=False, selloffs=False, freq_list=['Monthly', 'Weekly']):
     """
     Generate equity hedge analysis report
     
@@ -164,7 +164,7 @@ def get_rolling_cum_ret_report(report_name, df_returns, freq, notional_weights):
     print_report_info(report_name, file_path)
     writer.save()
 
-def generate_strat_report(report_name, returns_dict, selloffs=False):
+def generate_strat_report(report_name, returns_dict, selloffs=False, freq_list=['Monthly', 'Weekly']):
     """
     Generate strat analysis report
     
@@ -186,9 +186,6 @@ def generate_strat_report(report_name, returns_dict, selloffs=False):
     #get file path and create excel writer
     file_path = get_report_path(report_name)
     writer = pd.ExcelWriter(file_path,engine='xlsxwriter')
-    
-    #create list of frequencies we want to create the report for
-    freq_list = ['Monthly', 'Weekly']
     
     #loop through frequencies
     for freq in freq_list:
