@@ -332,7 +332,12 @@ def set_hist_return_sheet(writer,df_returns,sheet_name='Daily Historical Returns
     #    title_format = set_title_format(workbook)
     
     #percent format
-    pct_fmt = formats.set_number_format(workbook,num_format='0.00%')
+    pct_fmt_pos = formats.set_number_format(workbook,num_format='0.00%')
+    #percent format with dark red text.
+    pct_fmt_neg = workbook.add_format({'num_format': '0.00%',
+                                    'bold':False,
+                                    'font_color': '#9C0006'})
+    
     #date format
     date_fmt = formats.set_number_format(workbook, num_format='mm/dd/yyyy')
         
@@ -340,8 +345,23 @@ def set_hist_return_sheet(writer,df_returns,sheet_name='Daily Historical Returns
     col_dim = col + df_returns.shape[1]
     #    worksheet.write(row-1, 1, sheet_name, title_format)
     df_returns.to_excel(writer, sheet_name=sheet_name, startrow=row , startcol=col)   
-    worksheet.conditional_format(row+1,col+1, row_dim, col_dim,{'type':'no_blanks',
-                                  'format':pct_fmt})
+    # worksheet.conditional_format(row+1,col+1, row_dim, col_dim,{'type':'no_blanks',
+    #                               'format':pct_fmt})
+    worksheet.conditional_format(row+1,col+1, row_dim, col_dim,
+                                 {'type':'cell',
+                                  'criteria': '<',
+                                  'value': 0,
+                                  'format':pct_fmt_neg})
+    worksheet.conditional_format(row+1,col+1, row_dim, col_dim,
+                                 {'type':'cell',
+                                  'criteria': '>',
+                                  'value': 0,
+                                  'format':pct_fmt_pos})
+    worksheet.conditional_format(row+1,col+1, row_dim, col_dim,
+                                 {'type':'cell',
+                                  'criteria': '=',
+                                  'value': 0,
+                                  'format':pct_fmt_pos})
     worksheet.conditional_format(row,col, row_dim, col,{'type':'no_blanks',
                                   'format':date_fmt})
     return 0
@@ -435,13 +455,13 @@ def set_hist_sheet(writer, df_hist):
     #write data into worksheet
     df_hist.to_excel(writer, sheet_name=title, startrow=row , startcol=1)   
     
-    #format for correlation matrices
+    #format for dates
     worksheet.conditional_format(row+1,col+1, row_dim, col+2,{'type':'no_blanks',
                               'format':date_fmt})
-    #format ann. ret and ann. vol to percent
+    #format equity returns
     worksheet.conditional_format(row+1,col+3, row_dim, col+3,{'type':'no_blanks',
                               'format':pct_fmt})
-    #format ann. ret and ann. vol to percent
+    #format strat returns
     worksheet.conditional_format(row+1,col+4, row_dim, col_dim,
                                  {'type':'cell',
                                   'criteria': '<',

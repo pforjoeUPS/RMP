@@ -16,7 +16,7 @@ NEW_DATA = RETURNS_DATA_FP + 'new_strats\\'
 UPDATE_DATA = RETURNS_DATA_FP + 'update_strats\\'
 EQUITY_HEDGE_DATA = RETURNS_DATA_FP + 'ups_equity_hedge\\'
 NEW_DATA_COL_LIST = ['SPTR', 'SX5T','M1WD', 'Long Corp', 'STRIPS', 'Down Var',
-                    'Vortex', 'VOLA I', 'VOLA II','Dynamic Put Spread',
+                    'Vortex', 'VOLA I', 'VOLA II','Dynamic VOLA','Dynamic Put Spread',
                     'GW Dispersion', 'Corr Hedge','Def Var (Mon)', 'Def Var (Fri)', 'Def Var (Wed)']
 
 def merge_dicts(main_dict, new_dict):
@@ -36,10 +36,13 @@ def merge_dicts(main_dict, new_dict):
     for key in main_dict:
         df_main = main_dict[key]
         df_new = new_dict[key]
-        merged_dict[key] = merge_data_frames(df_main, df_new)
+        if key == 'Daily':
+            merged_dict[key] = merge_data_frames(df_main, df_new, True)
+        else:
+            merged_dict[key] = merge_data_frames(df_main, df_new)
     return merged_dict
 
-def merge_data_frames(df_main, df_new):
+def merge_data_frames(df_main, df_new,fillzeros=False):
     """
     Merge df_new to df_main and drop na values
     
@@ -52,7 +55,10 @@ def merge_data_frames(df_main, df_new):
     """
     
     df = pd.merge(df_main, df_new, left_index=True, right_index=True, how='outer')
-    df.dropna(inplace=True)
+    if fillzeros:
+        df = df.fillna(0)
+    else:
+        df.dropna(inplace=True)
     return df
 
 def format_data(df_index, freq="1M"):

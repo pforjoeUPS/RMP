@@ -52,9 +52,9 @@ def get_corr_analysis(df_returns, notional_weights=[], include_fi=False, weighte
     title = 'Correlation of ' + str(len(strategy_returns)) + ' Historical Observations (' + data_range + ')'
 
     corr_dict = {
-        "corr": [strategy_returns.corr(), title],
-        "corr_up": [equity_up.corr(), title + ' where ' + equity_id + ' > 0'],
-        "corr_down": [equity_down.corr(), title + ' where ' + equity_id + ' < 0']
+        "full": [strategy_returns.corr(), title],
+        "equity_up": [equity_up.corr(), title + ' where ' + equity_id + ' > 0'],
+        "equity_down": [equity_down.corr(), title + ' where ' + equity_id + ' < 0']
         }
     
     return corr_dict
