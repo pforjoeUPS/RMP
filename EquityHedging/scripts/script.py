@@ -43,7 +43,7 @@ if check_corr:
     corr_freq_list = ['Daily', 'Weekly', 'Monthly']
     corr_dict = summary.get_corr_data(returns, corr_freq_list, weighted, notional_weights, include_fi)
     data = corr_dict['Monthly']
-    corr_df = data[0]['corr'][0]
+    corr_df = data[0]['full'][0]
     plots.draw_corrplot(corr_df)
     plots.draw_heatmap(corr_df, False)
 
