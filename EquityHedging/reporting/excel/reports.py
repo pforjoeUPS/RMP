@@ -37,7 +37,7 @@ def get_report_path(report_name):
     return cwd + reports_fp + file_name
     
 def get_equity_hedge_report(report_name, returns_dict, notional_weights=[],
-                            include_fi=False, new_strat=False, weighted=False, selloffs=False):
+                            include_fi=False, new_strat=False, weighted=False, selloffs=False, grouped = False):
     """
     Generate equity hedge analysis report
     
@@ -122,11 +122,12 @@ def get_equity_hedge_report(report_name, returns_dict, notional_weights=[],
        
     #     #Create Sheet
     #     sheets.set_normal_sheet(writer, normal_data)
-        
-    quintile_df = summary.get_grouped_data(returns_dict, notional_weights, weighted = True, group = 'Quintile')
-    decile_df = summary.get_grouped_data(returns_dict, notional_weights, weighted = True, group = 'Decile')
     
-    sheets.set_grouped_data_sheet(writer, quintile_df, decile_df)
+    if grouped:
+        quintile_df = summary.get_grouped_data(returns_dict, notional_weights, weighted = True, group = 'Quintile')
+        decile_df = summary.get_grouped_data(returns_dict, notional_weights, weighted = True, group = 'Decile')
+        
+        sheets.set_grouped_data_sheet(writer, quintile_df, decile_df)
     
     print_report_info(report_name, file_path)
     writer.save()
