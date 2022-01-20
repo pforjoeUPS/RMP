@@ -76,8 +76,9 @@ if check_ann:
 #run report
 equity_hedge_report = 'equity_hedge_analysis_test'
 selloffs = True
+grouped = True
 # start = time.time()
-rp.get_equity_hedge_report(equity_hedge_report, returns,notional_weights, include_fi, new_strat, weighted[0], selloffs, grouped = True)
+rp.get_equity_hedge_report(equity_hedge_report, returns,notional_weights, include_fi, new_strat, weighted[0], selloffs, grouped)
 # end = time.time()
 # print(end - start)
 
