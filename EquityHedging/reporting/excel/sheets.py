@@ -6,7 +6,7 @@ Created on Tue Oct  1 17:59:28 2019
 """
 
 import pandas as pd
-from .import formats
+from EquityHedging.reporting.excel import formats
 
 def set_analysis_sheet(writer, data_dict, sheet_name, spaces=3):
     """
@@ -522,4 +522,49 @@ def set_corr_rank_sheet(writer,corr_pack,dates):
         worksheet.conditional_format(row+1,col+1, row_dim, col_dim,{'type':'3_color_scale'})
         
         row = row_dim + spaces + 1
+    return 0
+
+def set_monthly_ret_table_sheet(writer, table, strategy, sheet_name = "Monthly Returns Table"):
+    workbook = writer.book
+    cell_format = formats.set_worksheet_format(workbook)
+    df_empty = pd.DataFrame()
+    df_empty.to_excel(writer, sheet_name=sheet_name, startrow=0, startcol=0)
+    worksheet = writer.sheets[sheet_name]
+    worksheet.set_column(0, 1000, 21, cell_format)
+    row = 1
+    col = 0
+    
+    title_format = formats.set_title_format(workbook)
+    
+    #percent format
+    pct_fmt_pos = formats.set_number_format(workbook,num_format='0.00%')
+    #percent format with dark red text.
+    
+    pct_fmt_neg = workbook.add_format({'num_format': '0.00%',
+                                    'bold':False,
+                                    'font_color': '#9C0006'})
+    
+    row_dim = row + table.shape[0]
+    col_dim = col + table.shape[1]
+
+    table.to_excel(writer, sheet_name=sheet_name, startrow=row , startcol=col)   
+    # worksheet.conditional_format(row+1,col+1, row_dim, col_dim,{'type':'no_blanks',
+    #                               'format':pct_fmt})
+    worksheet.write(row-1, col+1, strategy, title_format)
+    worksheet.conditional_format(row+1,col+1, row_dim, col_dim,
+                                 {'type':'cell',
+                                  'criteria': '<',
+                                  'value': 0,
+                                  'format':pct_fmt_neg})
+    worksheet.conditional_format(row+1,col+1, row_dim, col_dim,
+                                 {'type':'cell',
+                                  'criteria': '>',
+                                  'value': 0,
+                                  'format':pct_fmt_pos})
+    worksheet.conditional_format(row+1,col+1, row_dim, col_dim,
+                                 {'type':'cell',
+                                  'criteria': '=',
+                                  'value': 0,
+                                  'format':pct_fmt_pos})
+   
     return 0

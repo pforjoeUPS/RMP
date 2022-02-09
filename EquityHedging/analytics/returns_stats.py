@@ -7,7 +7,7 @@ Created on Tue Oct  1 17:59:28 2019
 
 
 import numpy as np
-from ..datamanager import data_manager as dm
+from EquityHedging.datamanager import data_manager as dm
 from EquityHedging.analytics import  util
 
 

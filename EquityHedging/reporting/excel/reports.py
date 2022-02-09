@@ -6,12 +6,12 @@ Created on Tue Oct  1 17:59:28 2019
 """
 
 import pandas as pd
-from ...analytics import summary
-from ...analytics import util
-from ...analytics.corr_stats import get_corr_rank_data
-from ...analytics.historical_selloffs import get_hist_sim_table
-from ...datamanager import data_manager as dm
-from .import sheets
+from EquityHedging.analytics import summary
+from EquityHedging.analytics import util
+from EquityHedging.analytics.corr_stats import get_corr_rank_data
+from EquityHedging.analytics.historical_selloffs import get_hist_sim_table
+from EquityHedging.datamanager import data_manager as dm
+from EquityHedging.reporting.excel import sheets
 import os
 
 
@@ -37,7 +37,7 @@ def get_report_path(report_name):
     return cwd + reports_fp + file_name
     
 def get_equity_hedge_report(report_name, returns_dict, notional_weights=[],
-                            include_fi=False, new_strat=False, weighted=False, selloffs=False, grouped = False):
+                            include_fi=False, new_strat=False, weighted=False, selloffs=False, grouped = False, monthly_ret_table = True):
     """
     Generate equity hedge analysis report
     
@@ -128,7 +128,12 @@ def get_equity_hedge_report(report_name, returns_dict, notional_weights=[],
         decile_df = summary.get_grouped_data(returns_dict, notional_weights, weighted = True, group = 'Decile')
         
         sheets.set_grouped_data_sheet(writer, quintile_df, decile_df)
-    
+        
+    if monthly_ret_table:
+        strat = dm.get_strategy_for_table()
+        table = dm.month_ret_table(returns_dict, strategy = strat)
+        sheets.set_monthly_ret_table_sheet(writer, table, strat)
+        
     print_report_info(report_name, file_path)
     writer.save()
 

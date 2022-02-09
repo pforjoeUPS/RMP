@@ -72,13 +72,17 @@ if check_quint:
 check_ann = False
 if check_ann:
     annual_dollar_returns = summary.get_annual_dollar_returns(returns, notional_weights)
-
+    
+strategy = "VOLA"
+monthly_ret_table = True
+if monthly_ret_table:
+    month_returns_table = dm.month_ret_table(returns, strategy = strategy)
 #run report
 equity_hedge_report = 'equity_hedge_analysis_test'
 selloffs = True
 grouped = True
 # start = time.time()
-rp.get_equity_hedge_report(equity_hedge_report, returns,notional_weights, include_fi, new_strat, weighted[0], selloffs, grouped)
+rp.get_equity_hedge_report(equity_hedge_report, returns,notional_weights, include_fi, new_strat, weighted[0], selloffs, grouped, monthly_ret_table)
 # end = time.time()
 # print(end - start)
 

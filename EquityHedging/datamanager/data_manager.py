@@ -6,8 +6,10 @@ Created on Tue Oct  1 17:59:28 2019
 """
 
 import pandas as pd
+import numpy as np
 import os
 from datetime import datetime as dt
+from EquityHedging.analytics import returns_stats as rs
 
 CWD = os.getcwd()
 RETURNS_DATA_FP = CWD +'\\EquityHedging\\data\\'
@@ -227,6 +229,9 @@ def get_notional_weights(df_returns):
     list
     """
     return [float(input('notional value (Billions) for ' + col + ': ')) for col in df_returns.columns]    
+
+def get_strategy_for_table():
+        return str(input('Strategy for the Monthly Returns Table : '))
 
 def create_copy_with_fi(df_returns, equity = 'SPTR', freq='1M', include_fi=False):
     """
@@ -560,3 +565,62 @@ def create_update_dict():
         
     #return a dictionary
     return new_data_dict
+
+
+def ann_ret_from_monthly(strat_monthly_returns, strategy):
+    monthly_ret = strat_monthly_returns.copy()
+    monthly_ret["Year"] = monthly_ret.index.get_level_values('year')
+    
+    years = np.unique(monthly_ret["Year"])
+    yr_ret = []
+    for i in range(0, len(years)):
+        monthly_ret_by_yr = monthly_ret.loc[monthly_ret.Year == years[i]][strategy]
+        ann_ret =rs.get_ann_return(monthly_ret_by_yr)
+        yr_ret.append(ann_ret)
+        
+    yr_ret = pd.DataFrame( yr_ret, columns = ["Yearly"], index = list(years)) 
+    return yr_ret
+    
+
+
+def month_ret_table(returns_dict, strategy):
+    '''
+    #just use monthly data and annualize using get ann return in return stats.py
+
+    Parameters
+    ----------
+    returns_dict : Dictionary
+        dictionary with Daily, Monthly, Yearly, Quarterly returns
+        
+    strategy : String
+        Strategy name
+
+    Returns
+    -------
+    Data Frame
+
+    '''
+    #pull monthly returns from dictionary 
+    month_ret = pd.DataFrame(returns_dict['Monthly'][strategy])
+    
+    #create monthly return data frame with index of years 
+    month_ret['year'] = month_ret.index.year
+    month_ret['month'] = month_ret.index.month_name().str[:3]
+    
+    #change monthly returns into a table with x axis as months and y axis as years
+    strat_monthly_returns = month_ret.groupby(['year', 'month']).sum()
+    yr_ret = ann_ret_from_monthly(strat_monthly_returns, strategy)
+       
+    month_table = strat_monthly_returns.unstack()
+    
+    #drop first row index
+    month_table = month_table.droplevel(level = 0, axis = 1)
+    
+    #re order columns
+    month_table = month_table[["Jan", "Feb", "Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]]
+    
+    #Join yearly returns to the monthly returns table
+    table = pd.concat([month_table, yr_ret],  axis=1)
+    return table
+
+    
