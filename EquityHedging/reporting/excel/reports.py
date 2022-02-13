@@ -130,9 +130,8 @@ def get_equity_hedge_report(report_name, returns_dict, notional_weights=[],
         sheets.set_grouped_data_sheet(writer, quintile_df, decile_df)
         
     if monthly_ret_table:
-        strat = dm.get_strategy_for_table()
-        table = dm.month_ret_table(returns_dict, strategy = strat)
-        sheets.set_monthly_ret_table_sheet(writer, table, strat)
+        table_dict = dm.all_strat_month_ret_table(returns_dict['Monthly'])
+        sheets.set_monthly_ret_table_sheet(writer, table_dict)
         
     print_report_info(report_name, file_path)
     writer.save()

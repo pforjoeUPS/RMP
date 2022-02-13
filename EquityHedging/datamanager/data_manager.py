@@ -230,8 +230,6 @@ def get_notional_weights(df_returns):
     """
     return [float(input('notional value (Billions) for ' + col + ': ')) for col in df_returns.columns]    
 
-def get_strategy_for_table():
-        return str(input('Strategy for the Monthly Returns Table : '))
 
 def create_copy_with_fi(df_returns, equity = 'SPTR', freq='1M', include_fi=False):
     """
@@ -578,12 +576,12 @@ def ann_ret_from_monthly(strat_monthly_returns, strategy):
         ann_ret =rs.get_ann_return(monthly_ret_by_yr)
         yr_ret.append(ann_ret)
         
-    yr_ret = pd.DataFrame( yr_ret, columns = ["Yearly"], index = list(years)) 
+    yr_ret = pd.DataFrame( yr_ret, columns = ["Year"], index = list(years)) 
     return yr_ret
     
 
 
-def month_ret_table(returns_dict, strategy):
+def month_ret_table(returns_df, strategy):
     '''
     #just use monthly data and annualize using get ann return in return stats.py
 
@@ -601,7 +599,7 @@ def month_ret_table(returns_dict, strategy):
 
     '''
     #pull monthly returns from dictionary 
-    month_ret = pd.DataFrame(returns_dict['Monthly'][strategy])
+    month_ret = pd.DataFrame(returns_df[strategy])
     
     #create monthly return data frame with index of years 
     month_ret['year'] = month_ret.index.year
@@ -621,6 +619,34 @@ def month_ret_table(returns_dict, strategy):
     
     #Join yearly returns to the monthly returns table
     table = pd.concat([month_table, yr_ret],  axis=1)
+    table.index.names = [strategy]
+
     return table
 
     
+
+def all_strat_month_ret_table(returns_df, strat_list = ['Down Var','VOLA', 'Dynamic Put Spread', 'VRR', 'GW Dispersion','Corr Hedge','Def Var']):
+    '''
+    #just use monthly data and annualize using get ann return in return stats.py
+
+    Parameters
+    ----------
+    returns_dict : Dictionary
+        dictionary with Daily, Monthly, Yearly, Quarterly returns
+        
+    strategy : String
+        Strategy name
+
+    Returns
+    -------
+    Data Frame
+
+    '''
+    month_table = {}
+    for strat in strat_list:
+       month_table[strat] = month_ret_table(returns_df, strat)
+
+    return month_table
+
+    
+

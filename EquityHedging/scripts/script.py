@@ -15,6 +15,7 @@ from EquityHedging.analytics import summary
 from EquityHedging.reporting.excel import reports as rp
 from EquityHedging.reporting import formatter as plots
 
+
 #import returns data
 equity_bmk = 'SPTR'
 include_fi = False
@@ -76,7 +77,7 @@ if check_ann:
 strategy = "VOLA"
 monthly_ret_table = True
 if monthly_ret_table:
-    month_returns_table = dm.month_ret_table(returns, strategy = strategy)
+    month_returns_table = dm.month_ret_table(returns['Monthly'], strategy = strategy)
 #run report
 equity_hedge_report = 'equity_hedge_analysis_test'
 selloffs = True
