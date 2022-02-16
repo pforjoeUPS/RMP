@@ -10,6 +10,7 @@ import numpy as np
 import os
 from datetime import datetime as dt
 from EquityHedging.analytics import returns_stats as rs
+import EquityHedging.analytics.summary as sm
 
 CWD = os.getcwd()
 RETURNS_DATA_FP = CWD +'\\EquityHedging\\data\\'
@@ -583,12 +584,10 @@ def ann_ret_from_monthly(strat_monthly_returns, strategy):
 
 def month_ret_table(returns_df, strategy):
     '''
-    #just use monthly data and annualize using get ann return in return stats.py
 
     Parameters
     ----------
-    returns_dict : Dictionary
-        dictionary with Daily, Monthly, Yearly, Quarterly returns
+    returns_df : Data Frame
         
     strategy : String
         Strategy name
@@ -625,28 +624,38 @@ def month_ret_table(returns_df, strategy):
 
     
 
-def all_strat_month_ret_table(returns_df, strat_list = ['Down Var','VOLA', 'Dynamic Put Spread', 'VRR', 'GW Dispersion','Corr Hedge','Def Var']):
+def all_strat_month_ret_table(returns_df, notional_weights = [], include_fi = False, new_strat = False):
     '''
-    #just use monthly data and annualize using get ann return in return stats.py
+    
 
     Parameters
     ----------
-    returns_dict : Dictionary
-        dictionary with Daily, Monthly, Yearly, Quarterly returns
-        
-    strategy : String
-        Strategy name
+    returns_df : Data Frame
+        Data Frame containing monthly returns data
+    strat_list : List
+        DESCRIPTION. The default is ['Down Var','VOLA', 'Dynamic Put Spread', 'VRR', 'GW Dispersion','Corr Hedge','Def Var'].
 
     Returns
     -------
-    Data Frame
+    month_table : TYPE
+        DESCRIPTION.
 
     '''
-    month_table = {}
+    #make strat list the columns of returns_df
+    #get weighted strats and weighted hedges 
+    returns_with_weighted = sm.get_weighted_data(returns_df,notional_weights,include_fi, new_strat)
+    
+    #create strat list from the columns of the returns data
+    strat_list = returns_with_weighted.columns
+    
+    #create moth table dict
+    month_table_dict = {}
+    
+    #loop through each strategy in the list and get the monthly returns table
     for strat in strat_list:
-       month_table[strat] = month_ret_table(returns_df, strat)
+       month_table_dict[strat] = month_ret_table(returns_with_weighted, strat)
 
-    return month_table
+    return month_table_dict
 
     
 

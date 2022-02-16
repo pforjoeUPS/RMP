@@ -78,6 +78,7 @@ strategy = "VOLA"
 monthly_ret_table = True
 if monthly_ret_table:
     month_returns_table = dm.month_ret_table(returns['Monthly'], strategy = strategy)
+    full_month_returns_table = dm.all_strat_month_ret_table(returns['Monthly'])
 #run report
 equity_hedge_report = 'equity_hedge_analysis_test'
 selloffs = True

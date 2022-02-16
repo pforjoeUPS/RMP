@@ -523,18 +523,17 @@ def set_corr_rank_sheet(writer,corr_pack,dates):
         
         row = row_dim + spaces + 1
     return 0
-#['SPTR','Down Var','VOLA', 'Dynamic Put Spread', 'VRR', 'GW Dispersion','Corr Hedge','Def Var']
 
 def set_monthly_ret_table_sheet(writer, table_dict, 
                                 sheet_name = "Monthly Returns Table"):
-    #want all strats into one sheet
+
     workbook = writer.book
     cell_format = formats.set_worksheet_format(workbook)
     df_empty = pd.DataFrame()
     df_empty.to_excel(writer, sheet_name=sheet_name, startrow=0, startcol=0)
     worksheet = writer.sheets[sheet_name]
     #21 is the width of the cell
-    worksheet.set_column(0, 1000, 16, cell_format)
+    worksheet.set_column(0, 1000, 17, cell_format)
     row = 1
     col = 0
     spaces = 3
@@ -546,6 +545,8 @@ def set_monthly_ret_table_sheet(writer, table_dict,
     pct_fmt_neg = workbook.add_format({'num_format': '0.00%',
                                     'bold':False,
                                     'font_color': '#9C0006'})
+    
+    #get the list of strategies that are in the dictionary
     strat_list = list(table_dict.keys())
     
     for strat in strat_list:
