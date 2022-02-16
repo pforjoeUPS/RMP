@@ -43,7 +43,7 @@ def test_max_3m_dd():
 
 def test_avg_pos_neg():
     result = rs.get_avg_pos_neg(RETURNS_DF['SPTR'])
-    assert result == pytest.approx(-0.91666901),"Avg Pos Neg should be -0.91666901"
+    assert result == pytest.approx(0.91666901),"Avg Pos Neg should be -0.91666901"
 
 def test_down_stddev():
     result = rs.get_down_stddev(RETURNS_DF['SPTR'])
