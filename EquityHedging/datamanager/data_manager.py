@@ -624,7 +624,7 @@ def month_ret_table(returns_df, strategy):
 
     
 
-def all_strat_month_ret_table(returns_df, notional_weights = [], include_fi = False, new_strat = False):
+def all_strat_month_ret_table(returns_df, notional_weights = [], include_fi = False, new_strat = False, weighted = False):
     '''
     
 
@@ -642,18 +642,22 @@ def all_strat_month_ret_table(returns_df, notional_weights = [], include_fi = Fa
 
     '''
     #make strat list the columns of returns_df
-    #get weighted strats and weighted hedges 
-    returns_with_weighted = sm.get_weighted_data(returns_df,notional_weights,include_fi, new_strat)
+    
+    if weighted == True:
+        
+        #get weighted strats and weighted hedges 
+        returns_df = sm.get_weighted_data(returns_df,notional_weights,include_fi, new_strat)
+        
     
     #create strat list from the columns of the returns data
-    strat_list = returns_with_weighted.columns
+    strat_list = returns_df.columns
     
     #create moth table dict
     month_table_dict = {}
     
     #loop through each strategy in the list and get the monthly returns table
     for strat in strat_list:
-       month_table_dict[strat] = month_ret_table(returns_with_weighted, strat)
+       month_table_dict[strat] = month_ret_table(returns_df, strat)
 
     return month_table_dict
 
