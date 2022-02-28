@@ -26,18 +26,18 @@ n = 0
 new_data_dict['Weekly'] = new_data_dict['Weekly'].iloc[n:,]
 
 #remove last row from weekly dataframe
-# n =1
-# new_data_dict['Weekly'] = new_data_dict['Weekly'][:-n]
+n = 1
+new_data_dict['Weekly'] = new_data_dict['Weekly'][:-n]
 
 # #remove first n rows from monthly dataframe
 n = 0
 new_data_dict['Monthly'] = new_data_dict['Monthly'].iloc[n:,]
 
 # #remove first n rows from quarterly dataframe
-n = 1
+n = 0
 new_data_dict['Quarterly'] = new_data_dict['Quarterly'].iloc[n:,]
 
-n = 1
+n = 0
 new_data_dict['Yearly'] = new_data_dict['Yearly'].iloc[n:,]
 
 #remove last row from quarterly dataframe
