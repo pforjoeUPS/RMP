@@ -658,7 +658,7 @@ def all_strat_month_ret_table(returns_df, notional_weights = [], include_fi = Fa
     #loop through each strategy in the list and get the monthly returns table
     for strat in strat_list:
        month_table_dict[strat] = month_ret_table(returns_df, strat)
-
+       month_table_dict[strat] = month_table_dict[strat][:-1]
     return month_table_dict
 
     
