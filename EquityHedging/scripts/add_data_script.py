@@ -18,11 +18,15 @@ returns_dict = dm.get_equity_hedge_returns(all_data=True)
 new_data_dict = dm.create_update_dict()
 
 # #remove first n rows from daily dataframe
-n = 3662
+n = 3719
 new_data_dict['Daily'] = new_data_dict['Daily'].iloc[n:,]
 
+#remove last row from returns dict weekly dataframe
+n =1
+returns_dict['Weekly'] = returns_dict['Weekly'][:-n]
+
 # #remove first n rows from weekly dataframe
-n = 43
+n = 4
 new_data_dict['Weekly'] = new_data_dict['Weekly'].iloc[n:,]
 
 #remove last row from weekly dataframe
@@ -30,11 +34,11 @@ new_data_dict['Weekly'] = new_data_dict['Weekly'].iloc[n:,]
 # new_data_dict['Weekly'] = new_data_dict['Weekly'][:-n]
 
 # #remove first n rows from monthly dataframe
-n = 10
+n = 1
 new_data_dict['Monthly'] = new_data_dict['Monthly'].iloc[n:,]
 
 # #remove first n rows from quarterly dataframe
-n = 3
+n = 0
 new_data_dict['Quarterly'] = new_data_dict['Quarterly'].iloc[n:,]
 
 #remove last row from quarterly dataframe
