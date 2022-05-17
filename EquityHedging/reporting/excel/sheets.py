@@ -8,7 +8,7 @@ Created on Tue Oct  1 17:59:28 2019
 import pandas as pd
 from .import formats
 
-def set_analysis_sheet(writer, data_dict, sheet_name, spaces=3):
+def set_analysis_sheet(writer, data_dict, sheet_name, spaces=3,include_fi=False):
     """
     Create excel sheet with:
     Correlation Matrices
@@ -41,6 +41,9 @@ def set_analysis_sheet(writer, data_dict, sheet_name, spaces=3):
     worksheet.set_column(0, 1000, 22, cell_format)
     row = 2
     col = 1
+    jump=0
+    if include_fi:
+        jump=2
     
     #get formats for worksheet
     #title format
@@ -67,7 +70,7 @@ def set_analysis_sheet(writer, data_dict, sheet_name, spaces=3):
         except AttributeError:
             pass
         #format for correlation matrices
-        if n<3:
+        if n<(jump+3):
             #format numbers to digits
             worksheet.conditional_format(row+1,col+1, row_dim, col_dim,{'type':'duplicate',
                                       'format':digits_fmt})
@@ -75,7 +78,7 @@ def set_analysis_sheet(writer, data_dict, sheet_name, spaces=3):
             worksheet.conditional_format(row+1,col+1, row_dim, col_dim,{'type':'3_color_scale'})
         
         #format for weights
-        elif n==3:
+        elif n==(jump+3):
             if len(df_list[n]) != 0:
                 #format notional weights to currency
                 worksheet.conditional_format(row+1,col+1, row+1, col_dim,{'type':'no_blanks',
@@ -85,7 +88,7 @@ def set_analysis_sheet(writer, data_dict, sheet_name, spaces=3):
                                           'format':pct_fmt})
             
         #format for return stats
-        elif n==4:
+        elif n==(jump+4):
             #format ann. ret and ann. vol to percent
             worksheet.conditional_format(row+1,col+1, row+2, col_dim,{'type':'no_blanks',
                                       'format':pct_fmt})

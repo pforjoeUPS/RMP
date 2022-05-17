@@ -164,7 +164,7 @@ def get_rolling_cum_ret_report(report_name, df_returns, freq, notional_weights):
     print_report_info(report_name, file_path)
     writer.save()
 
-def generate_strat_report(report_name, returns_dict, selloffs=False, freq_list=['Monthly', 'Weekly']):
+def generate_strat_report(report_name, returns_dict, selloffs=False, freq_list=['Monthly', 'Weekly'], include_fi=False):
     """
     Generate strat analysis report
     
@@ -193,14 +193,14 @@ def generate_strat_report(report_name, returns_dict, selloffs=False, freq_list=[
         
         #get analytics
         analysis_data = summary.get_analysis_sheet_data(returns_dict[freq], 
-                                                        freq=dm.switch_string_freq(freq))
+                                                        freq=dm.switch_string_freq(freq),include_fi=include_fi)
 
         corr_sheet =  freq + ' Analysis'
         return_sheet = freq + ' Historical Returns'
         spaces = 3
         
         #create sheets
-        sheets.set_analysis_sheet(writer,analysis_data, corr_sheet, spaces)
+        sheets.set_analysis_sheet(writer,analysis_data, corr_sheet, spaces, include_fi)
         sheets.set_hist_return_sheet(writer,returns_dict[freq], return_sheet)
 
     if selloffs:

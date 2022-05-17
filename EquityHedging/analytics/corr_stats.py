@@ -46,19 +46,34 @@ def get_corr_analysis(df_returns, notional_weights=[], include_fi=False, weighte
     equity_up = (strategy_returns[strategy_returns[equity_id] > 0])
     equity_down = (strategy_returns[strategy_returns[equity_id] < 0])
 
-    #TODO: fix bug in title
     dates = get_min_max_dates(strategy_returns)
     data_range = str(dates['start']).split()[0] + ' to ' + str(dates['end']).split()[0]
-    title = 'Correlation of ' + str(len(strategy_returns)) + ' Historical Observations (' + data_range + ')'
-
+    
     corr_dict = {
-        "full": [strategy_returns.corr(), title],
-        "equity_up": [equity_up.corr(), title + ' where ' + equity_id + ' > 0'],
-        "equity_down": [equity_down.corr(), title + ' where ' + equity_id + ' < 0']
+        "full": [strategy_returns.corr(), get_title_string(strategy_returns, data_range,equity_id)],
+        "equity_up": [equity_up.corr(), get_title_string(equity_up, data_range,equity_id,'index_up')],
+        "equity_down": [equity_down.corr(), get_title_string(equity_up, data_range,equity_id,'index_down')]
         }
     
+    if include_fi:
+        fi_id = col_list[1]
+        fi_up = (strategy_returns[strategy_returns[fi_id] > 0])
+        fi_down = (strategy_returns[strategy_returns[fi_id] < 0])
+        corr_dict["fi_up"] = [fi_up.corr(), get_title_string(fi_up, data_range,fi_id,'index_up')]
+        corr_dict["fi_down"] = [fi_down.corr(), get_title_string(fi_up, data_range,fi_id,'index_down')]
+
     return corr_dict
 
+
+def get_title_string(returns_df,data_range,eq_fi_id,scenario='full'):
+    title = 'Correlation of {} Historical Observations ({})'.format(str(len(returns_df)), data_range)
+    
+    if scenario == 'index_up':
+        return title + 'where ' + eq_fi_id + ' > 0'
+    elif scenario == 'index_down':
+        return title + 'where ' + eq_fi_id + ' < 0'
+    else:
+        return title
 #TODO: make flexible to compute corrs w/o weighted strats/hedges
 #TODO: add comments
 def get_corr_rank_data(df_returns,buckets, notional_weights=[],include_fi=False):

@@ -148,13 +148,24 @@ def get_analysis_sheet_data(df_returns, notional_weights=[], include_fi=False, n
         weightings_title = 'Portfolio Weightings'
     
     #store analytics and respective titles in lists
-    df_list = [corr_dict["full"][0], corr_dict["equity_down"][0], 
+    df_list, title_list = [], []
+    if include_fi:
+        df_list = [corr_dict["full"][0], corr_dict["equity_down"][0], 
+               corr_dict["equity_up"][0],corr_dict["fi_down"][0], 
+               corr_dict["fi_up"][0], df_weights, analytics_dict['return_stats'],analytics_dict['hedge_metrics']]
+        title_list = [corr_dict["full"][1], corr_dict["equity_down"][1], 
+                   corr_dict["equity_up"][1],corr_dict["fi_down"][1], 
+                   corr_dict["fi_up"][1], weightings_title,
+                   'Return Statistics ({} Returns)'.format(freq_string),
+                   'Hedging Framework Metrics ({} Returns)'.format(freq_string)]
+    else:
+        df_list = [corr_dict["full"][0], corr_dict["equity_down"][0], 
                corr_dict["equity_up"][0], df_weights, analytics_dict['return_stats'],analytics_dict['hedge_metrics']]
     
-    title_list = [corr_dict["full"][1], corr_dict["equity_down"][1], 
-               corr_dict["equity_up"][1], weightings_title,
-               'Return Statistics ({} Returns)'.format(freq_string),
-               'Hedging Framework Metrics ({} Returns)'.format(freq_string)]
+        title_list = [corr_dict["full"][1], corr_dict["equity_down"][1], 
+                   corr_dict["equity_up"][1], weightings_title,
+                   'Return Statistics ({} Returns)'.format(freq_string),
+                   'Hedging Framework Metrics ({} Returns)'.format(freq_string)]
     
     return {'df_list': df_list,'title_list': title_list}
 
