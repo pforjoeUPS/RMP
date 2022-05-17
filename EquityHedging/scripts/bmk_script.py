@@ -30,14 +30,16 @@ bmk_df = bmk_df[['LBUSTRUU Index', 'NDUEACWF Index', 'SPGSCITR Index', 'HFRXM In
                  'HFRXCA Index', 'HFRXEMC Index', 'HFRXCOM Index',
                  'SECTGLMA Index', 'SECTNEUT Index','SECTMSTR Index',
                  'HEDGGLMA Index', 'HEDGNAV Index','HEDGNEUT Index','HEDGCONV Index',
-                 'CSLAB Index', 'CSLABED Index', 'CSLABGS Index']]
+                 'CSLAB Index', 'CSLABED Index', 'CSLABGS Index', 'CSLABMF Index',
+                 'CSLABT15 Index', 'CSLABT18 Index', 'CSLABT20 Index']]
 bmk_df.columns = ['US Agg Bond', 'MSCI ACWI TR','S&P GSCI TR', 'HFRX Macro/CTA', 'HFRI Macro Total Index',
                   'Eqty Risk Prem', 'Eqty Risk Prem-Hedged','SGI Cross Asset Trend', 'SG Trend Index',
                   'HFRX Abs Ret', 'HFRX Eqty Hedge', 'HFRX Equal Wgtd', 'HFRX Event Driven',
                   'HFRX RV FI Conv Arb', 'HFRX EM', 'HFRX Macro Comdty',
                   'CS AllHedge Global Macro', 'CS AllHedge Eqty Mkt Neutral','CS AllHedge Multi_Strat',
                   'CS Global Macro', 'CS Hedge Fund', 'CS Eqty Mkt Neutral', 'CS Conv Arb',
-                 'CS Liq Alt Beta', 'CS Event Driven', 'CS Global Strat']
+                 'CS Liq Alt Beta', 'CS Event Driven', 'CS Global Strat', 'CS Managed Fut',
+                 'CS Managed Fut-15% vol','CS Managed Fut-18% vol', 'CS Managed Fut-20% vol']
 bmk_df = dm.format_data(bmk_df)
 
 liq_alts_df = dm.get_real_cols(pd.read_excel(dm.RETURNS_DATA_FP + 'liq_alts\\mgr_data_m.xlsx', sheet_name='bny',index_col=0))
@@ -102,4 +104,4 @@ for col in liq_alts_sp.columns:
     
 selloffs = False
 include_fi = True
-rp.generate_strat_report('macro', {'Monthly': data}, selloffs, ['Monthly'],include_fi)
+rp.generate_strat_report('bmks', {'Monthly': data}, selloffs, ['Monthly'],include_fi)
