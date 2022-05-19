@@ -271,7 +271,7 @@ def get_percentile(returns_df , bucket_format=util.bucket , group='Quintile', bu
     return groups
 
 #TODO: Add frequency (Monthly, Weekly)  
-def get_grouped_data(returns_dict, notional_weights=[], weighted=False, group='Quintile', strat='equity'):
+def get_grouped_data(returns_df, notional_weights=[], weighted=False, group='Quintile', strat='equity'):
     """
     Returns a dataframe containing average returns of each strategy grouped 
     into quintiles based on the equity returns ranking.
@@ -292,7 +292,7 @@ def get_grouped_data(returns_dict, notional_weights=[], weighted=False, group='Q
 
     """
     
-    df = returns_dict['Monthly'].copy()
+    df = returns_df.copy()
     
     if weighted == True:
         util.check_notional(df, notional_weights)
