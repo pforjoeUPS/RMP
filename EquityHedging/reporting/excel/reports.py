@@ -99,9 +99,17 @@ def get_equity_hedge_report(report_name, returns_dict, notional_weights=[],
         #get daily returns
         try:
             daily_returns = returns_dict['Daily'].copy()
-        
+            hs_notional_weights = notional_weights.copy()
+            
+            if include_fi:
+                col_list = list(daily_returns.columns)
+                
+                #remove fi weight
+                if len(col_list) != len(hs_notional_weights):
+                    hs_notional_weights.pop(1)
+                    
             #compute historical selloffs
-            hist_df = summary.get_hist_sim_table(daily_returns, notional_weights, weighted)
+            hist_df = summary.get_hist_sim_table(daily_returns, hs_notional_weights, weighted)
             
             #create sheets
             sheets.set_hist_sheet(writer, hist_df)
