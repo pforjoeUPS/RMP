@@ -19,7 +19,7 @@ NEW_DATA_COL_LIST = ['SPTR', 'SX5T','M1WD', 'Long Corp', 'STRIPS', 'Down Var',
                     'Vortex', 'VOLA I', 'VOLA II','Dynamic VOLA','Dynamic Put Spread',
                     'GW Dispersion', 'Corr Hedge','Def Var (Mon)', 'Def Var (Fri)', 'Def Var (Wed)']
 
-def merge_dicts(main_dict, new_dict):
+def merge_dicts(main_dict, new_dict, fillzeros = True):
     """
     Merge new_dict to main_dict
     
@@ -37,7 +37,7 @@ def merge_dicts(main_dict, new_dict):
         df_main = main_dict[key]
         df_new = new_dict[key]
         if key == 'Daily':
-            merged_dict[key] = merge_data_frames(df_main, df_new, True)
+            merged_dict[key] = merge_data_frames(df_main, df_new, fillzeros = fillzeros)
         else:
             merged_dict[key] = merge_data_frames(df_main, df_new)
     return merged_dict
@@ -539,7 +539,7 @@ def create_update_dict():
 
     '''
     #Import data from bloomberg into dataframe and create dictionary with different frequencies
-    new_data_dict = get_data_to_update(NEW_DATA_COL_LIST, 'ups_data.xlsx')
+    new_ups_data_dict = get_data_to_update(NEW_DATA_COL_LIST, 'ups_data.xlsx')
     
     #get vrr data
     vrr_dict = get_data_to_update(['VRR'], 'vrr_tracks_data.xlsx')
@@ -551,8 +551,10 @@ def create_update_dict():
     put_spread_dict = get_data_to_update(['99 Rep', 'Short Put', '99%/90% Put Spread'], 'put_spread_data.xlsx', 'Daily', put_spread = True)
     
     #merge vrr and put spread dicts to the new_data dict
-    new_data_dict = merge_dicts_list([new_data_dict,put_spread_dict, vrr_dict])
-    
+    new_data_dict = merge_dicts(new_ups_data_dict, put_spread_dict, False)
+    new_data_dict =  merge_dicts(new_data_dict, vrr_dict)   
+
+
     #get data from returns_data.xlsx into dictionary
     returns_dict = get_equity_hedge_returns(all_data=True)
     
