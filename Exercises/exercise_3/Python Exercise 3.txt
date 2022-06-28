@@ -1,0 +1,32 @@
+Python Exercise 3
+Aim: Create Equity Hedge Analysis reports for different strategies using different benchmarks
+
+notional_weights = [13,1,1,1,1,1,.25,.25]
+*notional_weights are in Billions
+1. Create an equity hedge analysis report including the Credit Suisse Defensive Skew strategy:
+	make the benchmark 'SPTR'
+	notional = 1 Billion	
+	strategy_list = ['Defensive Skew]
+	equity_hedge_report = 'equity_hedge_analysis_cs_def_skew'
+
+2. Create an equity hedge analysis report including the Credit Suisse SMI Dispersion strategy:
+	make the benchmark 'M1WD'	
+	notional = 0.5
+	strategy_list = ['SMI Dispersion']
+	equity_hedge_report = 'equity_hedge_analysis_cs_dispersion'
+
+3. Create equity hedge analysis reports including the 3 CS strategies separately
+	make the benchmark 'M1WD'
+	each strategy has notiional 0.5 Billion
+	
+	a. strategy_list = ['FVA', 'Def Term Premia', 'FVA + Def Term Premia']
+	equity_hedge_report = 'equity_hedge_analysis_cs1'
+
+	b. strategy_list = ['FVA']
+	equity_hedge_report = 'equity_hedge_analysis_FVA'
+
+	c. strategy_list = ['Def Term Premia']
+	equity_hedge_report = 'equity_hedge_analysis_def_term_premia'
+
+	d. strategy_list = ['FVA + Def Term Premia']
+	equity_hedge_report = 'equity_hedge_analysis_fva_term'
