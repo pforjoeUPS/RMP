@@ -232,6 +232,7 @@ def create_copy_with_fi(df_returns, equity = 'SPTR', freq='1M', include_fi=False
     """
     Combine columns of df_returns together to get:
     FI Benchmark (avg of Long Corps and STRIPS)
+    ***Change to VOLA (Dynamic VOLA) ????????
     VOLA (avg of VOLA I and VOLA II)
     Def Var (weighted avg Def Var (Fri): 60%, Def Var (Mon):20%, Def Var (Wed): 20%)
     
@@ -244,22 +245,22 @@ def create_copy_with_fi(df_returns, equity = 'SPTR', freq='1M', include_fi=False
     """
     strategy_returns = df_returns.copy()
     
-    strategy_returns['VOLA'] = strategy_returns['Dynamic VOLA']
+    strategy_returns['VOLA 3'] = strategy_returns['Dynamic VOLA']
     strategy_returns['Def Var']=strategy_returns['Def Var (Fri)']*.4 + strategy_returns['Def Var (Mon)']*.3+strategy_returns['Def Var (Wed)']*.3
         
     if freq == '1W' or freq == '1M':
         if include_fi:
             strategy_returns['FI Benchmark'] = (strategy_returns['Long Corp'] + strategy_returns['STRIPS'])/2
             strategy_returns = strategy_returns[[equity, 'FI Benchmark', '99%/90% Put Spread', 
-                                                 'Down Var', 'Vortex', 'VOLA','Dynamic Put Spread',
+                                                 'Down Var', 'Vortex', 'VOLA 3','Dynamic Put Spread',
                                                  'VRR', 'GW Dispersion', 'Corr Hedge','Def Var']]
         else:
             strategy_returns = strategy_returns[[equity, '99%/90% Put Spread', 
-                                                 'Down Var', 'Vortex', 'VOLA','Dynamic Put Spread',
+                                                 'Down Var', 'Vortex', 'VOLA 3','Dynamic Put Spread',
                                                  'VRR', 'GW Dispersion', 'Corr Hedge','Def Var']]
     else:
         strategy_returns = strategy_returns[[equity, '99%/90% Put Spread', 'Down Var', 'Vortex',
-                                             'VOLA','Dynamic Put Spread','VRR', 
+                                             'VOLA 3','Dynamic Put Spread','VRR', 
                                              'GW Dispersion', 'Corr Hedge','Def Var']]
     
     return strategy_returns
@@ -357,7 +358,7 @@ def get_prices_df(df_returns):
             df_prices[col][i] = (df_returns[col][i] + 1) * df_prices[col][i-1]
     return df_prices
 
-def get_new_strategy_returns_data(report_name, sheet_name, strategy_list=[]):
+def get_new_strategy_returns_data(report_name, sheet_name, strategy_list=[], freq = '1D'):
     """
     dataframe of stratgy returns
     
@@ -377,7 +378,7 @@ def get_new_strategy_returns_data(report_name, sheet_name, strategy_list=[]):
         df_strategy.index = pd.to_datetime(df_strategy.index)
     except TypeError:
         pass
-    df_strategy = df_strategy.resample('1D').ffill()
+    df_strategy = df_strategy.resample(freq).ffill()
     new_strategy_returns = df_strategy.copy()
     if 'Index' in sheet_name:
         new_strategy_returns = df_strategy.pct_change(1)
@@ -559,4 +560,105 @@ def create_update_dict():
     new_data_dict = match_dict_columns(returns_dict, new_data_dict)
         
     #return a dictionary
+
     return new_data_dict
+
+
+def compound_ret_from_monthly(strat_monthly_returns, strategy):
+    monthly_ret = strat_monthly_returns.copy()
+    monthly_ret["Year"] = monthly_ret.index.get_level_values('year')
+    
+    years = np.unique(monthly_ret["Year"])
+    yr_ret = []
+    for i in range(0, len(years)):
+        #isolate monthly returns for single year
+        monthly_ret_by_yr = monthly_ret.loc[monthly_ret.Year == years[i]][strategy]
+        #calculate compound return
+        comp_ret = prod(1 + monthly_ret_by_yr) - 1
+        yr_ret.append(comp_ret)
+        
+    yr_ret = pd.DataFrame( yr_ret, columns = ["Year"], index = list(years)) 
+    return yr_ret
+    
+
+
+def month_ret_table(returns_df, strategy):
+    '''
+
+    Parameters
+    ----------
+    returns_df : Data Frame
+        
+    strategy : String
+        Strategy name
+
+    Returns
+    -------
+    Data Frame
+
+    '''
+    #pull monthly returns from dictionary 
+    month_ret = pd.DataFrame(returns_df[strategy])
+    
+    #create monthly return data frame with index of years 
+    month_ret['year'] = month_ret.index.year
+    month_ret['month'] = month_ret.index.month_name().str[:3]
+    
+    #change monthly returns into a table with x axis as months and y axis as years
+    strat_monthly_returns = month_ret.groupby(['year', 'month']).sum()
+    yr_ret = compound_ret_from_monthly(strat_monthly_returns, strategy)
+       
+    month_table = strat_monthly_returns.unstack()
+    
+    #drop first row index
+    month_table = month_table.droplevel(level = 0, axis = 1)
+    
+    #re order columns
+    month_table = month_table[["Jan", "Feb", "Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]]
+    
+    #Join yearly returns to the monthly returns table
+    table = pd.concat([month_table, yr_ret],  axis=1)
+    table.index.names = [strategy]
+
+    return table
+
+    
+
+def all_strat_month_ret_table(returns_df, notional_weights = [], include_fi = False, new_strat = False, weighted = False):
+    '''
+    
+
+    Parameters
+    ----------
+    returns_df : Data Frame
+        Data Frame containing monthly returns data
+    strat_list : List
+        DESCRIPTION. The default is ['Down Var','VOLA', 'Dynamic Put Spread', 'VRR', 'GW Dispersion','Corr Hedge','Def Var'].
+
+    Returns
+    -------
+    month_table : TYPE
+        DESCRIPTION.
+
+    '''
+    #make strat list the columns of returns_df
+    
+    if weighted == True:
+        
+        #get weighted strats and weighted hedges 
+        returns_df = sm.get_weighted_data(returns_df,notional_weights,include_fi, new_strat)
+        
+    
+    #create strat list from the columns of the returns data
+    strat_list = returns_df.columns
+    
+    #create moth table dict
+    month_table_dict = {}
+    
+    #loop through each strategy in the list and get the monthly returns table
+    for strat in strat_list:
+       month_table_dict[strat] = month_ret_table(returns_df, strat)
+       #month_table_dict[strat] = month_table_dict[strat][:-1]
+    return month_table_dict
+
+    
