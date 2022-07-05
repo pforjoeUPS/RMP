@@ -2,7 +2,7 @@
 """
 Created on Mon Jul 26 22:35:26 2021
 
-@author: gcz5chn
+@author: Maddie Choi
 """
 import os
 os.chdir("..\..")
@@ -17,10 +17,11 @@ returns_dict = dm.get_equity_hedge_returns(all_data=True)
 #create dictionary that contains updated returns
 new_data_dict = dm.create_update_dict()
 
-#TODO: make into method
+
+#TODO: make into method in data_manager.py
 for key in returns_dict:
     
-    #create returns fata frame
+    #create returns data frame
     new_ret_df = new_data_dict[key]
     ret_df = returns_dict[key]
     
@@ -48,9 +49,9 @@ for key in returns_dict:
     new_data_dict[key] = new_ret_df
     
     
-
+################old way
 # # #remove first n rows from daily dataframe
-# n = 2
+# n = 83
 # new_data_dict['Daily'] = new_data_dict['Daily'].iloc[n:,]
 
 # # #remove last n rows from daily dataframe

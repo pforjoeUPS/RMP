@@ -237,6 +237,7 @@ def create_copy_with_fi(df_returns, equity = 'SPTR', freq='1M', include_fi=False
     """
     Combine columns of df_returns together to get:
     FI Benchmark (avg of Long Corps and STRIPS)
+    ***Change to VOLA (Dynamic VOLA) ????????
     VOLA (avg of VOLA I and VOLA II)
     Def Var (weighted avg Def Var (Fri): 60%, Def Var (Mon):20%, Def Var (Wed): 20%)
     
@@ -249,22 +250,22 @@ def create_copy_with_fi(df_returns, equity = 'SPTR', freq='1M', include_fi=False
     """
     strategy_returns = df_returns.copy()
     
-    strategy_returns['VOLA'] = strategy_returns['Dynamic VOLA']
+    strategy_returns['VOLA 3'] = strategy_returns['Dynamic VOLA']
     strategy_returns['Def Var']=strategy_returns['Def Var (Fri)']*.4 + strategy_returns['Def Var (Mon)']*.3+strategy_returns['Def Var (Wed)']*.3
         
     if freq == '1W' or freq == '1M':
         if include_fi:
             strategy_returns['FI Benchmark'] = (strategy_returns['Long Corp'] + strategy_returns['STRIPS'])/2
             strategy_returns = strategy_returns[[equity, 'FI Benchmark', '99%/90% Put Spread', 
-                                                 'Down Var', 'Vortex', 'VOLA','Dynamic Put Spread',
+                                                 'Down Var', 'Vortex', 'VOLA 3','Dynamic Put Spread',
                                                  'VRR', 'GW Dispersion', 'Corr Hedge','Def Var']]
         else:
             strategy_returns = strategy_returns[[equity, '99%/90% Put Spread', 
-                                                 'Down Var', 'Vortex', 'VOLA','Dynamic Put Spread',
+                                                 'Down Var', 'Vortex', 'VOLA 3','Dynamic Put Spread',
                                                  'VRR', 'GW Dispersion', 'Corr Hedge','Def Var']]
     else:
         strategy_returns = strategy_returns[[equity, '99%/90% Put Spread', 'Down Var', 'Vortex',
-                                             'VOLA','Dynamic Put Spread','VRR', 
+                                             'VOLA 3','Dynamic Put Spread','VRR', 
                                              'GW Dispersion', 'Corr Hedge','Def Var']]
     
     return strategy_returns
@@ -362,7 +363,7 @@ def get_prices_df(df_returns):
             df_prices[col][i] = (df_returns[col][i] + 1) * df_prices[col][i-1]
     return df_prices
 
-def get_new_strategy_returns_data(report_name, sheet_name, strategy_list=[]):
+def get_new_strategy_returns_data(report_name, sheet_name, strategy_list=[], freq = '1D'):
     """
     dataframe of stratgy returns
     
@@ -382,7 +383,7 @@ def get_new_strategy_returns_data(report_name, sheet_name, strategy_list=[]):
         df_strategy.index = pd.to_datetime(df_strategy.index)
     except TypeError:
         pass
-    df_strategy = df_strategy.resample('1D').ffill()
+    df_strategy = df_strategy.resample(freq).ffill()
     new_strategy_returns = df_strategy.copy()
     if 'Index' in sheet_name:
         new_strategy_returns = df_strategy.pct_change(1)
@@ -663,7 +664,7 @@ def all_strat_month_ret_table(returns_df, notional_weights = [], include_fi = Fa
     #loop through each strategy in the list and get the monthly returns table
     for strat in strat_list:
        month_table_dict[strat] = month_ret_table(returns_df, strat)
-       month_table_dict[strat] = month_table_dict[strat][:-1]
+       #month_table_dict[strat] = month_table_dict[strat][:-1]
     return month_table_dict
 
     
