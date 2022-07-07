@@ -9,6 +9,7 @@ from EquityHedging.datamanager import data_manager as dm
 from EquityHedging.analytics.decay import get_decay_days
 from EquityHedging.analytics.util import get_pos_neg_df
 from EquityHedging.analytics import  util
+import scipy.interpolate
 
 HEDGE_METRICS_INDEX = ['Benefit Count','Benefit Median','Benefit Mean','Benefit Cum', 
                        'Downside Reliability','Upside Reliability',
@@ -239,6 +240,37 @@ def get_reliability_stats(df_returns, col_name, tail=False):
     
     return reliability
 
+def get_var(df_returns, p = 0.05):
+    
+    count = len(df_returns)
+    location = p*count
+    
+    #sort returns
+    df_returns = df_returns.sort_values(by = "Down Var")
+
+    # if decimal is less than 0.5 round down 
+    if location % 1 < 0.5:
+        lower = round(location)
+        #get var returns to interpolate
+        var_returns = df_returns.iloc[[lower,lower+1],:]
+        var_returns['Interpolation'] = [location % 1, 1-location%1]
+    else:
+        #if decimal is greater than 0.5 round up
+        upper = round(location)
+        #get var to interpolate
+        var_returns = df_returns.iloc[[upper-1,upper,],:]
+        var_returns['Interpolation'] = [1-location % 1, location % 1,]
+    
+    x = list(range(1,count+1))
+
+    y = list(df_returns['Down Var'])
+
+    y_interp = scipy.interpolate.interp1d(x, y)
+
+    y_interp(location)
+    
+    
+    
 def get_hedge_metrics(df_returns, freq="1M", full_list=True):
     """
     Return a dataframe of hedge metrics
@@ -291,3 +323,4 @@ def get_hedge_metrics(df_returns, freq="1M", full_list=True):
     #Converts hedge_dict to a data grame
     df_hedge_metrics = util.convert_dict_to_df(hedge_dict, get_hm_index_list(full_list))
     return df_hedge_metrics
+
