@@ -240,34 +240,19 @@ def get_reliability_stats(df_returns, col_name, tail=False):
     
     return reliability
 
-def get_var(df_returns, p = 0.05):
+def get_var(df_returns, col_name, p = 0.05):
     
-    count = len(df_returns)
+    count = len(df_returns[col_name])
     location = p*count
     
     #sort returns
-    df_returns = df_returns.sort_values(by = "Down Var")
+    ranked_returns = list(df_returns[col_name].sort_values())
 
-    # if decimal is less than 0.5 round down 
-    if location % 1 < 0.5:
-        lower = round(location)
-        #get var returns to interpolate
-        var_returns = df_returns.iloc[[lower,lower+1],:]
-        var_returns['Interpolation'] = [location % 1, 1-location%1]
-    else:
-        #if decimal is greater than 0.5 round up
-        upper = round(location)
-        #get var to interpolate
-        var_returns = df_returns.iloc[[upper-1,upper,],:]
-        var_returns['Interpolation'] = [1-location % 1, location % 1,]
-    
-    x = list(range(1,count+1))
+    rank = list(range(1,count+1))
 
-    y = list(df_returns['Down Var'])
+    interp = scipy.interpolate.interp1d(rank, ranked_returns)
 
-    y_interp = scipy.interpolate.interp1d(x, y)
-
-    y_interp(location)
+    return float( interp(location))
     
     
     
@@ -300,7 +285,6 @@ def get_hedge_metrics(df_returns, freq="1M", full_list=True):
             convexity = get_convexity_stats(df_returns, col)
             cost = get_cost_stats(df_returns, col)
             decay = get_decay_stats(df_returns, col, freq)
-            
             hedge_dict[col] = [benefit['count'],benefit['median'],benefit['mean'],
                                benefit['cumulative'],reliability['down'],reliability['up'],
                                convexity['count'],convexity['median'],convexity['mean'],
