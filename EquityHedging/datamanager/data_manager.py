@@ -9,6 +9,10 @@ import pandas as pd
 import os
 from datetime import datetime as dt
 
+from math import prod
+from EquityHedging.analytics import returns_stats as rs
+from EquityHedging.analytics import summary 
+
 CWD = os.getcwd()
 RETURNS_DATA_FP = CWD +'\\EquityHedging\\data\\'
 EQUITY_HEDGING_RETURNS_DATA = RETURNS_DATA_FP + 'ups_equity_hedge\\returns_data.xlsx'
@@ -648,7 +652,7 @@ def all_strat_month_ret_table(returns_df, notional_weights = [], include_fi = Fa
     if weighted == True:
         
         #get weighted strats and weighted hedges 
-        returns_df = sm.get_weighted_data(returns_df,notional_weights,include_fi, new_strat)
+        returns_df = summary.get_weighted_data(returns_df,notional_weights,include_fi, new_strat)
         
     
     #create strat list from the columns of the returns data
@@ -693,3 +697,17 @@ def method_updating_returns(returns_dict, new_data_dict):
         new_data_dict[key] = new_ret_df
     returns_dict = append_dict(returns_dict, new_data_dict)
     return returns_dict
+
+def check_returns(returns_dict):
+    #if the last day of the month is earlier than the last row in weekly returns then drop last row of weekly returns
+    if returns_dict['Monthly'].index[-1] < returns_dict['Weekly'].index[-1] :
+        returns_dict['Weekly'] = returns_dict['Weekly'][:-1]
+    
+    
+    if returns_dict['Monthly'].index[-1] < returns_dict['Quarterly'].index[-1] :
+        returns_dict['Quarterly'] = returns_dict['Quarterly'][:-1]
+        
+    return returns_dict
+        
+        
+   

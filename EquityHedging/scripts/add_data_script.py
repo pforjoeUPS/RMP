@@ -10,21 +10,23 @@ from EquityHedging.datamanager import data_manager as dm
 from EquityHedging.reporting.excel import reports as rp
 
 
-
 #get data from returns_data.xlsx into dictionary
 returns_dict = dm.get_equity_hedge_returns(all_data=True)
 
 #create dictionary that contains updated returns
 new_data_dict = dm.create_update_dict()
 
-
 #TODO: make into method in data_manager.py
 for key in returns_dict:
-    
     #create returns data frame
-    new_ret_df = new_data_dict[key]
-    ret_df = returns_dict[key]
+    new_ret_df = new_data_dict[key].copy()
+    ret_df = returns_dict[key].copy()
     
+    #update current year returns 
+    if key == 'Yearly':
+        if ret_df.index[-1] == new_ret_df.index[-1]:
+            ret_df = ret_df[:-1]
+            
     #reset both data frames index to make current index (dates) into a column
     new_ret_df.index.names = ['Date']
     new_ret_df.reset_index(inplace = True)
@@ -45,59 +47,20 @@ for key in returns_dict:
     ret_df.set_index('Date', inplace = True)
     
     #reassign dataframes to dictionaries
-    returns_dict[key] = ret_df
     new_data_dict[key] = new_ret_df
+    returns_dict[key] = ret_df
     
+    returns_dict[key] = ret_df.append(new_ret_df)
     
-################old way
-# # #remove first n rows from daily dataframe
-# n = 83
-# new_data_dict['Daily'] = new_data_dict['Daily'].iloc[n:,]
 
-# # #remove last n rows from daily dataframe
-# n = 1
-# new_data_dict['Daily'] = new_data_dict['Daily'][:-n]
+returns_dict = dm.check_returns(returns_dict)
 
 
-
-# # #remove first n rows from weekly dataframe
-# n = 8
-# new_data_dict['Weekly'] = new_data_dict['Weekly'].iloc[n:,]
-
-# #remove last row from weekly dataframe
-# n = 1
-# new_data_dict['Weekly'] = new_data_dict['Weekly'][:-n]
-
-
-# # #remove first n rows from monthly dataframe
-# n = 2
-# new_data_dict['Monthly'] = new_data_dict['Monthly'].iloc[n:,]
-
-# # #remove last n rows from monthly dataframe
-# n = 1
-# new_data_dict['Monthly'] = new_data_dict['Monthly'][:-n]
-
-
-# # #remove first n rows from quarterly dataframe
-# n = 0
-# new_data_dict['Quarterly'] = new_data_dict['Quarterly'].iloc[n:,]
-
-# # #remove last n rows from original returns quarterly dataframe
-# n = 1
-# new_data_dict['Quarterly'] = new_data_dict['Quarterly'][:-n]
-
-
-# # #remove first n rows from yearly dataframe
-# n = 0
-# new_data_dict['Yearly'] = new_data_dict['Yearly'].iloc[n:,]
-
-# # #remove last n rows from original returns yearly dataframe
-# n = 1
-# returns_dict['Yearly'] = returns_dict['Yearly'][:-n]
-
-
-#update returns_dict with new_data
 returns_dict = dm.append_dict(returns_dict, new_data_dict)
+
 
 #create new returns report
 rp.get_returns_report('returns_data_new', returns_dict)
+
+
+
