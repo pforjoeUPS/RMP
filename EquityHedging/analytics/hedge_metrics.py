@@ -250,7 +250,7 @@ def get_var(df_returns, col_name, p = 0.05):
 
     rank = list(range(1,count+1))
 
-    interp = scipy.interpolate.interp1d(rank, ranked_returns)
+    interp = scipy.interpolate.interp1d(rank, ranked_returns, fill_value='extrapolate')
 
     return float( interp(location))
     
