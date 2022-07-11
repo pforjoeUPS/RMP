@@ -667,7 +667,27 @@ def all_strat_month_ret_table(returns_df, notional_weights = [], include_fi = Fa
        #month_table_dict[strat] = month_table_dict[strat][:-1]
     return month_table_dict
 
+
+def get_new_returns_df(new_ret_df,ret_df):
+    #reset both data frames index to make current index (dates) into a column
+    new_ret_df.index.names = ['Date']
+    new_ret_df.reset_index(inplace = True)
+    ret_df.reset_index(inplace=True)
+   
+    #find difference in dates
+    difference = set(new_ret_df.Date).difference(ret_df.Date)
+    #find which dates in the new returns are not in the current returns data
+    difference_dates = new_ret_df['Date'].isin(difference)
     
+    #select only dates not included in original returns df
+    new_ret_df = new_ret_df[difference_dates]
+    
+    #set 'Date' column as index for both data frames
+    new_ret_df.set_index('Date', inplace = True)
+    ret_df.set_index('Date', inplace = True)
+    
+    return new_ret_df
+
 def check_returns(returns_dict):
     #if the last day of the month is earlier than the last row in weekly returns then drop last row of weekly returns
     if returns_dict['Monthly'].index[-1] < returns_dict['Weekly'].index[-1] :
@@ -677,8 +697,9 @@ def check_returns(returns_dict):
     if returns_dict['Monthly'].index[-1] < returns_dict['Quarterly'].index[-1] :
         returns_dict['Quarterly'] = returns_dict['Quarterly'][:-1]
         
-    return returns_dict
-    
+    return returns_dict    
+
+
 def update_returns_data(returns_dict, new_data_dict):
     
     #get data from returns_data.xlsx into dictionary
@@ -702,4 +723,3 @@ def update_returns_data(returns_dict, new_data_dict):
     
     returns_dict = check_returns(returns_dict)
     return returns_dict
-
