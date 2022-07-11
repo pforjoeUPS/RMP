@@ -35,7 +35,8 @@ if new_strat:
     returns = dm.merge_dicts(returns, new_strategy_dict)
 
 #get notional weights
-notional_weights = dm.get_notional_weights(returns['Monthly'])
+notional_weights = [13,1,1.25,1,1,1,0.25,1]
+#dm.get_notional_weights(returns['Monthly'])
 df_weights = get_df_weights(notional_weights, list(returns['Monthly'].columns), include_fi)
 
 #compute correlations
@@ -74,7 +75,7 @@ check_ann = False
 if check_ann:
     annual_dollar_returns = summary.get_annual_dollar_returns(returns, notional_weights)
     
-strategy = "VOLA"
+strategy = "VOLA 3"
 monthly_ret_table = True
 if monthly_ret_table:
     month_returns_table = dm.month_ret_table(returns['Monthly'], strategy = strategy)

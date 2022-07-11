@@ -9,7 +9,7 @@ from EquityHedging.datamanager import data_manager as dm
 from EquityHedging.analytics.decay import get_decay_days
 from EquityHedging.analytics.util import get_pos_neg_df
 from EquityHedging.analytics import  util
-import scipy.interpolate
+
 
 HEDGE_METRICS_INDEX = ['Benefit Count','Benefit Median','Benefit Mean','Benefit Cum', 
                        'Downside Reliability','Upside Reliability',
@@ -239,22 +239,6 @@ def get_reliability_stats(df_returns, col_name, tail=False):
         reliability['non_tail'] = corr_non_tail[col_name].iloc[0]
     
     return reliability
-
-def get_var(df_returns, col_name, p = 0.05):
-    
-    count = len(df_returns[col_name])
-    location = p*count
-    
-    #sort returns
-    ranked_returns = list(df_returns[col_name].sort_values())
-
-    rank = list(range(1,count+1))
-
-    interp = scipy.interpolate.interp1d(rank, ranked_returns, fill_value='extrapolate')
-
-    return float( interp(location))
-    
-    
     
 def get_hedge_metrics(df_returns, freq="1M", full_list=True):
     """
