@@ -663,33 +663,35 @@ def all_strat_month_ret_table(returns_df, notional_weights = [], include_fi = Fa
        #month_table_dict[strat] = month_table_dict[strat][:-1]
     return month_table_dict
 
+
+def get_new_returns_df(new_ret_df,ret_df):
+    #reset both data frames index to make current index (dates) into a column
+    new_ret_df.index.names = ['Date']
+    new_ret_df.reset_index(inplace = True)
+    ret_df.reset_index(inplace=True)
+   
+    #find difference in dates
+    difference = set(new_ret_df.Date).difference(ret_df.Date)
+    #find which dates in the new returns are not in the current returns data
+    difference_dates = new_ret_df['Date'].isin(difference)
     
-def method_updating_returns(returns_dict, new_data_dict):
+    #select only dates not included in original returns df
+    new_ret_df = new_ret_df[difference_dates]
+    
+    #set 'Date' column as index for both data frames
+    new_ret_df.set_index('Date', inplace = True)
+    ret_df.set_index('Date', inplace = True)
+    
+    return new_ret_df
+
+    
+def updating_returns(returns_dict, new_data_dict):
     
     for key in returns_dict:
     #create returns data frame
         new_ret_df = new_data_dict[key]
         ret_df = returns_dict[key]
-        
-        #reset both data frames index to make current index (dates) into a column
-        new_ret_df.index.names = ['Date']
-        new_ret_df.reset_index(inplace = True)
-        ret_df.reset_index(inplace=True)
-       
-        #find difference in dates
-        difference = set(new_ret_df.Date).difference(ret_df.Date)
-        #find which dates in the new returns are not in the current returns data
-        difference_dates = new_ret_df['Date'].isin(difference)
-        
-        #select only dates not included in original returns df
-        new_ret_df = new_ret_df[difference_dates]
-        
-        #set 'Date' column as index for both data frames
-        new_ret_df.set_index('Date', inplace = True)
-        ret_df.set_index('Date', inplace = True)
-        
-        #reassign dataframes to dictionaries
-        returns_dict[key] = ret_df
-        new_data_dict[key] = new_ret_df
+        new_data_dict[key] = get_new_returns_df(new_ret_df,ret_df)
     returns_dict = append_dict(returns_dict, new_data_dict)
     return returns_dict
+    
