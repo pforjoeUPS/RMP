@@ -8,9 +8,7 @@ Created on Tue Oct  1 17:59:28 2019
 import pandas as pd
 import os
 from datetime import datetime as dt
-
 from math import prod
-from EquityHedging.analytics import returns_stats as rs
 from EquityHedging.analytics import summary 
 
 CWD = os.getcwd()
@@ -220,17 +218,17 @@ def convert_to_freq2(arg, freq1, freq2):
     
     return round(arg / get_freq_ratio(freq1, freq2))
 
-def get_notional_weights(df_returns):
-    """
-    Returns list of notional values for stratgies
+# def get_notional_weights(df_returns):
+#     """
+#     Returns list of notional values for stratgies
     
-    Parameters:
-    df_returns -- dataframe
+#     Parameters:
+#     df_returns -- dataframe
     
-    Returns:
-    list
-    """
-    return [float(input('notional value (Billions) for ' + col + ': ')) for col in df_returns.columns]    
+#     Returns:
+#     list
+#     """
+#     return [float(input('notional value (Billions) for ' + col + ': ')) for col in df_returns.columns]    
 
 def create_copy_with_fi(df_returns, equity = 'SPTR', freq='1M', include_fi=False):
     """
@@ -695,8 +693,15 @@ def updating_returns(returns_dict, new_data_dict):
     #create returns data frame
         new_ret_df = new_data_dict[key]
         ret_df = returns_dict[key]
-        new_data_dict[key] = get_new_returns_df(new_ret_df,ret_df)
-    returns_dict = append_dict(returns_dict, new_data_dict)
+        
+        if key == 'Yearly':
+            if ret_df.index[-1] == new_ret_df.index[-1]:
+                ret_df = ret_df[:-1]
+                
+        returns_dict[key] = ret_df.append(get_new_returns_df(new_ret_df, ret_df))
+    
+    #
+    returns_dict = check_returns(returns_dict)
     return returns_dict
 
 
