@@ -218,17 +218,17 @@ def convert_to_freq2(arg, freq1, freq2):
     
     return round(arg / get_freq_ratio(freq1, freq2))
 
-# def get_notional_weights(df_returns):
-#     """
-#     Returns list of notional values for stratgies
+def get_notional_weights(df_returns):
+    """
+    Returns list of notional values for stratgies
     
-#     Parameters:
-#     df_returns -- dataframe
+    Parameters:
+    df_returns -- dataframe
     
-#     Returns:
-#     list
-#     """
-#     return [float(input('notional value (Billions) for ' + col + ': ')) for col in df_returns.columns]    
+    Returns:
+    list
+    """
+    return [float(input('notional value (Billions) for ' + col + ': ')) for col in df_returns.columns]    
 
 def create_copy_with_fi(df_returns, equity = 'SPTR', freq='1M', include_fi=False):
     """
@@ -686,24 +686,6 @@ def get_new_returns_df(new_ret_df,ret_df):
     
     return new_ret_df
 
-    
-def updating_returns(returns_dict, new_data_dict):
-    
-    for key in returns_dict:
-    #create returns data frame
-        new_ret_df = new_data_dict[key]
-        ret_df = returns_dict[key]
-        
-        if key == 'Yearly':
-            if ret_df.index[-1] == new_ret_df.index[-1]:
-                ret_df = ret_df[:-1]
-                
-        returns_dict[key] = ret_df.append(get_new_returns_df(new_ret_df, ret_df))
-    
-    #
-    returns_dict = check_returns(returns_dict)
-    return returns_dict
-
 
 def check_returns(returns_dict):
     #if the last day of the month is earlier than the last row in weekly returns then drop last row of weekly returns
@@ -716,3 +698,28 @@ def check_returns(returns_dict):
         
     return returns_dict
         
+
+def update_returns_data(returns_dict, new_data_dict):
+    
+    #get data from returns_data.xlsx into dictionary
+    returns_dict = get_equity_hedge_returns(all_data=True)
+
+    #create dictionary that contains updated returns
+    new_data_dict = create_update_dict()
+
+    for key in returns_dict:
+        #create returns data frame
+        new_ret_df = new_data_dict[key].copy()
+        ret_df = returns_dict[key].copy()
+        
+        #update current year returns 
+        if key == 'Yearly':
+            if ret_df.index[-1] == new_ret_df.index[-1]:
+                ret_df = ret_df[:-1]
+        #get new returns df       
+        new_ret_df = get_new_returns_df(new_ret_df, ret_df)
+        returns_dict[key] = ret_df.append(new_ret_df)
+    
+    returns_dict = check_returns(returns_dict)
+    return returns_dict
+
