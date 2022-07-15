@@ -668,7 +668,6 @@ def all_strat_month_ret_table(returns_df, notional_weights = [], include_fi = Fa
     return month_table_dict
 
     
-
 def check_returns(returns_dict):
     #if the last day of the month is earlier than the last row in weekly returns then drop last row of weekly returns
     if returns_dict['Monthly'].index[-1] < returns_dict['Weekly'].index[-1] :
@@ -679,17 +678,28 @@ def check_returns(returns_dict):
         returns_dict['Quarterly'] = returns_dict['Quarterly'][:-1]
         
     return returns_dict
+    
+def update_returns_data(returns_dict, new_data_dict):
+    
+    #get data from returns_data.xlsx into dictionary
+    returns_dict = get_equity_hedge_returns(all_data=True)
+
+    #create dictionary that contains updated returns
+    new_data_dict = create_update_dict()
+
+    for key in returns_dict:
+        #create returns data frame
+        new_ret_df = new_data_dict[key].copy()
+        ret_df = returns_dict[key].copy()
         
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
+        #update current year returns 
+        if key == 'Yearly':
+            if ret_df.index[-1] == new_ret_df.index[-1]:
+                ret_df = ret_df[:-1]
+        #get new returns df       
+        new_ret_df = get_new_returns_df(new_ret_df, ret_df)
+        returns_dict[key] = ret_df.append(new_ret_df)
+    
+    returns_dict = check_returns(returns_dict)
+    return returns_dict
+
