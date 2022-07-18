@@ -42,5 +42,3 @@ data_dict_1 = dm.get_data_dict(data_df, data_type='index')
 
 #7
 data_dict_2 = dm.merge_dicts(bmks_dict, strats_dict)
-
-
