@@ -9,6 +9,8 @@ import pandas as pd
 import numpy as np
 from ..datamanager import data_manager as dm
 from sklearn.preprocessing import MinMaxScaler
+#from ..datamanager.data_manager import get_notional_weights
+#from sklearn.preprocessing import MinMaxScaler
 
 def get_pos_neg_df(return_series, pos=True):
     """
