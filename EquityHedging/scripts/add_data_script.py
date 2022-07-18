@@ -13,7 +13,7 @@ from EquityHedging.reporting.excel import reports as rp
 #get data from returns_data.xlsx into dictionary
 returns_dict = dm.get_equity_hedge_returns(all_data=True)
 
-#create dictionary that contains updated returns
+ #create dictionary that contains updated returns
 new_data_dict = dm.create_update_dict()
 
 #TODO: make into method in data_manager.py
@@ -47,8 +47,8 @@ for key in returns_dict:
     ret_df.set_index('Date', inplace = True)
     
     #reassign dataframes to dictionaries
-    new_data_dict[key] = new_ret_df
-    returns_dict[key] = ret_df
+    #new_data_dict[key] = new_ret_df
+    #returns_dict[key] = ret_df
     
     returns_dict[key] = ret_df.append(new_ret_df)
     
@@ -56,7 +56,7 @@ for key in returns_dict:
 returns_dict = dm.check_returns(returns_dict)
 
 
-returns_dict = dm.append_dict(returns_dict, new_data_dict)
+#returns_dict = dm.append_dict(returns_dict, new_data_dict)
 
 
 #create new returns report

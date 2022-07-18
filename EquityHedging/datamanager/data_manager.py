@@ -721,7 +721,7 @@ def update_returns_data(returns_dict, new_data_dict):
         returns_dict[key] = ret_df.append(new_ret_df)
     
     returns_dict = check_returns(returns_dict)
-<<<<<<< Updated upstream
+
     return returns_dict
 
 
@@ -729,14 +729,12 @@ def get_VaR(ret_data, p = 0.05):
     location = int(round(p*ret_data.count()))-1
     ret_data = pd.Series(ret_data)
     sorted_series = ret_data.sort_values(ascending = True)
-    VaR_p = sorted_series[location]
-    return VaR_p
+    VaR = sorted_series[location]
+    return VaR
 
 def get_CVaR(ret_data, p = 0.05):
     location = int(round(p*ret_data.count()))-1
     sorted_series = ret_data.sort_values(ascending = True)
     CVaR = sum(sorted_series[0:location]) / location
     return CVaR
-=======
-    return returns_dict
->>>>>>> Stashed changes
+
