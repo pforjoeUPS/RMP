@@ -738,3 +738,29 @@ def get_CVaR(ret_data, p = 0.05):
     CVaR = sum(sorted_series[0:location]) / location
     return CVaR
 
+#Davis Code
+def get_VaR(strategy, p):
+        
+    data = dm.get_equity_hedge_returns(equity= 'SPTR', include_fi=False, strat_drop_list=[], only_equity=False, all_data=False)
+    #make the data daily
+    daily_data = data['Daily']
+    #which strategy we are analyzing
+    chosen_strategy_data = daily_data[strategy]
+    #now sort the strategy
+    sorted_strat_data = chosen_strategy_data.sort_values()
+    #count data
+    x = sorted_strat_data.count()
+    #find value at p percentile
+    return_at_certain_percentile = x*(p)
+    #round it
+    rounded_p = return_at_certain_percentile.round(0)
+    #make it an integer
+    location = int(rounded_p)
+    #basically like the VLOOKUP
+    #neatening into a percentage
+    VaR_step_1 = sorted_strat_data[location]
+    VaR_step_2 = VaR_step_1*100
+    VaR_step_3 = VaR_step_2.round(3)
+    
+    
+    return VaR_step_3
