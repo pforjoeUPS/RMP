@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+#-*- coding: utf-8 -*-
 """
 Created on Tue Oct  1 17:59:28 2019
 
@@ -9,7 +9,7 @@ import pandas as pd
 import os
 from datetime import datetime as dt
 from math import prod
-from EquityHedging.analytics import summary 
+from EquityHedging.analytics import summary
 
 CWD = os.getcwd()
 RETURNS_DATA_FP = CWD +'\\EquityHedging\\data\\'
@@ -721,6 +721,7 @@ def update_returns_data(returns_dict, new_data_dict):
         returns_dict[key] = ret_df.append(new_ret_df)
     
     returns_dict = check_returns(returns_dict)
+<<<<<<< Updated upstream
     return returns_dict
 
 
@@ -736,3 +737,6 @@ def get_CVaR(ret_data, p = 0.05):
     sorted_series = ret_data.sort_values(ascending = True)
     CVaR = sum(sorted_series[0:location]) / location
     return CVaR
+=======
+    return returns_dict
+>>>>>>> Stashed changes
