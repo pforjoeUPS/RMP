@@ -6,6 +6,7 @@ Created on Mon Jun 13 15:19:00 2022
 """
 
 import pandas as pd
+from EquityHedging.datamanager import data_manager as dm
 
 #1
 data_bmk = pd.read_excel('C:\\Users\\GMS0VSB\\Documents\\GitHub\\data_for_exercise_1.xlsx', sheet_name='bmks', index_col=0)
