@@ -7,11 +7,7 @@ Created on Tue Oct  1 17:59:28 2019
 
 import pandas as pd
 import numpy as np
-<<<<<<< Updated upstream
 from ..datamanager import data_manager as dm
-=======
-from .. datamanager.data_manager import get_min_max_dates
->>>>>>> Stashed changes
 from .import util
 
 def get_corr_analysis(df_returns, notional_weights=[], include_fi=False, weighted=False):
