@@ -700,7 +700,7 @@ def check_returns(returns_dict):
     return returns_dict    
 
 
-def update_returns_data(returns_dict, new_data_dict):
+def update_returns_data():
     
     #get data from returns_data.xlsx into dictionary
     returns_dict = get_equity_hedge_returns(all_data=True)
