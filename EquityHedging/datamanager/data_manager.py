@@ -738,3 +738,14 @@ def get_CVaR(ret_data, p = 0.05):
     CVaR = ret_data.loc[ret_data<VaR].mean()
     return CVaR
 
+#Davis Code
+def get_VaR_DB(ret_data, p = .05):
+    ret_data = pd.Series(ret_data)
+    range_list = list(range(1,len(ret_data)+1))
+    sorted_strat_data = ret_data.sort_values()
+    location = int((sorted_strat_data.count()*p).round())-1    
+    value_at_risk = sorted_strat_data[location]
+        
+    return value_at_risk
+
+ 
