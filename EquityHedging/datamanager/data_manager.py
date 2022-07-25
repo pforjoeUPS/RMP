@@ -726,15 +726,15 @@ def update_returns_data(returns_dict, new_data_dict):
 
 
 def get_VaR(ret_data, p = 0.05):
+    rank = list(range(1,len(ret_data)+1))
     location = int(round(p*ret_data.count()))-1
     ret_data = pd.Series(ret_data)
     sorted_series = ret_data.sort_values(ascending = True)
-    VaR = sorted_series[location]
-    return VaR
+    VaR_p = sorted_series[location]
+    return VaR_p
 
 def get_CVaR(ret_data, p = 0.05):
-    location = int(round(p*ret_data.count()))-1
-    sorted_series = ret_data.sort_values(ascending = True)
-    CVaR = sum(sorted_series[0:location]) / location
+    VaR = get_VaR(ret_data,p=p)
+    CVaR = ret_data.loc[ret_data<VaR].mean()
     return CVaR
 
