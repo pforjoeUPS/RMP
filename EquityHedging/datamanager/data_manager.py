@@ -10,6 +10,7 @@ import os
 from datetime import datetime as dt
 from math import prod
 from EquityHedging.analytics import summary
+import scipy
 
 CWD = os.getcwd()
 RETURNS_DATA_FP = CWD +'\\EquityHedging\\data\\'
@@ -725,27 +726,29 @@ def update_returns_data(returns_dict, new_data_dict):
     return returns_dict
 
 
-def get_VaR(ret_data, p = 0.05):
-    rank = list(range(1,len(ret_data)+1))
-    location = int(round(p*ret_data.count()))-1
-    ret_data = pd.Series(ret_data)
-    sorted_series = ret_data.sort_values(ascending = True)
-    VaR_p = sorted_series[location]
-    return VaR_p
+def get_VaR(ret_data, p = .05):
+
+    range_list = list(range(1,len(ret_data)+1))
+    
+    sorted_strat_data = ret_data.sort_values()
+    
+    location = sorted_strat_data.count()*p
+    
+    interp = scipy.interpolate.interp1d(range_list, sorted_strat_data, fill_value='extrapolate')
+    
+    value_at_risk = interp(location)
+        
+    return float(value_at_risk)
+
 
 def get_CVaR(ret_data, p = 0.05):
+    
     VaR = get_VaR(ret_data,p=p)
+    
     CVaR = ret_data.loc[ret_data<VaR].mean()
+    
     return CVaR
 
-#Davis Code
-def get_VaR_DB(ret_data, p = .05):
-    ret_data = pd.Series(ret_data)
-    range_list = list(range(1,len(ret_data)+1))
-    sorted_strat_data = ret_data.sort_values()
-    location = int((sorted_strat_data.count()*p).round())-1    
-    value_at_risk = sorted_strat_data[location]
-        
-    return value_at_risk
+
 
  
