@@ -41,7 +41,7 @@ COVID_19 = {'period':'Coronavirus Pandemic',
           'end':'2020-03-23'}
 
 
-JUNE_2022 =  {'period':'June 2022', 
+JUNE_2022 =  {'period':'June 2022 Sell Off', 
           'start': '2022-06-07', 
           'end':'2022-06-16'}
 
