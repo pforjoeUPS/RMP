@@ -9,6 +9,8 @@ Created on Tue Oct  1 17:59:28 2019
 import numpy as np
 from ..datamanager import data_manager as dm
 from EquityHedging.analytics import  util
+import scipy
+
 
 
 RETURNS_STATS_INDEX = ['Annualized Ret','Annualized Vol','Ret/Vol', 
@@ -16,7 +18,7 @@ RETURNS_STATS_INDEX = ['Annualized Ret','Annualized Vol','Ret/Vol',
                        'Max 1M DD','Max 1M DD Date', 'Ret/Max 1M DD',
                        'Max 3M DD','Max 3M DD Date','Ret/Max 3M DD',
                        'Skew','Avg Pos Ret/Avg Neg Ret',
-                       'Downside Deviation','Sortino Ratio']
+                       'Downside Deviation','Sortino Ratio', 'VaR']
 
 def get_ann_return(return_series, freq='1M'):
     """
@@ -301,6 +303,21 @@ def get_ret_max_dd_freq_ratio(return_series, price_series, freq, max_3m_dd=False
     #compute ratio
     return ann_ret/abs(max_freq_dd)
 
+
+def get_VaR(return_series, p = .05):
+    
+    range_list = list(range(1,len(return_series)+1))
+    
+    sorted_strat_data = return_series.sort_values()
+    
+    location = sorted_strat_data.count()*p
+    
+    interp = scipy.interpolate.interp1d(range_list, sorted_strat_data, fill_value='extrapolate')
+    
+    value_at_risk = interp(location)
+        
+    return float(value_at_risk)
+
 def get_return_stats(df_returns, freq='1M'):
     """
     Return a dict of return analytics
@@ -338,10 +355,11 @@ def get_return_stats(df_returns, freq='1M'):
         avg_pos_neg = get_avg_pos_neg(df_strat[col])
         down_stdev = get_down_stddev(df_strat[col], freq)
         sortino = get_sortino_ratio(df_strat[col], freq)
+        VaR = get_VaR(df_strat[col])
         returns_stats_dict[col] = [ann_ret, ann_vol, ret_vol, max_dd, ret_dd,
                              max_1m_dd_dict['max_dd'], max_1m_dd_dict['index'], ret_1m_dd,
                              max_3m_dd_dict['max_dd'], max_3m_dd_dict['index'], ret_3m_dd,
-                             skew, avg_pos_neg, down_stdev, sortino]
+                             skew, avg_pos_neg, down_stdev, sortino, VaR]
         
     #Converts hedge_dict to a data grame
     df_returns_stats = util.convert_dict_to_df(returns_stats_dict, RETURNS_STATS_INDEX)
