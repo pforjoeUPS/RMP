@@ -11,12 +11,12 @@ from ..datamanager import data_manager as dm
 from EquityHedging.analytics import  util
 
 
-RETURNS_STATS_INDEX = ['Annualized Ret','Annualized Vol','Ret/Vol', 
-                       'Max DD','Ret/Max DD',
-                       'Max 1M DD','Max 1M DD Date', 'Ret/Max 1M DD',
-                       'Max 3M DD','Max 3M DD Date','Ret/Max 3M DD',
-                       'Skew','Avg Pos Ret/Avg Neg Ret',
-                       'Downside Deviation','Sortino Ratio']
+RETURNS_STATS_INDEX = ['Annualized Ret', 'Alpha', 'Beta', 'Median Period Return',
+                       'Avg. Period Return','Avg. Period Up Return', 'Avg. Period Down Return',
+                       'Avg Pos Ret/Avg Neg Ret','Best Period', 'Worst Period','% Positive Periods',
+                       '% Negative Periods','Annualized Vol','Upside Deviation','Downside Deviation',
+                       'Upside to Downside Deviation Ratio','Skewness', 'Kurtosis',
+                       'Max DD','Ret/Vol', 'Sortino Ratio','Ret/Max DD']
 
 def get_ann_return(return_series, freq='1M'):
     """
@@ -59,6 +59,26 @@ def get_ann_vol(return_series, freq='1M'):
     #compute the annualized volatility
     return np.std(return_series, ddof=1)*np.sqrt(dm.switch_freq_int(freq))
 
+def get_mkt_series(freq='1M',mkt='SPTR'):
+    
+    mkt_dict = dm.get_equity_hedge_returns(equity='SPTR',only_equity=True)
+    mkt_df = mkt_dict[dm.switch_freq_string(freq)]
+    return mkt_df[mkt]
+    
+def get_beta(return_series, freq = '1M', mkt = 'SPTR'):
+    
+    mkt_series = get_mkt_series(freq, mkt)
+    
+    return return_series.cov(mkt_series)/mkt_series.var()
+
+def get_alpha(return_series, freq = '1M', mkt = 'SPTR', rfr = 0.0):
+    beta = get_beta(return_series, freq, mkt)
+    mkt_ret = get_ann_return(get_mkt_series(freq, mkt), freq)
+    port_ret = get_ann_return(return_series, freq)
+    return port_ret - (rfr +  beta*(mkt_ret - rfr))
+
+                             
+    
 def get_max_dd(price_series):
     """
     Return maximum draw down (Max DD) for a price series.
@@ -127,9 +147,9 @@ def get_max_dd_freq(price_series, freq='1M', max_3m_dd=False):
     #return dictionary
     return {'max_dd': max_dd_freq, 'index': index_list[0]}
 
-def get_avg_pos_neg(return_series):
+def get_avg_pos_neg(return_series, pos=True):
     """
-    Return Average positve returns/ Average negative returns
+    Average positve returns/ Average negative returns
     of a strategy
 
     Parameters
@@ -144,18 +164,38 @@ def get_avg_pos_neg(return_series):
     """
     
     #filter positive and negative returns
-    pos_ret = util.get_pos_neg_df(return_series,True)
-    neg_ret = util.get_pos_neg_df(return_series,False)
+    pos_neg_series = util.get_pos_neg_df(return_series,pos)
     
+    return pos_neg_series.mean()
+    
+def get_avg_pos_neg_ratio(return_series):
+    """
+    Return Average positve returns/ Average negative returns
+    of a strategy
+
+    Parameters
+    ----------
+    return_series : series
+        returns series.
+
+    Returns
+    -------
+    double
+    
+    """
     #compute means
-    avg_pos = pos_ret.mean()
-    avg_neg = neg_ret.mean()
+    avg_pos = get_avg_pos_neg(return_series)
+    avg_neg = get_avg_pos_neg(return_series, False)
     
     return avg_pos/abs(avg_neg)
 
-def get_down_stddev(return_series, freq='1M', target=0):
+def get_pct_pos_neg_periods(return_series, pos=True):
+    pos_neg_series = util.get_pos_neg_df(return_series,pos)
+    return len(pos_neg_series) / len(return_series)
+
+def get_updown_dev(return_series, freq='1M', target=0, up = False):
     """
-    Compute annualized downside std dev
+    Compute annualized upside/downside dev
 
     Parameters
     ----------
@@ -169,14 +209,19 @@ def get_down_stddev(return_series, freq='1M', target=0):
     Returns
     -------
     double
-        downside std deviation.
+        upside / downside std deviation.
 
     """
-    #create a downside return column with the negative returns only
-    downside_returns = return_series.loc[return_series < target]
+    #create a upside/downside return column with the positive/negative returns only
+    up_down_series = return_series >= target if up else return_series < target
+    
+    up_down_side_returns = return_series.loc[up_down_series]
 
     #return annualized std dev of downside
-    return get_ann_vol(downside_returns, freq)
+    return get_ann_vol(up_down_side_returns, freq)
+
+def get_up_down_dev_ratio(return_series, freq='M', target = 0):
+    return get_updown_dev(return_series, freq, target,True)/get_updown_dev(return_series,freq, target)
 
 def get_sortino_ratio(return_series, freq='1M', rfr=0, target=0):
     """
@@ -200,7 +245,7 @@ def get_sortino_ratio(return_series, freq='1M', rfr=0, target=0):
     """
     #calculate annulaized return and std dev of downside
     ann_ret = get_ann_return(return_series, freq)
-    down_stddev = get_down_stddev(return_series, freq, target)
+    down_stddev = get_updown_dev(return_series, freq, target)
     
     #calculate the sortino ratio
     return (ann_ret - rfr) / down_stddev
@@ -273,6 +318,22 @@ def get_skew(return_series):
     """
     return return_series.skew()
 
+def get_kurtosis(return_series):
+    """
+    Compute kurtosis of a return series
+
+    Parameters
+    ----------
+    return_series : series
+        returns series.
+
+    Returns
+    -------
+    double
+        kurtosis.
+
+    """
+    return return_series.kurtosis()
 def get_ret_max_dd_freq_ratio(return_series, price_series, freq, max_3m_dd=False):
     """
     Compute Ret/Max 1M/3M DD ratio
@@ -301,7 +362,10 @@ def get_ret_max_dd_freq_ratio(return_series, price_series, freq, max_3m_dd=False
     #compute ratio
     return ann_ret/abs(max_freq_dd)
 
-def get_return_stats(df_returns, freq='1M'):
+def get_cum_ret(return_series):
+    return return_series.add(1).prod(axis=0) - 1
+
+def get_return_stats(df_returns, freq='1M',mkt='SPTR', rfr=0.0):
     """
     Return a dict of return analytics
 
@@ -326,25 +390,35 @@ def get_return_stats(df_returns, freq='1M'):
         df_prices = dm.get_prices_df(df_strat)
     
         ann_ret = get_ann_return(df_strat[col], freq)
+        alpha = get_alpha(df_strat[col],freq, mkt,rfr)
+        beta = get_beta(df_strat[col],freq,mkt)
+        med_ret = df_strat[col].median()
+        avg_ret = df_strat[col].mean()
+        avg_up_ret = get_avg_pos_neg(df_strat[col])
+        avg_down_ret = get_avg_pos_neg(df_strat[col],False)
+        avg_pos_neg = get_avg_pos_neg_ratio(df_strat[col])
+        best_period = df_strat[col].max()
+        worst_period = df_strat[col].min()
+        pct_pos_periods = get_pct_pos_neg_periods(df_strat[col])
+        pct_neg_periods = get_pct_pos_neg_periods(df_strat[col], False)
         ann_vol = get_ann_vol(df_strat[col], freq)
-        ret_vol = get_ret_vol_ratio(df_strat[col],freq)
-        max_dd = get_max_dd(df_prices[col])
-        ret_dd = get_ret_max_dd_ratio(df_strat[col],df_prices[col],freq)
-        max_1m_dd_dict = get_max_dd_freq(df_prices[col],freq)
-        ret_1m_dd = get_ret_max_dd_freq_ratio(df_strat[col], df_prices[col],freq,False)   
-        max_3m_dd_dict = get_max_dd_freq(df_prices[col],freq,True)
-        ret_3m_dd = get_ret_max_dd_freq_ratio(df_strat[col],df_prices[col],freq,True)
+        up_dev = get_updown_dev(df_strat[col], freq,up=True)
+        down_dev = get_updown_dev(df_strat[col], freq)
+        updev_downdev_ratio = get_up_down_dev_ratio(df_strat[col],freq)
         skew = get_skew(df_strat[col])
-        avg_pos_neg = get_avg_pos_neg(df_strat[col])
-        down_stdev = get_down_stddev(df_strat[col], freq)
+        kurt = get_kurtosis(df_strat[col])
+        max_dd = get_max_dd(df_prices[col])
+        ret_vol = get_ret_vol_ratio(df_strat[col],freq)
         sortino = get_sortino_ratio(df_strat[col], freq)
-        returns_stats_dict[col] = [ann_ret, ann_vol, ret_vol, max_dd, ret_dd,
-                             max_1m_dd_dict['max_dd'], max_1m_dd_dict['index'], ret_1m_dd,
-                             max_3m_dd_dict['max_dd'], max_3m_dd_dict['index'], ret_3m_dd,
-                             skew, avg_pos_neg, down_stdev, sortino]
+        ret_dd = get_ret_max_dd_ratio(df_strat[col],df_prices[col],freq)
+        returns_stats_dict[col] = [ann_ret, alpha, beta, med_ret, avg_ret, avg_up_ret, avg_down_ret,
+                                   avg_pos_neg, best_period, worst_period, pct_pos_periods,
+                                   pct_neg_periods, ann_vol, up_dev, down_dev, updev_downdev_ratio,
+                                   skew, kurt, max_dd,ret_vol,sortino, ret_dd]
         
     #Converts hedge_dict to a data grame
     df_returns_stats = util.convert_dict_to_df(returns_stats_dict, RETURNS_STATS_INDEX)
     return df_returns_stats
 
 
+                       
