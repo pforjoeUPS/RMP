@@ -18,7 +18,7 @@ RETURNS_STATS_INDEX = ['Annualized Ret','Annualized Vol','Ret/Vol',
                        'Max 1M DD','Max 1M DD Date', 'Ret/Max 1M DD',
                        'Max 3M DD','Max 3M DD Date','Ret/Max 3M DD',
                        'Skew','Avg Pos Ret/Avg Neg Ret',
-                       'Downside Deviation','Sortino Ratio', 'VaR', 'CVaR']
+                       'Downside Deviation','Sortino Ratio']
 
 def get_ann_return(return_series, freq='1M'):
     """
@@ -328,7 +328,7 @@ def get_CVaR(return_series, p=.05):
     return CVaR
 
 
-def get_return_stats(df_returns, freq='1M'):
+def get_return_stats(df_returns, freq='1M', p = 0.05):
     """
     Return a dict of return analytics
 
@@ -365,15 +365,19 @@ def get_return_stats(df_returns, freq='1M'):
         avg_pos_neg = get_avg_pos_neg(df_strat[col])
         down_stdev = get_down_stddev(df_strat[col], freq)
         sortino = get_sortino_ratio(df_strat[col], freq)
-        VaR = get_VaR(df_strat[col])
-        CVaR = get_CVaR(df_strat[col])
+        VaR = get_VaR(df_strat[col], p = p)
+        CVaR = get_CVaR(df_strat[col], p = p)
         returns_stats_dict[col] = [ann_ret, ann_vol, ret_vol, max_dd, ret_dd,
                              max_1m_dd_dict['max_dd'], max_1m_dd_dict['index'], ret_1m_dd,
                              max_3m_dd_dict['max_dd'], max_3m_dd_dict['index'], ret_3m_dd,
                              skew, avg_pos_neg, down_stdev, sortino, VaR, CVaR]
-        
+    
+    var_index = 'VaR ' + "{:.00%}".format(1-p)
+    cvar_index = 'CVaR ' + "{:.00%}".format(1-p)
+    
+    return_stats_index_new = RETURNS_STATS_INDEX + ([var_index, cvar_index])
     #Converts hedge_dict to a data grame
-    df_returns_stats = util.convert_dict_to_df(returns_stats_dict, RETURNS_STATS_INDEX)
+    df_returns_stats = util.convert_dict_to_df(returns_stats_dict, return_stats_index_new )
     return df_returns_stats
 
 
