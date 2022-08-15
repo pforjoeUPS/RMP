@@ -82,15 +82,19 @@ def get_analysis(df_returns, notional_weights=[], include_fi=False, new_strat=Fa
         hedge_returns.drop([col_list[1]],axis=1,inplace=True)
     
     # Create pandas DataFrame for hedge metrics
-    df_hedge_metrics = get_hedge_metrics(hedge_returns,freq)
+    try:
+        df_hedge_metrics = get_hedge_metrics(hedge_returns,freq)
     
-    #remove equity col
-    df_hedge_metrics.drop([col_list[0]],axis=1,inplace=True)
+        #remove equity col
+        df_hedge_metrics.drop([col_list[0]],axis=1,inplace=True)
+        
+        #remove decay metrics if frequency is 1M, 1Q, 1Y
+        if dm.switch_freq_int(freq) <= 12:
+            df_hedge_metrics.drop(['Decay Days (50% retrace)','Decay Days (25% retrace)',
+                                 'Decay Days (10% retrace)'],inplace=True)
+    except IndexError:
+        df_hedge_metrics = dm.pd.DataFrame()
     
-    #remove decay metrics if frequency is 1M, 1Q, 1Y
-    if dm.switch_freq_int(freq) <= 12:
-        df_hedge_metrics.drop(['Decay Days (50% retrace)','Decay Days (25% retrace)',
-                             'Decay Days (10% retrace)'],inplace=True)
         
     return {'return_stats':df_return_stats, 'hedge_metrics':df_hedge_metrics}
 
@@ -168,6 +172,55 @@ def get_analysis_sheet_data(df_returns, notional_weights=[], include_fi=False, n
                    'Hedging Framework Metrics ({} Returns)'.format(freq_string)]
     
     return {'df_list': df_list,'title_list': title_list}
+
+def get_alts_data(df_returns, notional_weights=[], include_fi=False, new_strat=False,freq='1M', weighted=False):
+    """
+    Returns data for analysis excel sheet into a dictionary
+
+    Parameters
+    ----------
+    df_returns : dataframe
+        dataframe of returns
+    notional_weights : list, optional
+        notional weights of strategies. The default is [].
+    include_fi : boolean, optional
+        Include Fixed Income benchmark. The default is False.
+    new_strat : boolean, optional
+        Does analysis involve a new strategy. The default is False.
+    freq : string, optional
+        frequency. The default is '1M'.
+    weighted : boolean, optional
+        Include weighgted hedges and weighgted strats. The default is False.
+
+    Returns
+    -------
+    dict
+       dictionary containing:
+           df_list: list
+               a list of dataframes:
+                   correlations, portfolio weightings, returns_stats, hedge_metrics
+           title_list: list
+               a list containing titles of each of the dataframes
+
+    """
+    #create list of df_returns column names
+    col_list = list(df_returns.columns)
+    
+    #convert freq to string
+    freq_string = dm.switch_freq_string(freq)
+    
+    #get notional weights for weighted strategy returns if not accurate
+    if weighted:
+        notional_weights = util.check_notional(df_returns, notional_weights)
+    
+    #compute correlations
+    corr_dict = get_corr_analysis(df_returns, notional_weights, include_fi, weighted)
+    
+    #compute return stats and hedge metrics
+    analytics_dict = get_analysis(df_returns, notional_weights, include_fi, new_strat, freq,weighted)
+    
+    return {'corr': corr_dict,'ret_stat_df': analytics_dict['return_stats']}
+
 
 #TODO: Ask powis if this makes sense bc notional only when weighted so do we need to have  2 seperate normal_dict
 def get_normal_sheet_data(df_returns, notional_weights=[], freq='1W', drop_bmk=True, weighted=False):
