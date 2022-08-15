@@ -19,7 +19,15 @@ NEW_DATA_COL_LIST = ['SPTR', 'SX5T','M1WD', 'Long Corp', 'STRIPS', 'Down Var',
                     'Vortex', 'VOLA I', 'VOLA II','Dynamic VOLA','Dynamic Put Spread',
                     'GW Dispersion', 'Corr Hedge','Def Var (Mon)', 'Def Var (Fri)', 'Def Var (Wed)']
 
-def merge_dicts(main_dict, new_dict):
+LIQ_ALTS_MGR_DICT = {'Global Macro': ['1907 Penso Class A','Bridgewater Alpha', 'DE Shaw Oculus Fund',
+                                      'Element Capital'],
+                     'Trend Following': ['1907 ARP TF','1907 Campbell TF', '1907 Systematica TF',
+                                         'One River Trend'],
+                     'Absolute Return':['1907 ARP EM',  '1907 III CV', '1907 III Class A',
+                                        'ABC Reversion','Acadian Commodity AR',
+                                        'Blueshift', 'Duality', 'Elliott'],
+                     }
+def merge_dicts(main_dict, new_dict, drop_na=False, fill_zeros=False):
     """
     Merge new_dict to main_dict
     
@@ -34,15 +42,18 @@ def merge_dicts(main_dict, new_dict):
     # freq_list = ['Daily', 'Weekly', 'Monthly', 'Quarterly', 'Yearly']
     merged_dict = {}
     for key in main_dict:
-        df_main = main_dict[key]
-        df_new = new_dict[key]
-        if key == 'Daily':
-            merged_dict[key] = merge_data_frames(df_main, df_new, True)
-        else:
-            merged_dict[key] = merge_data_frames(df_main, df_new)
+        try:
+            df_main = main_dict[key]
+            df_new = new_dict[key]
+            if key == 'Daily':
+                merged_dict[key] = merge_data_frames(df_main, df_new, fill_zeros=True)
+            else:
+                merged_dict[key] = merge_data_frames(df_main, df_new, drop_na)
+        except KeyError:
+            pass
     return merged_dict
 
-def merge_data_frames(df_main, df_new,fillzeros=False):
+def merge_data_frames(df_main, df_new,drop_na=True,fill_zeros=False):
     """
     Merge df_new to df_main and drop na values
     
@@ -55,13 +66,14 @@ def merge_data_frames(df_main, df_new,fillzeros=False):
     """
     
     df = pd.merge(df_main, df_new, left_index=True, right_index=True, how='outer')
-    if fillzeros:
-        df = df.fillna(0)
-    else:
-        df.dropna(inplace=True)
+    if drop_na:
+        if fill_zeros:
+            df = df.fillna(0)
+        else:
+            df.dropna(inplace=True)
     return df
 
-def format_data(df_index, freq="1M"):
+def format_data(df_index, freq="1M", dropna=True):
     """
     Format dataframe, by freq, to return dataframe
     
@@ -77,7 +89,8 @@ def format_data(df_index, freq="1M"):
     if not(freq == '1D'):
        data = data.resample(freq).ffill()
     data = data.pct_change(1)
-    data.dropna(inplace=True)
+    if dropna:
+        data.dropna(inplace=True)
     data = data.loc[(data!=0).any(1)]
     return data
 
@@ -350,13 +363,21 @@ def get_prices_df(df_returns):
     df_prices = df_returns.copy()
     
     for col in df_returns.columns:
-        df_prices[col][0] = df_returns[col][0] + 1
+        df_prices[col] = get_price_series(df_returns[col])
+        # df_prices[col][0] = df_returns[col][0] + 1
     
-    for i in range(1, len(df_returns)):
-        for col in df_returns.columns:
-            df_prices[col][i] = (df_returns[col][i] + 1) * df_prices[col][i-1]
+    # for i in range(1, len(df_returns)):
+    #     for col in df_returns.columns:
+    #         df_prices[col][i] = (df_returns[col][i] + 1) * df_prices[col][i-1]
     return df_prices
 
+def get_price_series(return_series):
+    price_series = return_series.copy()
+    price_series[0] = return_series[0] + 1
+    for i in range(1, len(return_series)):
+        price_series[i] = (return_series[i] + 1) * price_series[i-1]
+    return price_series
+    
 def get_new_strategy_returns_data(report_name, sheet_name, strategy_list=[]):
     """
     dataframe of stratgy returns
@@ -560,3 +581,127 @@ def create_update_dict():
         
     #return a dictionary
     return new_data_dict
+
+def transform_nexen_data(filename = 'liq_alts\\Historical Asset Class Returns.xls', return_data = True, fillna = False):
+    nexen_df = pd.read_excel(RETURNS_DATA_FP + filename)
+    nexen_df = nexen_df[['Account Name\n', 'Account Id\n', 'Return Type\n', 'As Of Date\n',
+                           'Market Value\n', 'Account Monthly Return\n']]
+    nexen_df.columns = ['Name', 'Account Id', 'Return Type', 'Date', 'Market Value', 'Return']
+    if return_data:
+        nexen_df = nexen_df.pivot_table(values='Return', index='Date', columns='Name')
+        nexen_df /=100
+    else:
+        nexen_df = nexen_df.pivot_table(values='Market Value', index='Date', columns='Name')
+    if fillna:
+        nexen_df = nexen_df.fillna(0)
+    return nexen_df
+
+def transform_nexen_data_1(filename = 'liq_alts\\Historical Asset Class Returns.xls', fillna = False):
+    nexen_df = pd.read_excel(RETURNS_DATA_FP + filename)
+    nexen_df = nexen_df[['Account Name\n', 'Account Id\n', 'Return Type\n', 'As Of Date\n',
+                           'Market Value\n', 'Account Monthly Return\n']]
+    nexen_df.columns = ['Name', 'Account Id', 'Return Type', 'Date', 'Market Value', 'Return']
+    returns_df = nexen_df.pivot_table(values='Return', index='Date', columns='Name')
+    returns_df /=100
+    mv_df = nexen_df.pivot_table(values='Market Value', index='Date', columns='Name')
+    if fillna:
+        return {'returns': returns_df.fillna(0), 'mv': mv_df.fillna(0)}
+    else:
+        return {'returns': returns_df, 'mv': mv_df}
+
+    
+def transform_bbg_data(filepath, sheet_name='data'):
+    bbg_df = pd.read_excel(filepath, sheet_name=sheet_name, 
+                           index_col=0,skiprows=[0,1,2,4,5,6])
+    bbg_df.index.names = ['Dates']
+    return bbg_df
+
+def get_liq_alts_bmks(equity = 'M1WD',include_fi=True):
+    bmks_index = transform_bbg_data(RETURNS_DATA_FP+'liq_alts\\liq_alts_bmks.xlsx')
+    bmks_index = bmks_index[['HFRXM Index','NEIXCTAT Index', 'HFRXAR Index']]
+    bmks_index.columns = ['HFRX Macro/CTA Index', 'SG Trend Index', 'HFRX Absolute Return Index']
+    bmks_ret = format_data(bmks_index)
+    bmks_ret['Liquid Alts Bmk'] = 0.5*bmks_ret['HFRX Macro/CTA Index'] + 0.3*bmks_ret['HFRX Absolute Return Index'] + 0.2*bmks_ret['SG Trend Index']
+    beta_m =  get_equity_hedge_returns(equity=equity, include_fi=include_fi)
+    return merge_data_frames(beta_m['Monthly'][[equity, 'FI Benchmark']],bmks_ret, drop_na=False)
+
+def get_liq_alts_dict(filename = 'liq_alts\\Monthly Returns Liquid Alts.xls'):
+    liq_alts_ret = transform_nexen_data(filename)
+    liq_alts_mv = transform_nexen_data(filename, False)
+    liq_alts_dict = {}
+    total_ret = pd.DataFrame(index = liq_alts_ret.index)
+    total_mv = pd.DataFrame(index = liq_alts_mv.index)
+    for key in LIQ_ALTS_MGR_DICT:
+        temp_dict = {}
+        temp_ret = liq_alts_ret[LIQ_ALTS_MGR_DICT[key]].copy()
+        temp_mv = liq_alts_mv[LIQ_ALTS_MGR_DICT[key]].copy()
+        temp_dict = get_agg_data(temp_ret, temp_mv, key)
+        if key == 'Trend Following':
+            temp_dict = {'returns': liq_alts_ret[get_sub_mgrs(key)], 
+                              'mv':liq_alts_mv[get_sub_mgrs(key)]}
+        total_ret = merge_data_frames(total_ret, temp_ret[[key]])
+        total_mv = merge_data_frames(total_mv, temp_mv[[key]])
+        liq_alts_dict[key] = temp_dict
+    liq_alts_dict['Total Liquid Alts'] = get_agg_data(total_ret, total_mv, 'Total Liquid Alts')
+    return liq_alts_dict
+
+def get_liq_alts_returns(equity='M1WD', include_fi=True):
+    liq_alts_bmks = get_liq_alts_bmks()
+    liq_alts_port = get_liq_alts_port(get_liq_alts_dict())
+    return merge_data_frames(liq_alts_port,liq_alts_bmks)
+    
+def get_liq_alts_port(liq_alts_dict):
+    liq_alts_port = pd.DataFrame()
+    for key in LIQ_ALTS_MGR_DICT:
+        liq_alts_port = merge_data_frames(liq_alts_port, liq_alts_dict[key]['returns'], drop_na=False)
+        
+    liq_alts_port = merge_data_frames(liq_alts_port, liq_alts_dict['Total Liquid Alts']['returns'][['Total Liquid Alts']],drop_na=False)
+    return liq_alts_port
+
+def get_agg_data(df_returns, df_mv, agg_col):
+    wgts = df_mv.divide(df_mv.sum(axis=1), axis='rows')
+    df_returns[agg_col] = (df_returns*wgts).sum(axis=1)
+    df_mv[agg_col] = df_mv.sum(axis=1)
+    return {'returns':df_returns, 'mv':df_mv}
+    
+def get_abs_ret():
+    ar_list = ['1907 ARP EM', '1907 III CV', '1907 III Class A', 'ABC Reversion',
+                    'Acadian Commodity AR','Blueshift', 'Duality', 'Elliott']
+    liq_alts_data = get_liq_alts_dict()
+    for key in liq_alts_data:
+        liq_alts_data[key] = liq_alts_data[key][ar_list]
+    wgts = liq_alts_data['mv']/liq_alts_data['mv'].sum(axis=1)
+    liq_alts_data['returns']['Absolute Return-no RP'] = (liq_alts_data['returns']*wgts).sum(axis=1)
+    liq_alts_data['mv']['Absolute Return-no RP'] = liq_alts_data['mv'].sum(axis=1)
+    return liq_alts_data
+    
+def get_mgrs_list(full=True,sub_port= 'Global Macro'):
+    mgr_list = []
+    if full:
+        for key in LIQ_ALTS_MGR_DICT:
+            mgr_list = mgr_list + LIQ_ALTS_MGR_DICT[key]
+            mgr_list.append(key)
+    else:
+        mgr_list = mgr_list + LIQ_ALTS_MGR_DICT[sub_port]
+        mgr_list.append(sub_port)
+    return mgr_list
+
+def get_sub_mgrs(sub_port = 'Global Macro'):
+    mgr_list = []
+    mgr_list = mgr_list + LIQ_ALTS_MGR_DICT[sub_port]
+    mgr_list.append(sub_port)
+    return mgr_list
+
+def get_sub_ports():
+    return list(LIQ_ALTS_MGR_DICT.keys())
+    
+
+def get_new_strat_data(filename, sheet_name='data', freq='1M', index_data = False):
+    new_strat = pd.read_excel(RETURNS_DATA_FP+filename,sheet_name=sheet_name, index_col=0)
+    if index_data:
+        new_strat = format_data(new_strat,freq)
+    return new_strat
+
+def get_monthly_dict(df_returns):
+    obs = len(df_returns)
+    return {'full': df_returns, '5y':df_returns.iloc[obs-60:,], '3y':df_returns.iloc[obs-36:,]}
