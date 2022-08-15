@@ -15,7 +15,7 @@ from .import sheets
 import os
 
 
-def get_report_path(report_name):
+def get_filepath_path(report_name, data_file=False):
     """
     Gets the file path where the report will be stored
 
@@ -32,9 +32,10 @@ def get_report_path(report_name):
     """
     
     cwd = os.getcwd()
-    reports_fp = '\\EquityHedging\\reports\\'
+    
+    fp = '\\EquityHedging\\reports\\' if data_file else '\\EquityHedging\\data\\'
     file_name = report_name +'.xlsx'
-    return cwd + reports_fp + file_name
+    return cwd + fp + file_name
     
 def get_equity_hedge_report(report_name, returns_dict, notional_weights=[],
                             include_fi=False, new_strat=False, weighted=False, selloffs=False, freq_list=['Monthly', 'Weekly']):
@@ -65,7 +66,7 @@ def get_equity_hedge_report(report_name, returns_dict, notional_weights=[],
     """
     
     #get file path and create excel writer
-    file_path = get_report_path(report_name)
+    file_path = get_filepath_path(report_name)
     writer = pd.ExcelWriter(file_path,engine='xlsxwriter')
     
     #create list of frequencies we want to create the report for
@@ -139,11 +140,62 @@ def get_equity_hedge_report(report_name, returns_dict, notional_weights=[],
     print_report_info(report_name, file_path)
     writer.save()
 
+def get_alts_report(report_name, returns_dict, notional_weights=[],
+                            include_fi=False, new_strat=False, weighted=False, selloffs=False, freq_list=['Monthly']):
+    """
+    Generate equity hedge analysis report
+    
+    Parameters
+    ----------
+    report_name : string
+        Name of report.
+    returns_dict : dict
+        dictionary of returns containing different frequencies.
+    notional_weights : list, optional
+        notional weights of strategies. The default is [].
+    include_fi : boolean, optional
+        Include Fixed Income benchmark. The default is False.
+    new_strat : boolean, optional
+        Does analysis involve a new strategy. The default is False.
+    weighted : boolean, optional
+        Include weighgted hedges and weighgted strats. The default is False.
+    selloffs : boolean, optional
+        Include historical selloffs. The default is False.
+
+    Returns
+    -------
+    None. An excel report called [report_name].xlsx is created 
+
+    """
+    
+    #get file path and create excel writer
+    file_path = get_filepath_path(report_name)
+    writer = pd.ExcelWriter(file_path,engine='xlsxwriter')
+    
+    
+    #loop through frequencies
+    for freq in freq_list:
+        print("Computing {} Analytics...".format(freq))
+        
+        #get analytics
+        analysis_data = summary.get_alts_data(returns_dict[freq], notional_weights,
+                                                          include_fi,new_strat,
+                                                          dm.switch_string_freq(freq), weighted)
+        return_sheet = freq + ' Historical Returns'
+        
+        #create sheets
+        sheets.set_corr_sheet(writer,analysis_data['corr'], include_fi=include_fi)
+        sheets.set_ret_stat_sheet(writer,analysis_data['ret_stat_df'], include_fi=include_fi)
+        sheets.set_hist_return_sheet(writer,returns_dict[freq], return_sheet)
+    
+    print_report_info(report_name, file_path)
+    writer.save()
+
 def get_corr_rank_report(report_name, df_returns, buckets, notional_weights=[],include_fi=False):
     """
     """
     
-    file_path = get_report_path(report_name)
+    file_path = get_filepath_path(report_name)
     writer = pd.ExcelWriter(file_path,engine='xlsxwriter')
     
     corr_pack = get_corr_rank_data(df_returns, buckets, notional_weights,include_fi)
@@ -160,7 +212,7 @@ def get_rolling_cum_ret_report(report_name, df_returns, freq, notional_weights):
     """
     """
     
-    file_path = get_report_path(report_name)
+    file_path = get_filepath_path(report_name)
     writer = pd.ExcelWriter(file_path, engine='xlsxwriter')
     
     rolling_cum_dict = summary.get_rolling_cum_data(df_returns, freq,notional_weights)
@@ -192,7 +244,7 @@ def generate_strat_report(report_name, returns_dict, selloffs=False, freq_list=[
     """
     
     #get file path and create excel writer
-    file_path = get_report_path(report_name)
+    file_path = get_filepath_path(report_name)
     writer = pd.ExcelWriter(file_path,engine='xlsxwriter')
     
     #loop through frequencies
@@ -228,19 +280,6 @@ def generate_strat_report(report_name, returns_dict, selloffs=False, freq_list=[
             print('Skipping Historical SellOffs, no daily data in returns dictionary')
             pass
     
-    #Get Normalized Hedge Metrics 
-    # if 'Weekly' in returns_dict.keys():
-    #     print("Computing Normalized Hedge Metrics...")
-        
-    #     #get weekly returns
-    #     weekly_returns = returns_dict['Weekly'].copy()
-        
-    #     #Compute hedge metrics and normalize them
-    #     normal_data = summary.get_normal_sheet_data(weekly_returns)
-       
-    #     #Create Sheet
-    #     sheets.set_normal_sheet(writer, normal_data)
-    
     print_report_info(report_name, file_path)
     writer.save()
 
@@ -266,7 +305,7 @@ def generate_hs_report(report_name, returns_dict, notional_weights=[], weighted=
     """
     
     #get file path and create excel writer
-    file_path = get_report_path(report_name)
+    file_path = get_filepath_path(report_name)
     writer = pd.ExcelWriter(file_path, engine='xlsxwriter')
 
     print("Computing Historical SellOffs...")
@@ -287,7 +326,7 @@ def generate_hs_report(report_name, returns_dict, notional_weights=[], weighted=
         print('Skipping Historical SellOffs, no daily data in returns dictionary')
         pass
 
-def get_returns_report(report_name, returns_dict):
+def get_returns_report(report_name, returns_dict, data_file = False):
     """
     Generates historical returns spreadsheet containing returns for different frequencies
 
@@ -304,7 +343,7 @@ def get_returns_report(report_name, returns_dict):
 
     """
     #get file path and create excel writer
-    file_path = get_report_path(report_name)
+    file_path = get_filepath_path(report_name, data_file)
     writer = pd.ExcelWriter(file_path, engine='xlsxwriter')
     
     #loop through dictionary to create returns spreadsheet
@@ -312,6 +351,18 @@ def get_returns_report(report_name, returns_dict):
         print("Writing {} Historical Returns sheet...".format(key))
         sheets.set_hist_return_sheet(writer, returns_dict[key], key)
     
+    #save file
+    print_report_info(report_name, file_path)
+    writer.save()
+
+def get_nexen_report(report_name, nexen_dict, data_file = True):
+    file_path = get_filepath_path(report_name, data_file)
+    writer = pd.ExcelWriter(file_path, engine='xlsxwriter')
+    print("Writing Monthly Returns sheet...")
+    sheets.set_hist_return_sheet(writer, nexen_dict['returns'], 'returns')
+    print("Writing Monthly Market Values sheet...")
+    sheets.set_mv_sheet(writer, nexen_dict['mv'], 'Market Values')
+
     #save file
     print_report_info(report_name, file_path)
     writer.save()

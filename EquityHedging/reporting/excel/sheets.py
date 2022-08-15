@@ -183,6 +183,143 @@ def set_analysis_sheet(writer, data_dict, sheet_name, spaces=3,include_fi=False)
     
     return 0
 
+def set_ret_stat_sheet(writer, ret_stat_df, sheet_name='Returns Statistics', spaces=3,include_fi=False):
+    """
+    Create excel sheet with:
+    Return Statistics
+    
+
+    Parameters:
+    writer - ExcelWriter
+    data_dict -- list
+    sheet_name -- string
+    spaces -- int
+
+    Returns:
+    excel writer
+    """
+
+    #create writer and workbook
+    workbook = writer.book
+    
+    #pull out lists from data_dict
+    
+    #format background color of worksheet to white
+    cell_format = formats.set_worksheet_format(workbook)
+    df_empty = pd.DataFrame()
+    df_empty.to_excel(writer, sheet_name=sheet_name, startrow=0, startcol=0)
+    worksheet = writer.sheets[sheet_name]
+    worksheet.set_column(0, 1000, 22, cell_format)
+    row = 2
+    col = 1
+    jump_1=0
+    jump_2 = 0
+    if include_fi:
+        jump_1 = 1
+        jump_2 = 2
+    
+    #get formats for worksheet
+    #title format
+    title_format = formats.set_title_format(workbook)
+    #digits format
+    digits_fmt = formats.set_number_format(workbook,num_format='0.00')
+    #percent format
+    pct_fmt = formats.set_number_format(workbook,num_format='0.00%')
+       
+    try:
+        row_dim = row + ret_stat_df.shape[0]
+        col_dim = col + ret_stat_df.shape[1]
+        worksheet.write(row-1, 1, sheet_name, title_format)
+        
+        #write data into worksheet
+        ret_stat_df.to_excel(writer, sheet_name=sheet_name, startrow=row , startcol=1)   
+    except AttributeError:
+        pass
+    #format for return stats
+    #format ret to percent
+    worksheet.conditional_format(row+1,col+1, row+2+jump_1, col_dim,{'type':'no_blanks',
+                              'format':pct_fmt})
+    #format ratio to digits
+    worksheet.conditional_format(row+3+jump_1,col+1, row+3+jump_2, col_dim,{'type':'no_blanks',
+                              'format':digits_fmt})
+    
+    worksheet.conditional_format(row+4+jump_2,col+1, row+7+jump_2, col_dim,{'type':'no_blanks',
+                              'format':pct_fmt})
+    #format ratio to digits
+    worksheet.conditional_format(row+8+jump_2,col+1, row+8+jump_2, col_dim,{'type':'no_blanks',
+                              'format':digits_fmt})
+    #format max_dd to percent
+    worksheet.conditional_format(row+9+jump_2,col+1, row+15+jump_2, col_dim,{'type':'no_blanks',
+                              'format':pct_fmt})
+    #format ret/dd to digits
+    worksheet.conditional_format(row+16+jump_2,col+1, row+18+jump_2, col_dim,{'type':'no_blanks',
+                              'format':digits_fmt})
+    #format max_1m_dd to percent
+    worksheet.conditional_format(row+19+jump_2,col+1, row+19+jump_2, col_dim,{'type':'no_blanks',
+                              'format':pct_fmt})
+    #format ret/dd to digits
+    worksheet.conditional_format(row+20+jump_2,col+1, row+22+jump_2, col_dim,{'type':'no_blanks',
+                              'format':digits_fmt})
+    
+    return 0
+
+def set_corr_sheet(writer, corr_dict, sheet_name='Correlation Analsysis', spaces=3,include_fi=False):
+    """
+    Create excel sheet with:
+    Correlation Matrices
+    
+
+    Parameters:
+    writer - ExcelWriter
+    data_dict -- list
+    sheet_name -- string
+    spaces -- int
+
+    Returns:
+    excel writer
+    """
+
+    #create writer and workbook
+    workbook = writer.book
+    
+     
+    #format background color of worksheet to white
+    cell_format = formats.set_worksheet_format(workbook)
+    df_empty = pd.DataFrame()
+    df_empty.to_excel(writer, sheet_name=sheet_name, startrow=0, startcol=0)
+    worksheet = writer.sheets[sheet_name]
+    worksheet.set_column(0, 1000, 22, cell_format)
+    row = 2
+    col = 1
+    
+    #get formats for worksheet
+    #title format
+    title_format = formats.set_title_format(workbook)
+    #digits format
+    digits_fmt = formats.set_number_format(workbook,num_format='0.00')
+        
+    for key in corr_dict:
+        try:
+            row_dim = row + corr_dict[key][0].shape[0]
+            col_dim = col + corr_dict[key][0].shape[1]
+            worksheet.write(row-1, 1, corr_dict[key][1], title_format)
+            
+            #write data into worksheet
+            corr_dict[key][0].to_excel(writer, sheet_name=sheet_name, startrow=row , startcol=1)   
+        except AttributeError:
+            pass
+        #format for correlation matrices
+        #format numbers to digits
+        worksheet.conditional_format(row+1,col+1, row_dim, col_dim,{'type':'duplicate',
+                                  'format':digits_fmt})
+        #format matrics using 3 color scale
+        worksheet.conditional_format(row+1,col+1, row_dim, col_dim,{'type':'3_color_scale'})
+        
+        
+        row = row_dim + spaces + 1
+    
+    return 0
+
 def set_normal_sheet(writer, data_dict, sheet_name='Hedgging Framework Metrics', spaces=3):
     """
     Create excel sheet with:
@@ -313,6 +450,45 @@ def set_grouped_data_sheet(writer, quintile_df, decile_df, sheet_name = 'Grouped
             row = row_dim + spaces + 1
     
     return 0
+
+def set_mv_sheet(writer,df_returns,sheet_name='Market Values'):
+    """
+    Create excel sheet for historical returns
+    
+    Parameters:
+    writer -- excel writer
+    df_returns -- dataframe
+    sheet_name -- string
+    """
+
+    workbook = writer.book
+    cell_format = formats.set_worksheet_format(workbook)
+    df_empty = pd.DataFrame()
+    df_empty.to_excel(writer, sheet_name=sheet_name, startrow=0, startcol=0)
+    worksheet = writer.sheets[sheet_name]
+    worksheet.set_column(0, 1000, 21, cell_format)
+    row = 0
+    col = 0
+    #    title_format = set_title_format(workbook)
+    
+    #currency format
+    currency_fmt = formats.set_number_format(workbook,num_format='$#,##0.00')
+    
+    #date format
+    date_fmt = formats.set_number_format(workbook, num_format='mm/dd/yyyy')
+        
+    row_dim = row + df_returns.shape[0]
+    col_dim = col + df_returns.shape[1]
+    #    worksheet.write(row-1, 1, sheet_name, title_format)
+    df_returns.to_excel(writer, sheet_name=sheet_name, startrow=row , startcol=col)   
+    # worksheet.conditional_format(row+1,col+1, row_dim, col_dim,{'type':'no_blanks',
+    #                               'format':pct_fmt})
+    worksheet.conditional_format(row,col, row_dim, col,{'type':'no_blanks',
+                                  'format':date_fmt})
+    worksheet.conditional_format(row+1,col+1, row_dim, col_dim,{'type':'no_blanks',
+                              'format':currency_fmt})
+    return 0
+
     
 def set_hist_return_sheet(writer,df_returns,sheet_name='Daily Historical Returns'):
     """
@@ -368,7 +544,7 @@ def set_hist_return_sheet(writer,df_returns,sheet_name='Daily Historical Returns
     worksheet.conditional_format(row,col, row_dim, col,{'type':'no_blanks',
                                   'format':date_fmt})
     return 0
-        
+      
 def set_sgi_vrr_sheet(writer,df, sheet_name):
     """
     Create excel sheet for vrr returns
