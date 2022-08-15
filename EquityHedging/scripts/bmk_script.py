@@ -11,17 +11,25 @@ from EquityHedging.datamanager import data_manager as dm
 from EquityHedging.reporting.excel import reports as rp
 
 
-asset_df = pd.read_excel(dm.RETURNS_DATA_FP + 'liq_alts\\Historical Returns.xls', sheet_name='Historical Returns')
+asset_df = pd.read_excel(dm.RETURNS_DATA_FP + 'liq_alts\\Historical Returns.xls',
+                         sheet_name='Historical Returns')
 asset_df.columns = ['Name', 'Account Id', 'Return Type', 'Date',
        'Market Value', 'Return']
 asset_ret = asset_df.pivot_table(values='Return', index='Date', columns='Name')
 asset_ret /= 100
 eq_fi_df = asset_ret[['Total EQ w/o Derivatives', 'Total Fixed Income']]
 
-report_name = 'asset_return_data'
+report_name = 'return_data'
 file_path = rp.get_report_path(report_name)
 writer = pd.ExcelWriter(file_path,engine='xlsxwriter')
 rp.sheets.set_hist_return_sheet(writer,asset_ret, 'data')
+
+libor_df = pd.read_excel(dm.RETURNS_DATA_FP + 'liq_alts\\bmk_data.xlsx', sheet_name='libor', index_col=0)
+libor_df /=100
+libor_df = libor_df.resample('1M').ffill()
+libor_df['3M LIBOR'] = np.power(1+libor_df['US0003M Index'],1/12)-1
+libor_df['6M LIBOR'] = np.power(1+libor_df['US0006M Index'],1/12)-1
+libor_df['12M LIBOR'] = np.power(1+libor_df['US0012M Index'],1/12)-1
 
 bmk_df = pd.read_excel(dm.RETURNS_DATA_FP + 'liq_alts\\bmk_data.xlsx', sheet_name='data_m', index_col=0)
 bmk_df = bmk_df[['LBUSTRUU Index', 'NDUEACWF Index', 'SPGSCITR Index', 'HFRXM Index','HFRIMI Index',
