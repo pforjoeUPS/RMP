@@ -10,11 +10,11 @@ import os
 from datetime import datetime as dt
 
 CWD = os.getcwd()
-RETURNS_DATA_FP = CWD +'\\EquityHedging\\data\\'
-EQUITY_HEDGING_RETURNS_DATA = RETURNS_DATA_FP + 'ups_equity_hedge\\returns_data.xlsx'
-NEW_DATA = RETURNS_DATA_FP + 'new_strats\\'
-UPDATE_DATA = RETURNS_DATA_FP + 'update_strats\\'
-EQUITY_HEDGE_DATA = RETURNS_DATA_FP + 'ups_equity_hedge\\'
+DATA_FP = CWD +'\\EquityHedging\\data\\'
+EQUITY_HEDGING_RETURNS_DATA = DATA_FP + 'ups_equity_hedge\\returns_data.xlsx'
+NEW_DATA = DATA_FP + 'new_strats\\'
+UPDATE_DATA = DATA_FP + 'update_strats\\'
+EQUITY_HEDGE_DATA = DATA_FP + 'ups_equity_hedge\\'
 NEW_DATA_COL_LIST = ['SPTR', 'SX5T','M1WD', 'Long Corp', 'STRIPS', 'Down Var',
                     'Vortex', 'VOLA I', 'VOLA II','Dynamic VOLA','Dynamic Put Spread',
                     'GW Dispersion', 'Corr Hedge','Def Var (Mon)', 'Def Var (Fri)', 'Def Var (Wed)']
@@ -583,7 +583,7 @@ def create_update_dict():
     return new_data_dict
 
 def transform_nexen_data(filename = 'liq_alts\\Historical Asset Class Returns.xls', return_data = True, fillna = False):
-    nexen_df = pd.read_excel(RETURNS_DATA_FP + filename)
+    nexen_df = pd.read_excel(DATA_FP + filename)
     nexen_df = nexen_df[['Account Name\n', 'Account Id\n', 'Return Type\n', 'As Of Date\n',
                            'Market Value\n', 'Account Monthly Return\n']]
     nexen_df.columns = ['Name', 'Account Id', 'Return Type', 'Date', 'Market Value', 'Return']
@@ -596,8 +596,8 @@ def transform_nexen_data(filename = 'liq_alts\\Historical Asset Class Returns.xl
         nexen_df = nexen_df.fillna(0)
     return nexen_df
 
-def transform_nexen_data_1(filename = 'liq_alts\\Historical Asset Class Returns.xls', fillna = False):
-    nexen_df = pd.read_excel(RETURNS_DATA_FP + filename)
+def transform_nexen_data_1(filepath, fillna = False):
+    nexen_df = pd.read_excel(filepath)
     nexen_df = nexen_df[['Account Name\n', 'Account Id\n', 'Return Type\n', 'As Of Date\n',
                            'Market Value\n', 'Account Monthly Return\n']]
     nexen_df.columns = ['Name', 'Account Id', 'Return Type', 'Date', 'Market Value', 'Return']
@@ -617,7 +617,7 @@ def transform_bbg_data(filepath, sheet_name='data'):
     return bbg_df
 
 def get_liq_alts_bmks(equity = 'M1WD',include_fi=True):
-    bmks_index = transform_bbg_data(RETURNS_DATA_FP+'liq_alts\\liq_alts_bmks.xlsx')
+    bmks_index = transform_bbg_data(DATA_FP+'liq_alts\\liq_alts_bmks.xlsx')
     bmks_index = bmks_index[['HFRXM Index','NEIXCTAT Index', 'HFRXAR Index']]
     bmks_index.columns = ['HFRX Macro/CTA Index', 'SG Trend Index', 'HFRX Absolute Return Index']
     bmks_ret = format_data(bmks_index)
@@ -697,7 +697,7 @@ def get_sub_ports():
     
 
 def get_new_strat_data(filename, sheet_name='data', freq='1M', index_data = False):
-    new_strat = pd.read_excel(RETURNS_DATA_FP+filename,sheet_name=sheet_name, index_col=0)
+    new_strat = pd.read_excel(DATA_FP+filename,sheet_name=sheet_name, index_col=0)
     if index_data:
         new_strat = format_data(new_strat,freq)
     return new_strat
