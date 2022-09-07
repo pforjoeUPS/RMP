@@ -15,6 +15,7 @@ from EquityHedging.analytics import summary
 from EquityHedging.reporting.excel import reports as rp
 from EquityHedging.reporting import formatter as plots
 
+
 #import returns data
 equity_bmk = 'SPTR'
 include_fi = False
@@ -34,7 +35,8 @@ if new_strat:
     returns = dm.merge_dicts(returns, new_strategy_dict)
 
 #get notional weights
-notional_weights = dm.get_notional_weights(returns['Monthly'])
+notional_weights = [13,1,1.25,1,1,1,0.25,1]
+#dm.get_notional_weights(returns['Monthly'])
 df_weights = get_df_weights(notional_weights, list(returns['Monthly'].columns), include_fi)
 
 #compute correlations
@@ -72,12 +74,18 @@ if check_quint:
 check_ann = False
 if check_ann:
     annual_dollar_returns = summary.get_annual_dollar_returns(returns, notional_weights)
-
+    
+strategy = "VOLA 3"
+monthly_ret_table = True
+if monthly_ret_table:
+    month_returns_table = dm.month_ret_table(returns['Monthly'], strategy = strategy)
+    full_month_returns_table = dm.all_strat_month_ret_table(returns['Monthly'])
 #run report
 equity_hedge_report = 'equity_hedge_analysis_test'
 selloffs = True
+grouped = True
 # start = time.time()
-rp.get_equity_hedge_report(equity_hedge_report, returns,notional_weights, include_fi, new_strat, weighted[0], selloffs)
+rp.get_equity_hedge_report(equity_hedge_report, returns,notional_weights, include_fi, new_strat, weighted[0], selloffs, grouped, monthly_ret_table)
 # end = time.time()
 # print(end - start)
 

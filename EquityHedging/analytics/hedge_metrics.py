@@ -10,6 +10,7 @@ from EquityHedging.analytics.decay import get_decay_days
 from EquityHedging.analytics.util import get_pos_neg_df
 from EquityHedging.analytics import  util
 
+
 HEDGE_METRICS_INDEX = ['Benefit Count','Benefit Median','Benefit Mean','Benefit Cum', 
                        'Downside Reliability','Upside Reliability',
                        'Convexity Count','Convexity Median','Convexity Mean','Convexity Cum',
@@ -238,7 +239,7 @@ def get_reliability_stats(df_returns, col_name, tail=False):
         reliability['non_tail'] = corr_non_tail[col_name].iloc[0]
     
     return reliability
-
+    
 def get_hedge_metrics(df_returns, freq="1M", full_list=True):
     """
     Return a dataframe of hedge metrics
@@ -268,7 +269,6 @@ def get_hedge_metrics(df_returns, freq="1M", full_list=True):
             convexity = get_convexity_stats(df_returns, col)
             cost = get_cost_stats(df_returns, col)
             decay = get_decay_stats(df_returns, col, freq)
-            
             hedge_dict[col] = [benefit['count'],benefit['median'],benefit['mean'],
                                benefit['cumulative'],reliability['down'],reliability['up'],
                                convexity['count'],convexity['median'],convexity['mean'],
@@ -291,3 +291,4 @@ def get_hedge_metrics(df_returns, freq="1M", full_list=True):
     #Converts hedge_dict to a data grame
     df_hedge_metrics = util.convert_dict_to_df(hedge_dict, get_hm_index_list(full_list))
     return df_hedge_metrics
+

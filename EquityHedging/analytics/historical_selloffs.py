@@ -41,8 +41,13 @@ COVID_19 = {'period':'Coronavirus Pandemic',
           'end':'2020-03-23'}
 
 
+JUNE_2022 =  {'period':'June 2022 Sell Off', 
+          'start': '2022-06-07', 
+          'end':'2022-06-16'}
+
+ 
 EVENTS = [GFC, EURO_DEBT, US_DEBT, CHINA_WEAKNESS,
-          OIL_DROP, FEB_2018, Q4_2018, COVID_19]
+          OIL_DROP, FEB_2018, Q4_2018, COVID_19,JUNE_2022]
 
 
 def compute_event_ret(df_index, col, start, end):

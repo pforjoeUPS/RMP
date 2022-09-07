@@ -14,7 +14,6 @@ from math import prod
 from EquityHedging.analytics import returns_stats as rs
 from EquityHedging.analytics import summary 
 
-
 CWD = os.getcwd()
 RETURNS_DATA_FP = CWD +'\\EquityHedging\\data\\'
 EQUITY_HEDGING_RETURNS_DATA = RETURNS_DATA_FP + 'ups_equity_hedge\\returns_data.xlsx'
@@ -25,7 +24,7 @@ NEW_DATA_COL_LIST = ['SPTR', 'SX5T','M1WD', 'Long Corp', 'STRIPS', 'Down Var',
                     'Vortex', 'VOLA I', 'VOLA II','Dynamic VOLA','Dynamic Put Spread',
                     'GW Dispersion', 'Corr Hedge','Def Var (Mon)', 'Def Var (Fri)', 'Def Var (Wed)']
 
-def merge_dicts(main_dict, new_dict):
+def merge_dicts(main_dict, new_dict, fillzeros = True):
     """
     Merge new_dict to main_dict
     
@@ -43,7 +42,7 @@ def merge_dicts(main_dict, new_dict):
         df_main = main_dict[key]
         df_new = new_dict[key]
         if key == 'Daily':
-            merged_dict[key] = merge_data_frames(df_main, df_new, True)
+            merged_dict[key] = merge_data_frames(df_main, df_new, fillzeros = fillzeros)
         else:
             merged_dict[key] = merge_data_frames(df_main, df_new)
     return merged_dict
@@ -234,10 +233,12 @@ def get_notional_weights(df_returns):
     """
     return [float(input('notional value (Billions) for ' + col + ': ')) for col in df_returns.columns]    
 
+
 def create_copy_with_fi(df_returns, equity = 'SPTR', freq='1M', include_fi=False):
     """
     Combine columns of df_returns together to get:
     FI Benchmark (avg of Long Corps and STRIPS)
+    ***Change to VOLA (Dynamic VOLA) ????????
     VOLA (avg of VOLA I and VOLA II)
     Def Var (weighted avg Def Var (Fri): 60%, Def Var (Mon):20%, Def Var (Wed): 20%)
     
@@ -250,22 +251,22 @@ def create_copy_with_fi(df_returns, equity = 'SPTR', freq='1M', include_fi=False
     """
     strategy_returns = df_returns.copy()
     
-    strategy_returns['VOLA'] = strategy_returns['Dynamic VOLA']
+    strategy_returns['VOLA 3'] = strategy_returns['Dynamic VOLA']
     strategy_returns['Def Var']=strategy_returns['Def Var (Fri)']*.4 + strategy_returns['Def Var (Mon)']*.3+strategy_returns['Def Var (Wed)']*.3
         
     if freq == '1W' or freq == '1M':
         if include_fi:
             strategy_returns['FI Benchmark'] = (strategy_returns['Long Corp'] + strategy_returns['STRIPS'])/2
             strategy_returns = strategy_returns[[equity, 'FI Benchmark', '99%/90% Put Spread', 
-                                                 'Down Var', 'Vortex', 'VOLA','Dynamic Put Spread',
+                                                 'Down Var', 'Vortex', 'VOLA 3','Dynamic Put Spread',
                                                  'VRR', 'GW Dispersion', 'Corr Hedge','Def Var']]
         else:
             strategy_returns = strategy_returns[[equity, '99%/90% Put Spread', 
-                                                 'Down Var', 'Vortex', 'VOLA','Dynamic Put Spread',
+                                                 'Down Var', 'Vortex', 'VOLA 3','Dynamic Put Spread',
                                                  'VRR', 'GW Dispersion', 'Corr Hedge','Def Var']]
     else:
         strategy_returns = strategy_returns[[equity, '99%/90% Put Spread', 'Down Var', 'Vortex',
-                                             'VOLA','Dynamic Put Spread','VRR', 
+                                             'VOLA 3','Dynamic Put Spread','VRR', 
                                              'GW Dispersion', 'Corr Hedge','Def Var']]
     
     return strategy_returns
@@ -363,7 +364,7 @@ def get_prices_df(df_returns):
             df_prices[col][i] = (df_returns[col][i] + 1) * df_prices[col][i-1]
     return df_prices
 
-def get_new_strategy_returns_data(report_name, sheet_name, strategy_list=[]):
+def get_new_strategy_returns_data(report_name, sheet_name, strategy_list=[], freq = '1D'):
     """
     dataframe of stratgy returns
     
@@ -383,7 +384,7 @@ def get_new_strategy_returns_data(report_name, sheet_name, strategy_list=[]):
         df_strategy.index = pd.to_datetime(df_strategy.index)
     except TypeError:
         pass
-    df_strategy = df_strategy.resample('1D').ffill()
+    df_strategy = df_strategy.resample(freq).ffill()
     new_strategy_returns = df_strategy.copy()
     if 'Index' in sheet_name:
         new_strategy_returns = df_strategy.pct_change(1)
@@ -544,7 +545,7 @@ def create_update_dict():
 
     '''
     #Import data from bloomberg into dataframe and create dictionary with different frequencies
-    new_data_dict = get_data_to_update(NEW_DATA_COL_LIST, 'ups_data.xlsx')
+    new_ups_data_dict = get_data_to_update(NEW_DATA_COL_LIST, 'ups_data.xlsx')
     
     #get vrr data
     vrr_dict = get_data_to_update(['VRR'], 'vrr_tracks_data.xlsx')
@@ -556,8 +557,10 @@ def create_update_dict():
     put_spread_dict = get_data_to_update(['99 Rep', 'Short Put', '99%/90% Put Spread'], 'put_spread_data.xlsx', 'Daily', put_spread = True)
     
     #merge vrr and put spread dicts to the new_data dict
-    new_data_dict = merge_dicts_list([new_data_dict,put_spread_dict, vrr_dict])
-    
+    new_data_dict = merge_dicts(new_ups_data_dict, put_spread_dict, False)
+    new_data_dict =  merge_dicts(new_data_dict, vrr_dict)   
+
+
     #get data from returns_data.xlsx into dictionary
     returns_dict = get_equity_hedge_returns(all_data=True)
     
@@ -720,4 +723,6 @@ def update_returns_data():
         returns_dict[key] = ret_df.append(new_ret_df)
     
     returns_dict = check_returns(returns_dict)
+
     return returns_dict
+
