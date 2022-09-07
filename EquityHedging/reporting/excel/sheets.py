@@ -6,7 +6,7 @@ Created on Tue Oct  1 17:59:28 2019
 """
 
 import pandas as pd
-from EquityHedging.reporting.excel import formats
+from .import formats
 
 def set_analysis_sheet(writer, data_dict, sheet_name, spaces=3):
     """
@@ -133,13 +133,6 @@ def set_analysis_sheet(writer, data_dict, sheet_name, spaces=3):
             worksheet.conditional_format(row+15,col+1, row+15, col_dim,{'type':'no_blanks',
                                       'format':digits_fmt})
             
-            #format var to percent
-            worksheet.conditional_format(row+16,col+1, row+16, col_dim,{'type':'no_blanks',
-                                      'format':pct_fmt})
-            
-            #format cvar to percent
-            worksheet.conditional_format(row+17,col+1, row+17, col_dim,{'type':'no_blanks',
-                                      'format':pct_fmt})
             
         #format for hedge metrics
         else:
@@ -529,54 +522,4 @@ def set_corr_rank_sheet(writer,corr_pack,dates):
         worksheet.conditional_format(row+1,col+1, row_dim, col_dim,{'type':'3_color_scale'})
         
         row = row_dim + spaces + 1
-    return 0
-
-def set_monthly_ret_table_sheet(writer, table_dict, 
-                                sheet_name = "Monthly Returns Table"):
-
-    workbook = writer.book
-    cell_format = formats.set_worksheet_format(workbook)
-    df_empty = pd.DataFrame()
-    df_empty.to_excel(writer, sheet_name=sheet_name, startrow=0, startcol=0)
-    worksheet = writer.sheets[sheet_name]
-    #21 is the width of the cell
-    worksheet.set_column(0, 1000, 17, cell_format)
-    row = 1
-    col = 0
-    spaces = 3
-        
-    #percent format
-    pct_fmt_pos = formats.set_number_format(workbook,num_format='0.00%')
-    #percent format with dark red text.
-    
-    pct_fmt_neg = workbook.add_format({'num_format': '0.00%',
-                                    'bold':False,
-                                    'font_color': '#9C0006'})
-    
-    #get the list of strategies that are in the dictionary
-    strat_list = list(table_dict.keys())
-    
-    for strat in strat_list:
-        table = table_dict[strat]
-        row_dim = row + table.shape[0]
-        col_dim = col + table.shape[1]
-        table.to_excel(writer, sheet_name=sheet_name, startrow=row , startcol=col)   
-        worksheet.conditional_format(row+1,col+1, row_dim, col_dim,
-                                     {'type':'cell',
-                                      'criteria': '<',
-                                      'value': 0,
-                                      'format':pct_fmt_neg})
-        worksheet.conditional_format(row+1,col+1, row_dim, col_dim,
-                                     {'type':'cell',
-                                      'criteria': '>',
-                                      'value': 0,
-                                      'format':pct_fmt_pos})
-        worksheet.conditional_format(row+1,col+1, row_dim, col_dim,
-                                     {'type':'cell',
-                                      'criteria': '=',
-                                      'value': 0,
-                                      'format':pct_fmt_pos})
-    
-        row = row_dim + spaces + 1
-
     return 0

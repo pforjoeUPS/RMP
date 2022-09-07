@@ -7,7 +7,7 @@ Created on Thu Apr 22 00:02:00 2021
 
 import pandas as pd
 import numpy as np
-from EquityHedging.datamanager import data_manager as dm
+from ..datamanager.data_manager import get_notional_weights
 from sklearn.preprocessing import MinMaxScaler
 
 def get_pos_neg_df(return_series, pos=True):
@@ -202,7 +202,7 @@ def check_notional(df_returns, notional_weights=[]):
     #get notional weights for weighted strategy returns if not accurate
     if len(col_list) != len(notional_weights):
         notional_weights = []
-        notional_weights = dm.get_notional_weights(df_returns)
+        notional_weights = get_notional_weights(df_returns)
     
     return notional_weights
 

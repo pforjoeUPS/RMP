@@ -430,18 +430,3 @@ def get_dollar_ret_styler(dollar_returns):
             applymap(color_neg_pos).\
             apply(highlight_max_ret, subset = pd.IndexSlice[:,col_list[1:]]).\
             format(formatter)
-
-
-def get_monthly_ret_table_styler(month_ret_table):
-    data = month_ret_table.copy()
-    
-    #define formatter
-    formatter = {}
-    col_list = list(data.columns)
-    for strat in col_list:
-        formatter[strat] = "{:.2%}"
-    
-    #return styler
-    return month_ret_table.style.\
-        applymap(color_neg_red, subset = pd.IndexSlice[:,col_list]).\
-        format(formatter)
