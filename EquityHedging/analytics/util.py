@@ -9,6 +9,8 @@ import pandas as pd
 import numpy as np
 from EquityHedging.datamanager import data_manager as dm
 from sklearn.preprocessing import MinMaxScaler
+from openpyxl import load_workbook
+
 
 def get_pos_neg_df(return_series, pos=True):
     """
@@ -411,3 +413,7 @@ def change_to_neg(df):
                 df_reverse[col_name][x] = -(df_reverse[col_name][x])
             
     return df_reverse
+
+def get_sheetnames_xlsx(filepath):
+    wb = load_workbook(filepath, read_only=True, keep_links=False)
+    return wb.sheetnames
