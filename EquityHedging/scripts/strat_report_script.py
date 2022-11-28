@@ -13,21 +13,19 @@ import pandas as pd
 
 equity_bmk = 'SPTR'
 strat_drop_list = ['99%/90% Put Spread','Down Var', 'Vortex', 'VOLA 3', 'Dynamic Put Spread', 'VRR',
-       'GW Dispersion', 'Corr Hedge', 'Def Var']
+       'GW Dispersion', 'Def Var','Corr Hedge']
 include_fi = False
 #create returns data dictionary for equity benchmark
-returns= dm.get_equity_hedge_returns(equity_bmk, include_fi, strat_drop_list, only_equity=True)#
+returns= dm.get_equity_hedge_returns(equity_bmk, include_fi, strat_drop_list, only_equity=False)
 #returns['Daily'] = returns['Daily'].iloc[list(range(13,len(returns['Daily']))),:]
 
-qsp = pd.read_excel(dm.NEW_DATA+'QSP DHS Time Series.xlsx',
-                                           sheet_name = 'data', index_col=0)
-qsp_dict = dm.get_data_dict(qsp)
-#data_dict ={'Monthly': dm.merge_data_frames(returns, mix_spx)}
-#create returns data dictionary for strategy
+new_strat = pd.read_excel(dm.NEW_DATA+'JPM Skewness.xlsx',
+                                           sheet_name = 'basket', index_col=0)
+new_strat_dict = dm.get_data_dict(new_strat)
 
 #merge dictionaries
-full_data_dict = dm.merge_dicts(returns,qsp_dict, fillzeros=False)
+full_data_dict = dm.merge_dicts(returns,new_strat_dict, fillzeros=False)
 
-strat_report = 'qsp_dhs_analysis'
+strat_report = 'Def_Var_vs_intraday_analysis'
 selloffs = True
 rp.generate_strat_report(strat_report, full_data_dict, selloffs = True)
