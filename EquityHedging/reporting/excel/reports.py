@@ -33,7 +33,7 @@ def get_filepath_path(report_name, data_file=False):
     
     cwd = os.getcwd()
     
-    fp = '\\EquityHedging\\reports\\' if data_file else '\\EquityHedging\\data\\'
+    fp = '\\EquityHedging\\data\\returns_data\\' if data_file else '\\EquityHedging\\reports\\'
     file_name = report_name +'.xlsx'
     return cwd + fp + file_name
     
@@ -140,8 +140,8 @@ def get_equity_hedge_report(report_name, returns_dict, notional_weights=[],
     print_report_info(report_name, file_path)
     writer.save()
 
-def get_alts_report(report_name, returns_dict, notional_weights=[],
-                            include_fi=False, new_strat=False, weighted=False, selloffs=False, freq_list=['Monthly']):
+def get_alts_report(report_name, returns_dict, df_mv=pd.DataFrame(), notional_weights=[],
+                            include_fi=True, new_strat=False, weighted=False,freq='1M', selloffs=False):
     """
     Generate equity hedge analysis report
     
@@ -174,20 +174,18 @@ def get_alts_report(report_name, returns_dict, notional_weights=[],
     
     
     #loop through frequencies
-    for freq in freq_list:
-        print("Computing {} Analytics...".format(freq))
-        
+    for key in returns_dict:
+        print("Computing {} Analytics...".format(key))
         #get analytics
-        analysis_data = summary.get_alts_data(returns_dict[freq], notional_weights,
-                                                          include_fi,new_strat,
-                                                          dm.switch_string_freq(freq), weighted)
-        return_sheet = freq + ' Historical Returns'
+        analysis_data = summary.get_alts_data(returns_dict[key],df_mv, notional_weights,
+                                                          include_fi,new_strat,freq,weighted)
         
         #create sheets
-        sheets.set_corr_sheet(writer,analysis_data['corr'], include_fi=include_fi)
-        sheets.set_ret_stat_sheet(writer,analysis_data['ret_stat_df'], include_fi=include_fi)
-        sheets.set_hist_return_sheet(writer,returns_dict[freq], return_sheet)
-    
+        sheets.set_corr_sheet(writer,analysis_data['corr'],sheet_name='Correlation Analysis ({})'.format(key), include_fi=include_fi)
+        sheets.set_ret_stat_sheet(writer,analysis_data['ret_stat_df'],sheet_name='Returns Statistics ({})'.format(key), include_fi=include_fi)
+        
+    return_sheet = dm.switch_freq_string(freq) + ' Historical Returns'
+    sheets.set_hist_return_sheet(writer,returns_dict['full'], return_sheet)
     print_report_info(report_name, file_path)
     writer.save()
 
@@ -361,7 +359,7 @@ def get_nexen_report(report_name, nexen_dict, data_file = True):
     print("Writing Monthly Returns sheet...")
     sheets.set_hist_return_sheet(writer, nexen_dict['returns'], 'returns')
     print("Writing Monthly Market Values sheet...")
-    sheets.set_mv_sheet(writer, nexen_dict['mv'], 'Market Values')
+    sheets.set_mv_sheet(writer, nexen_dict['mv'], 'market_values')
 
     #save file
     print_report_info(report_name, file_path)

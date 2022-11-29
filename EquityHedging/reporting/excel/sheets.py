@@ -216,7 +216,7 @@ def set_ret_stat_sheet(writer, ret_stat_df, sheet_name='Returns Statistics', spa
     jump_2 = 0
     if include_fi:
         jump_1 = 1
-        jump_2 = 2
+        jump_2 = 4
     
     #get formats for worksheet
     #title format
@@ -240,26 +240,29 @@ def set_ret_stat_sheet(writer, ret_stat_df, sheet_name='Returns Statistics', spa
     worksheet.conditional_format(row+1,col+1, row+2+jump_1, col_dim,{'type':'no_blanks',
                               'format':pct_fmt})
     #format ratio to digits
-    worksheet.conditional_format(row+3+jump_1,col+1, row+3+jump_2, col_dim,{'type':'no_blanks',
+    worksheet.conditional_format(row+3+jump_1,col+1, row+5+jump_2, col_dim,{'type':'no_blanks',
                               'format':digits_fmt})
     
-    worksheet.conditional_format(row+4+jump_2,col+1, row+7+jump_2, col_dim,{'type':'no_blanks',
+    worksheet.conditional_format(row+6+jump_2,col+1, row+9+jump_2, col_dim,{'type':'no_blanks',
                               'format':pct_fmt})
     #format ratio to digits
-    worksheet.conditional_format(row+8+jump_2,col+1, row+8+jump_2, col_dim,{'type':'no_blanks',
+    worksheet.conditional_format(row+10+jump_2,col+1, row+10+jump_2, col_dim,{'type':'no_blanks',
                               'format':digits_fmt})
     #format max_dd to percent
-    worksheet.conditional_format(row+9+jump_2,col+1, row+15+jump_2, col_dim,{'type':'no_blanks',
+    worksheet.conditional_format(row+11+jump_2,col+1, row+17+jump_2, col_dim,{'type':'no_blanks',
                               'format':pct_fmt})
     #format ret/dd to digits
-    worksheet.conditional_format(row+16+jump_2,col+1, row+18+jump_2, col_dim,{'type':'no_blanks',
+    worksheet.conditional_format(row+18+jump_2,col+1, row+20+jump_2, col_dim,{'type':'no_blanks',
                               'format':digits_fmt})
     #format max_1m_dd to percent
-    worksheet.conditional_format(row+19+jump_2,col+1, row+19+jump_2, col_dim,{'type':'no_blanks',
+    worksheet.conditional_format(row+21+jump_2,col+1, row+21+jump_2, col_dim,{'type':'no_blanks',
                               'format':pct_fmt})
     #format ret/dd to digits
-    worksheet.conditional_format(row+20+jump_2,col+1, row+22+jump_2, col_dim,{'type':'no_blanks',
+    worksheet.conditional_format(row+22+jump_2,col+1, row+24+jump_2, col_dim,{'type':'no_blanks',
                               'format':digits_fmt})
+    #format mctr
+    worksheet.conditional_format(row+25+jump_2,col+1, row+25+jump_2, col_dim,{'type':'no_blanks',
+                              'format':pct_fmt})
     
     return 0
 
