@@ -5,9 +5,15 @@ Created on Tue Oct  1 17:59:28 2019
 @author: Powis Forjoe, Maddie Choi
 """
 
+
 import pandas as pd
+import numpy as np
 import os
 from datetime import datetime as dt
+from math import prod
+from EquityHedging.analytics import returns_stats as rs
+from EquityHedging.analytics import summary 
+
 
 CWD = os.getcwd()
 DATA_FP = CWD +'\\EquityHedging\\data\\'
@@ -582,6 +588,155 @@ def create_update_dict():
         
     #return a dictionary
     return new_data_dict
+
+def compound_ret_from_monthly(strat_monthly_returns, strategy):
+    monthly_ret = strat_monthly_returns.copy()
+    monthly_ret["Year"] = monthly_ret.index.get_level_values('year')
+    
+    years = np.unique(monthly_ret["Year"])
+    yr_ret = []
+    for i in range(0, len(years)):
+        #isolate monthly returns for single year
+        monthly_ret_by_yr = monthly_ret.loc[monthly_ret.Year == years[i]][strategy]
+        #calculate compound return
+        comp_ret = prod(1 + monthly_ret_by_yr) - 1
+        yr_ret.append(comp_ret)
+        
+    yr_ret = pd.DataFrame( yr_ret, columns = ["Year"], index = list(years)) 
+    return yr_ret
+    
+
+def month_ret_table(returns_df, strategy):
+    '''
+
+    Parameters
+    ----------
+    returns_df : Data Frame
+        
+    strategy : String
+        Strategy name
+
+    Returns
+    -------
+    Data Frame
+
+    '''
+    #pull monthly returns from dictionary 
+    month_ret = pd.DataFrame(returns_df[strategy])
+    
+    #create monthly return data frame with index of years 
+    month_ret['year'] = month_ret.index.year
+    month_ret['month'] = month_ret.index.month_name().str[:3]
+    
+    #change monthly returns into a table with x axis as months and y axis as years
+    strat_monthly_returns = month_ret.groupby(['year', 'month']).sum()
+    yr_ret = compound_ret_from_monthly(strat_monthly_returns, strategy)
+       
+    month_table = strat_monthly_returns.unstack()
+    
+    #drop first row index
+    month_table = month_table.droplevel(level = 0, axis = 1)
+    
+    #re order columns
+    month_table = month_table[["Jan", "Feb", "Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]]
+    
+    #Join yearly returns to the monthly returns table
+    table = pd.concat([month_table, yr_ret],  axis=1)
+    table.index.names = [strategy]
+
+    return table
+
+def all_strat_month_ret_table(returns_df, notional_weights = [], include_fi = False, new_strat = False, weighted = False):
+    '''
+    
+
+    Parameters
+    ----------
+    returns_df : Data Frame
+        Data Frame containing monthly returns data
+    strat_list : List
+        DESCRIPTION. The default is ['Down Var','VOLA', 'Dynamic Put Spread', 'VRR', 'GW Dispersion','Corr Hedge','Def Var'].
+
+    Returns
+    -------
+    month_table : TYPE
+        DESCRIPTION.
+
+    '''
+    #make strat list the columns of returns_df
+    
+    if weighted == True:
+        
+        #get weighted strats and weighted hedges 
+        returns_df = summary.get_weighted_data(returns_df,notional_weights,include_fi, new_strat)
+        
+    
+    #create strat list from the columns of the returns data
+    strat_list = returns_df.columns
+    
+    #create moth table dict
+    month_table_dict = {}
+    
+    #loop through each strategy in the list and get the monthly returns table
+    for strat in strat_list:
+       month_table_dict[strat] = month_ret_table(returns_df, strat)
+       #month_table_dict[strat] = month_table_dict[strat][:-1]
+    return month_table_dict
+
+def get_new_returns_df(new_ret_df,ret_df):
+    #reset both data frames index to make current index (dates) into a column
+    new_ret_df.index.names = ['Date']
+    new_ret_df.reset_index(inplace = True)
+    ret_df.reset_index(inplace=True)
+   
+    #find difference in dates
+    difference = set(new_ret_df.Date).difference(ret_df.Date)
+    #find which dates in the new returns are not in the current returns data
+    difference_dates = new_ret_df['Date'].isin(difference)
+    
+    #select only dates not included in original returns df
+    new_ret_df = new_ret_df[difference_dates]
+    
+    #set 'Date' column as index for both data frames
+    new_ret_df.set_index('Date', inplace = True)
+    ret_df.set_index('Date', inplace = True)
+    
+    return new_ret_df
+
+def check_returns(returns_dict):
+    #if the last day of the month is earlier than the last row in weekly returns then drop last row of weekly returns
+    if returns_dict['Monthly'].index[-1] < returns_dict['Weekly'].index[-1] :
+        returns_dict['Weekly'] = returns_dict['Weekly'][:-1]
+    
+    
+    if returns_dict['Monthly'].index[-1] < returns_dict['Quarterly'].index[-1] :
+        returns_dict['Quarterly'] = returns_dict['Quarterly'][:-1]
+        
+    return returns_dict    
+
+def update_returns_data():
+    
+    #get data from returns_data.xlsx into dictionary
+    returns_dict = get_equity_hedge_returns(all_data=True)
+
+    #create dictionary that contains updated returns
+    new_data_dict = create_update_dict()
+
+    for key in returns_dict:
+        #create returns data frame
+        new_ret_df = new_data_dict[key].copy()
+        ret_df = returns_dict[key].copy()
+        
+        #update current year returns 
+        if key == 'Yearly':
+            if ret_df.index[-1] == new_ret_df.index[-1]:
+                ret_df = ret_df[:-1]
+        #get new returns df       
+        new_ret_df = get_new_returns_df(new_ret_df, ret_df)
+        returns_dict[key] = ret_df.append(new_ret_df)
+    
+    returns_dict = check_returns(returns_dict)
+    return returns_dict
 
 def transform_nexen_data(filename = 'liq_alts\\Historical Asset Class Returns.xls', return_data = True, fillna = False):
     nexen_df = pd.read_excel(DATA_FP + filename)
