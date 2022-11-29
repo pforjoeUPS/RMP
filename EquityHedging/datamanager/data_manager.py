@@ -11,6 +11,7 @@ from datetime import datetime as dt
 
 CWD = os.getcwd()
 DATA_FP = CWD +'\\EquityHedging\\data\\'
+RETURNS_DATA_FP = CWD +'\\EquityHedging\\data\\returns_data\\'
 EQUITY_HEDGING_RETURNS_DATA = DATA_FP + 'ups_equity_hedge\\returns_data.xlsx'
 NEW_DATA = DATA_FP + 'new_strats\\'
 UPDATE_DATA = DATA_FP + 'update_strats\\'
@@ -325,7 +326,7 @@ def get_equity_hedge_returns(equity='SPTR', include_fi=False, strat_drop_list=[]
     
     return returns_dict
 
-def get_data_dict(data, data_type='index'):
+def get_data_dict(data, data_type='index', dropna=False):
     """
     Converts daily data into a dictionary of dataframes containing returns 
     data of different frequencies
@@ -346,7 +347,7 @@ def get_data_dict(data, data_type='index'):
             pass
         data = get_prices_df(data)
     for freq_string in freq_list:
-        data_dict[freq_string] = format_data(data, switch_string_freq(freq_string))
+        data_dict[freq_string] = format_data(data, switch_string_freq(freq_string),dropna)
     return data_dict
 
 def get_prices_df(df_returns):
@@ -659,10 +660,12 @@ def get_liq_alts_port(liq_alts_dict):
     return liq_alts_port
 
 def get_agg_data(df_returns, df_mv, agg_col):
-    wgts = df_mv.divide(df_mv.sum(axis=1), axis='rows')
-    df_returns[agg_col] = (df_returns*wgts).sum(axis=1)
-    df_mv[agg_col] = df_mv.sum(axis=1)
-    return {'returns':df_returns, 'mv':df_mv}
+    agg_ret = df_returns.copy()
+    agg_mv = df_mv.copy()
+    wgts = agg_mv.divide(agg_mv.sum(axis=1), axis='rows')
+    agg_ret[agg_col] = (agg_ret*wgts).sum(axis=1)
+    agg_mv[agg_col] = agg_mv.sum(axis=1)
+    return {'returns':agg_ret[[agg_col]], 'mv':agg_mv[[agg_col]]}
     
 def get_abs_ret():
     ar_list = ['1907 ARP EM', '1907 III CV', '1907 III Class A', 'ABC Reversion',

@@ -10,7 +10,7 @@ from .import data_manager as dm
 import pandas as pd
 
 CWD = os.getcwd()
-RETURNS_DATA_FP = CWD +'\\EquityHedging\\data\\'
+RETURNS_DATA_FP = CWD +'\\EquityHedging\\data\\returns_data\\'
 BMK_DATA_FP = RETURNS_DATA_FP+'bmk_returns.xlsx'
 LIQ_ALTS_BMK_DATA_FP = RETURNS_DATA_FP+'liq_alts_bmks.xlsx'
 LIQ_ALTS_PORT_DATA_FP = RETURNS_DATA_FP+'liq_alts_data.xlsx'
@@ -19,7 +19,8 @@ LIQ_ALTS_MGR_DICT = {'Global Macro': ['1907 Penso Class A','Bridgewater Alpha', 
                      'Trend Following': ['1907 ARP TF','1907 Campbell TF', '1907 Systematica TF',
                                          'One River Trend'],
                      'Absolute Return':['1907 ARP EM',  '1907 III CV', '1907 III Class A',
-                                        'ABC Reversion','Acadian Commodity AR',
+                                        # 'ABC Reversion',
+                                        'Acadian Commodity AR',
                                         'Blueshift', 'Duality', 'Elliott']
                      }
 EQ_HEDGE_DATA_FP = RETURNS_DATA_FP+'eq_hedge_returns.xlsx'
@@ -36,6 +37,8 @@ class bmkHandler():
     def __init__(self, equity_bmk = 'M1WD',include_fi = True, all_data=False):
         self.equity_bmk = equity_bmk
         self.include_fi = include_fi
+        if include_fi:
+            self.fi_bmk = 'FI Benchmark'
         self.all_data = all_data
         self.bmk_returns = self.get_bmk_returns()
         
@@ -49,8 +52,8 @@ class bmkHandler():
             else:    
                 if freq != '1D':
                     if self.include_fi:
-                        temp_ret['FI Benchmark'] = (temp_ret['Long Corp'] + temp_ret['STRIPS'])/2
-                        returns_dict[freq_string] = temp_ret[[self.equity_bmk, 'FI Benchmark']]
+                        temp_ret[self.fi_bmk] = (temp_ret['Long Corp'] + temp_ret['STRIPS'])/2
+                        returns_dict[freq_string] = temp_ret[[self.equity_bmk, self.fi_bmk]]
                     else:
                         returns_dict[freq_string] = temp_ret[[self.equity_bmk]]
                 else:
@@ -87,40 +90,51 @@ class liqAltsPortHandler(bmkHandler):
         self.mvs = self.get_full_port_data(False)
         
     def get_sub_port_data(self):
+        #pull all returns and mvs
         liq_alts_ret = read_ret_data(LIQ_ALTS_PORT_DATA_FP, 'returns')
         liq_alts_mv = read_ret_data(LIQ_ALTS_PORT_DATA_FP, 'market_values')
+        #define dicts and dataframes
         liq_alts_dict = {}
         total_ret = pd.DataFrame(index = liq_alts_ret.index)
         total_mv = pd.DataFrame(index = liq_alts_mv.index)
+        #loop through to creat sub_ports dict
         for key in LIQ_ALTS_MGR_DICT:
             temp_dict = {}
             temp_ret = liq_alts_ret[LIQ_ALTS_MGR_DICT[key]].copy()
             temp_mv = liq_alts_mv[LIQ_ALTS_MGR_DICT[key]].copy()
+            liq_alts_dict[key] = {'returns': temp_ret, 'mv': temp_mv}
             temp_dict = dm.get_agg_data(temp_ret, temp_mv, key)
-            if key == 'Trend Following':
-                tf_list = self.get_sub_mgrs(key)
-                temp_dict = {'returns': liq_alts_ret[tf_list], 
-                                  'mv':liq_alts_mv[tf_list]}
-            total_ret = dm.merge_data_frames(total_ret, temp_ret[[key]], False)
-            total_mv = dm.merge_data_frames(total_mv, temp_mv[[key]], False)
-            liq_alts_dict[key] = temp_dict
-        liq_alts_dict['Total Liquid Alts'] = self.get_total(total_ret, total_mv)
+            # if key == 'Trend Following':
+            #     temp_dict = {'returns': liq_alts_ret[[key]], 'mv':liq_alts_mv[[key]]}
+            total_ret = dm.merge_data_frames(total_ret, temp_dict['returns'], False)
+            total_mv = dm.merge_data_frames(total_mv, temp_dict['mv'], False)
+        liq_alts_dict['Total Liquid Alts'] = {'returns': total_ret, 'mv':total_mv}
         return liq_alts_dict
     
-    def get_total(self, total_ret, total_mv):
-        total_dict = dm.get_agg_data(total_ret, total_mv, 'Total Liquid Alts')
-        return {'returns': total_dict['returns'][['Total Liquid Alts']],
-                'mv':total_dict['mv'][['Total Liquid Alts']]}
+    # def get_total(self, total_ret, total_mv):
+    #     total_dict = dm.get_agg_data(total_ret, total_mv, 'Total Liquid Alts')
+    #     return {'returns': total_dict['returns'][['Total Liquid Alts']],
+    #             'mv':total_dict['mv'][['Total Liquid Alts']]}
     
     def get_full_port_data(self, return_data = True):
         data = 'returns' if return_data else 'mv'
         liq_alts_port = pd.DataFrame()
         for key in LIQ_ALTS_MGR_DICT:
             liq_alts_port = dm.merge_data_frames(liq_alts_port, self.sub_ports[key][data], False)
-            
-        liq_alts_port = dm.merge_data_frames(liq_alts_port, self.sub_ports['Total Liquid Alts'][data], False)
         return liq_alts_port
     
+    def add_new_mgr(self, df_mgr_ret, sub_port_key, mv_amt):
+        self.sub_ports[sub_port_key]['returns'] = dm.merge_data_frames(self.sub_ports[sub_port_key]['returns'], df_mgr_ret,drop_na=False)
+        col_list = list(self.sub_ports[sub_port_key]['returns'].columns)
+        self.sub_ports[sub_port_key]['mv'][col_list[len(col_list)-1]] = mv_amt
+
+        js_dict = dm.get_agg_data(self.sub_ports[sub_port_key]['returns'],self.sub_ports[sub_port_key]['mv'], sub_port_key)
+        self.sub_ports['Total Liquid Alts']['returns'][sub_port_key] = js_dict['returns'][sub_port_key]
+        self.sub_ports['Total Liquid Alts']['mv'][sub_port_key] = js_dict['mv'][sub_port_key]
+
+        self.returns = self.get_full_port_data()
+        self.mvs = self.get_full_port_data(False)
+        
     def get_sub_mgrs(self,sub_port = 'Global Macro'):
         mgr_list = []
         mgr_list = mgr_list + LIQ_ALTS_MGR_DICT[sub_port]
