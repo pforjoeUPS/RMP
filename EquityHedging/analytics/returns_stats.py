@@ -11,13 +11,13 @@ from ..datamanager import data_manager as dm
 from EquityHedging.analytics import  util
 
 
-RETURNS_STATS_INDEX = ['Annualized Ret', 'Equity Alpha', 'Equity Beta', 'Median Period Return',
+RETURNS_STATS_INDEX = ['Annualized Ret', 'Equity Alpha', 'Equity Beta','Equity Bull Beta','Equity Bear Beta', 'Median Period Return',
                        'Avg. Period Return','Avg. Period Up Return', 'Avg. Period Down Return',
                        'Avg Pos Ret/Avg Neg Ret','Best Period', 'Worst Period','% Positive Periods',
                        '% Negative Periods','Annualized Vol','Upside Deviation','Downside Deviation',
                        'Upside to Downside Deviation Ratio','Skewness', 'Kurtosis',
                        'Max DD','Ret/Vol', 'Sortino Ratio','Ret/Max DD']
-RETURNS_STATS_FI_INDEX = ['Annualized Ret', 'Equity Alpha',  'FI Alpha', 'Equity Beta','FI Beta', 'Median Period Return',
+RETURNS_STATS_FI_INDEX = ['Annualized Ret', 'Equity Alpha',  'FI Alpha', 'Equity Beta','Equity Bull Beta','Equity Bear Beta','FI Beta','FI Bull Beta','FI Bear Beta','Median Period Return',
                        'Avg. Period Return','Avg. Period Up Return', 'Avg. Period Down Return',
                        'Avg Pos Ret/Avg Neg Ret','Best Period', 'Worst Period','% Positive Periods',
                        '% Negative Periods','Annualized Vol','Upside Deviation','Downside Deviation',
@@ -395,19 +395,29 @@ def get_return_stats(df_returns, freq='1M',mkt='SPTR', rfr=0.0, include_fi=True)
     mkt_list = [df_returns.columns[0]]
     if include_fi:
         mkt_list.append(df_returns.columns[1])
-    for col in df_returns.columns:
+    for col in list(df_returns.columns)[2:]:
         df_strat = dm.remove_na(df_returns, col)
         df_prices = dm.get_prices_df(df_strat)
         temp_df = df_returns[mkt_list + [col]].copy()
         temp_df.dropna(inplace=True)
         mkt_strat = temp_df[mkt_list[0]]
+        eq_u_df = (temp_df[mkt_strat > 0])
+        eq_d_df = (temp_df[ mkt_strat <= 0])
+        
         ann_ret = get_ann_return(df_strat[col], freq)
         alpha = 0 if col == mkt_list[0] else get_alpha(df_strat[col],mkt_strat,freq,rfr)
         beta = 1 if col == mkt_list[0] else get_beta(df_strat[col],mkt_strat,freq)
+        bull_beta = 1 if col == mkt_list[0] else get_beta(eq_u_df[col],eq_u_df[mkt_list[0]],freq)
+        bear_beta = 1 if col == mkt_list[0] else  get_beta(eq_d_df[col],eq_d_df[mkt_list[0]],freq)
         if include_fi:
             fi_mkt_strat = temp_df[mkt_list[1]]
+            fi_u_df = (temp_df[fi_mkt_strat > 0])
+            fi_d_df = (temp_df[fi_mkt_strat <= 0])
             alpha_fi = 0 if col == mkt_list[1] else get_alpha(df_strat[col],fi_mkt_strat,freq,rfr)
             beta_fi = 1 if col == mkt_list[1] else get_beta(df_strat[col],fi_mkt_strat,freq)
+            fi_bull_beta = 1 if col == mkt_list[1] else get_beta(fi_u_df[col],fi_u_df[mkt_list[1]],freq)
+            fi_bear_beta = 1 if col == mkt_list[1] else get_beta(fi_d_df[col],fi_d_df[mkt_list[1]],freq)
+            
         med_ret = df_strat[col].median()
         avg_ret = df_strat[col].mean()
         avg_up_ret = get_avg_pos_neg(df_strat[col])
@@ -427,12 +437,13 @@ def get_return_stats(df_returns, freq='1M',mkt='SPTR', rfr=0.0, include_fi=True)
         ret_vol = get_ret_vol_ratio(df_strat[col],freq)
         sortino = get_sortino_ratio(df_strat[col], freq)
         ret_dd = get_ret_max_dd_ratio(df_strat[col],df_prices[col],freq)
-        returns_stats_dict[col] = [ann_ret, alpha, beta, med_ret, avg_ret, avg_up_ret, avg_down_ret,
+        returns_stats_dict[col] = [ann_ret, alpha, beta, bull_beta, bear_beta, med_ret, avg_ret, avg_up_ret, avg_down_ret,
                                    avg_pos_neg, best_period, worst_period, pct_pos_periods,
                                    pct_neg_periods, ann_vol, up_dev, down_dev, updev_downdev_ratio,
                                    skew, kurt, max_dd,ret_vol,sortino, ret_dd]
         if include_fi:
-            returns_stats_dict[col] = [ann_ret, alpha, alpha_fi, beta, beta_fi, med_ret, avg_ret, avg_up_ret, avg_down_ret,
+            returns_stats_dict[col] = [ann_ret, alpha, alpha_fi, beta, bull_beta, bear_beta, beta_fi, fi_bull_beta, fi_bear_beta, 
+                                       med_ret, avg_ret, avg_up_ret, avg_down_ret,
                                        avg_pos_neg, best_period, worst_period, pct_pos_periods,
                                        pct_neg_periods, ann_vol, up_dev, down_dev, updev_downdev_ratio,
                                        skew, kurt, max_dd,ret_vol,sortino, ret_dd]

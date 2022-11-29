@@ -15,6 +15,7 @@ from .returns_stats import get_return_stats
 from .corr_stats import get_corr_analysis
 from .historical_selloffs import get_hist_sim_table
 from .rolling_cum import get_rolling_cum
+from .import risk
 
 
 def get_analysis(df_returns, notional_weights=[], include_fi=False, new_strat=False, freq='1M', weighted = False):
@@ -173,7 +174,7 @@ def get_analysis_sheet_data(df_returns, notional_weights=[], include_fi=False, n
     
     return {'df_list': df_list,'title_list': title_list}
 
-def get_alts_data(df_returns, notional_weights=[], include_fi=False, new_strat=False,freq='1M', weighted=False):
+def get_alts_data(df_returns, df_mvs=pd.DataFrame(), notional_weights=[], include_fi=True, new_strat=False,freq='1M', weighted=False):
     """
     Returns data for analysis excel sheet into a dictionary
 
@@ -219,7 +220,15 @@ def get_alts_data(df_returns, notional_weights=[], include_fi=False, new_strat=F
     #compute return stats and hedge metrics
     analytics_dict = get_analysis(df_returns, notional_weights, include_fi, new_strat, freq,weighted)
     
-    return {'corr': corr_dict,'ret_stat_df': analytics_dict['return_stats']}
+    #add mctr
+    if df_mvs.empty:
+        return {'corr': corr_dict,'ret_stat_df': analytics_dict['return_stats']}
+    else:
+        wts = df_mvs.divide(df_mvs.sum(axis=1), axis='rows')
+        port_returns = df_returns[col_list[2:]]
+        port_risk = risk.Risk(port_returns, wts.iloc[-1:])
+        df_alts_stats = pd.concat([analytics_dict['return_stats'],port_risk.mctr])
+        return {'corr': corr_dict,'ret_stat_df': df_alts_stats}
 
 
 #TODO: Ask powis if this makes sense bc notional only when weighted so do we need to have  2 seperate normal_dict

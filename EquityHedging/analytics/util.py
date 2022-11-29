@@ -34,7 +34,7 @@ def get_pos_neg_df(return_series, pos=True):
     if pos:
         ret_index = ret.index[ret > 0]
     else:
-        ret_index = ret.index[ret < 0]
+        ret_index = ret.index[ret <= 0]
     
     #create new series
     return ret.loc[ret_index]
