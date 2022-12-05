@@ -12,6 +12,7 @@ from datetime import datetime as dt
 from math import prod
 from EquityHedging.analytics import returns_stats as rs
 from EquityHedging.analytics import summary 
+from EquityHedging.analytics import  util
 
 CWD = os.getcwd()
 RETURNS_DATA_FP = CWD +'\\EquityHedging\\data\\'
@@ -19,7 +20,7 @@ EQUITY_HEDGING_RETURNS_DATA = RETURNS_DATA_FP + 'ups_equity_hedge\\returns_data.
 NEW_DATA = RETURNS_DATA_FP + 'new_strats\\'
 UPDATE_DATA = RETURNS_DATA_FP + 'update_strats\\'
 EQUITY_HEDGE_DATA = RETURNS_DATA_FP + 'ups_equity_hedge\\'
-QIS_UNIVERSE = CWD + '\\Cluster Analysis\\data\\QIS Universe Time Series.xlsx'
+QIS_UNIVERSE = CWD + '\\Cluster Analysis\\data\\'
 NEW_DATA_COL_LIST = ['SPTR', 'SX5T','M1WD', 'Long Corp', 'STRIPS', 'Down Var',
                     'Vortex', 'VOLA I', 'VOLA II','Dynamic VOLA','Dynamic Put Spread',
                     'GW Dispersion', 'Corr Hedge','Def Var (Mon)', 'Def Var (Fri)', 'Def Var (Wed)']
@@ -724,3 +725,12 @@ def update_returns_data():
     
     returns_dict = check_returns(returns_dict)
     return returns_dict
+
+
+def get_qis_uni_dict():
+    qis_uni = {}
+    sheet_names = util.get_sheetnames_xlsx(QIS_UNIVERSE + "QIS Universe Time Series TEST.xlsx")
+    for sheet in sheet_names:
+        index_price = pd.read_excel(QIS_UNIVERSE, sheet_name = sheet, index_col=0,header = 1)
+        qis_uni[sheet] = format_data(index_price, freq = '1W')
+    return qis_uni

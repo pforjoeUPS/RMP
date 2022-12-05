@@ -417,3 +417,23 @@ def change_to_neg(df):
 def get_sheetnames_xlsx(filepath):
     wb = load_workbook(filepath, read_only=True, keep_links=False)
     return wb.sheetnames
+
+def append_dict_dfs(dictionary):
+    '''
+    
+
+    Parameters
+    ----------
+    dictionary : dictionary
+
+    Returns
+    -------
+    Dataframe that appends all dataframes within dictionary into one. 
+
+    '''
+    df = pd.DataFrame()
+    for i in list(dictionary.keys()):
+        temp_df = dictionary[i]
+        df = df.append(temp_df)
+            
+    return df
