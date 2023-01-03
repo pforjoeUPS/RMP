@@ -12,16 +12,31 @@ from EquityHedging.reporting import formatter as fmt
 import pandas as pd
 
 benchmark = pd.read_excel(dm.NEW_DATA+'Commodities.xlsx',
-                                           sheet_name = 'BCOM', index_col=0)
+                                           sheet_name = 'BCOM F3-F0', index_col=0)
 benchmark_dict = dm.get_data_dict(benchmark)
 
-new_strat = pd.read_excel(dm.NEW_DATA+'Commodities.xlsx',
-                                           sheet_name = 'Carry', index_col=0, header = 1)
+no_strat = 1
+
+if no_strat>1:
+   
+    new_strat1 = pd.read_excel(dm.NEW_DATA+'Commodities.xlsx',
+                                               sheet_name = 'Congestion', index_col=0, header = 1)
+    
+    new_strat2 = pd.read_excel(dm.NEW_DATA+'Commodities.xlsx',
+                               sheet_name = 'Barc Congestion', index_col=0, header = 0)
+    
+    new_strat = dm.merge_data_frames(new_strat1, new_strat2)
+else:
+    new_strat = pd.read_excel(dm.NEW_DATA+'Commodities.xlsx',
+                                               sheet_name = 'Carry', index_col=0, header = 1)
+    
+    
+    
 new_strat_dict = dm.get_data_dict(new_strat)
 
 #merge dictionaries
 full_data_dict = dm.merge_dicts(benchmark_dict,new_strat_dict, fillzeros=False)
 
-strat_report = 'Commodity_Curve_analysis'
+strat_report = 'Commodity_Congestion_analysis'
 selloffs = True
 rp.generate_strat_report(strat_report, full_data_dict, selloffs = True)

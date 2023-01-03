@@ -731,6 +731,6 @@ def get_qis_uni_dict():
     qis_uni = {}
     sheet_names = util.get_sheetnames_xlsx(QIS_UNIVERSE + "QIS Universe Time Series TEST.xlsx")
     for sheet in sheet_names:
-        index_price = pd.read_excel(QIS_UNIVERSE, sheet_name = sheet, index_col=0,header = 1)
+        index_price = pd.read_excel(QIS_UNIVERSE + "QIS Universe Time Series TEST.xlsx", sheet_name = sheet, index_col=0,header = 1)
         qis_uni[sheet] = format_data(index_price, freq = '1W')
     return qis_uni
