@@ -10,7 +10,6 @@ import numpy as np
 import os
 from datetime import datetime as dt
 from math import prod
-from EquityHedging.analytics import returns_stats as rs
 from EquityHedging.analytics import summary 
 from EquityHedging.analytics import  util
 
@@ -21,8 +20,8 @@ NEW_DATA = RETURNS_DATA_FP + 'new_strats\\'
 UPDATE_DATA = RETURNS_DATA_FP + 'update_strats\\'
 EQUITY_HEDGE_DATA = RETURNS_DATA_FP + 'ups_equity_hedge\\'
 QIS_UNIVERSE = CWD + '\\Cluster Analysis\\data\\'
-NEW_DATA_COL_LIST = ['SPTR', 'SX5T','M1WD', 'Long Corp', 'STRIPS', 'Down Var',
-                    'Vortex', 'VOLA I', 'VOLA II','Dynamic VOLA','Dynamic Put Spread',
+NEW_DATA_COL_LIST = ['SPTR', 'SX5T','M1WD', 'Long Corp', 'STRIPS', 'Down Var', 'VRR 2', 'VRR Trend',
+ 'Vortex', 'VOLA I', 'VOLA II','Dynamic VOLA','Dynamic Put Spread',
                     'GW Dispersion', 'Corr Hedge','Def Var (Mon)', 'Def Var (Fri)', 'Def Var (Wed)']
 
 def merge_dicts(main_dict, new_dict, fillzeros = True):
@@ -553,7 +552,7 @@ def create_update_dict():
     
     #add back 25 bps
     vrr_dict = add_bps(vrr_dict)
-    
+
     #get put spread data
     put_spread_dict = get_data_to_update(['99 Rep', 'Short Put', '99%/90% Put Spread'], 'put_spread_data.xlsx', 'Daily', put_spread = True)
     
