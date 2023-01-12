@@ -4,49 +4,60 @@ Created on Sun Aug 14 20:13:09 2022
 
 @author: NVG9HXP
 """
-
-"""
-Created on Sun Aug  7 22:18:15 2022
-
-@author: NVG9HXP
-"""
-
 import os
 from .import data_manager as dm
 import pandas as pd
 from ..reporting.excel import reports as rp
 
 CWD = os.getcwd()
-# RETURNS_DATA_FP = CWD +'\\EquityHedging\\data\\'
+RETURNS_DATA_FP = CWD +'\\EquityHedging\\data\\returns_data\\'
 UPDATE_DATA_FP = CWD +'\\EquityHedging\\data\\update_data\\'
+BMK_COL_LIST = ['SPTR', 'SX5T', 'M1WD', 'MIMUAWON', 'Long Corp', 'STRIPS',
+                    'HFRX Macro/CTA', 'HFRX Absolute Return', 'SG Trend']
 
+#TODO: get rid of this
 def update_nexen_data(filename, report_name):
     nexen_dict = dm.transform_nexen_data_1(UPDATE_DATA_FP+filename)
     rp.get_nexen_report(report_name, nexen_dict, data_file = True)
 
+#TODO: get rid of this
 def update_bbg_data(filename, report_name,sheet_name='data'):
     
     bbg_data = dm.transform_bbg_data(UPDATE_DATA_FP+filename, sheet_name)
     bbg_dict = dm.get_data_dict(bbg_data)
-    rp.get_returns_report(report_name, bbg_dict, True)
+    return bbg_dict
+    # rp.get_returns_report(report_name, bbg_dict, True)
 
 def update_liq_alts_port_data(filename='Monthly Returns Liquid Alts.xls'):
-    return update_nexen_data(filename,'liq_alts_data')
-
+    nexen_dict = dm.transform_nexen_data_1(UPDATE_DATA_FP+filename)
+    rp.get_nexen_report('liq_alts_data', nexen_dict, data_file = True)
+    
 def update_liq_alts_bmk_data(filename='bmk_data.xlsx'):
-    bbg_data = dm.transform_bbg_data(UPDATE_DATA_FP+filename)
-    bbg_data = bbg_data[['HFRXM Index', 'HFRXAR Index','NEIXCTAT Index']]
-    bbg_data.columns = ['HFRX Macro/CTA', 'HFRX Absolute Return', 'SG Trend']
+    bbg_data = dm.transform_bbg_data(UPDATE_DATA_FP+filename, col_list=BMK_COL_LIST)
+    bbg_data = bbg_data[['HFRX Macro/CTA', 'HFRX Absolute Return', 'SG Trend']]
     bbg_dict = dm.get_data_dict(bbg_data)
     rp.get_returns_report('liq_alts_bmks', bbg_dict, True)
 
 def update_bmk_data(filename='bmk_data.xlsx'):
-    bbg_data = dm.transform_bbg_data(UPDATE_DATA_FP+filename)
-    # bbg_data.columns = ['HFRX Macro/CTA', 'HFRX Absolute Return', 'SG Trend']
+    bbg_data = dm.transform_bbg_data(UPDATE_DATA_FP+filename, col_list=BMK_COL_LIST)
     bbg_dict = dm.get_data_dict(bbg_data)
-    rp.get_returns_report('liq_alts_bmks', bbg_dict, True)
+    bmks_dict = get_bmk_ret()
+    bbg_dict = dm.match_dict_columns(bmks_dict, bbg_dict)
+    bmks_dict = update_returns_data(bmks_dict, bbg_dict)
+    rp.get_returns_report('bmk_returns', bbg_dict, True)
 
-    
+def get_bmk_ret():
+    bmk_dict = {}
+    freqs = ['1D', '1W', '1M', '1Q', '1Y']
+    for freq in freqs:
+        freq_string = dm.switch_freq_string(freq)
+        temp_ret = pd.read_excel(RETURNS_DATA_FP+'bmk_returns.xlsx',
+                                 sheet_name=freq_string,
+                                 index_col=0)
+        temp_ret = dm.get_real_cols(temp_ret)  
+        bmk_dict[freq_string] = temp_ret.copy()
+    return bmk_dict
+
 def get_data_to_update(col_list, filename, sheet_name = 'data', put_spread=False):
     '''
     Update data to dictionary
@@ -122,29 +133,6 @@ def add_bps(vrr_dict, add_back=.0025):
         temp_dict[key] = temp_df
     return temp_dict
 
-def merge_dicts_list(dict_list):
-    '''
-    merge main dictionary with a dictionary list
-
-    Parameters
-    ----------
-    dict_list : list
-
-    Returns
-    -------
-    main_dict : dictionary
-        new dictionary created upon being merged with a list
-
-    '''
-    main_dict = dict_list[0]
-    dict_list.remove(main_dict)
-    #iterate through dictionary 
-    for dicts in dict_list:
-        
-        #merge each dictionary in the list of dictionaries to the main
-        main_dict = dm.merge_dicts(main_dict,dicts)
-    return main_dict
-
 def match_dict_columns(main_dict, new_dict):
     '''
     
@@ -213,7 +201,7 @@ def create_update_dict():
     put_spread_dict = get_data_to_update(['99 Rep', 'Short Put', '99%/90% Put Spread'], 'put_spread_data.xlsx', 'Daily', put_spread = True)
     
     #merge vrr and put spread dicts to the new_data dict
-    new_data_dict = merge_dicts_list([new_data_dict,put_spread_dict, vrr_dict])
+    new_data_dict = dm.merge_dicts_list([new_data_dict,put_spread_dict, vrr_dict])
     
     #get data from returns_data.xlsx into dictionary
     returns_dict = dm.get_equity_hedge_returns(all_data=True)
@@ -224,3 +212,67 @@ def create_update_dict():
     #return a dictionary
     return new_data_dict
 
+def get_new_returns_df(new_ret_df,ret_df):
+    #reset both data frames index to make current index (dates) into a column
+    new_ret_df.index.names = ['Date']
+    ret_df.index.names = ['Date']
+    new_ret_df.reset_index(inplace = True)
+    ret_df.reset_index(inplace=True)
+   
+    #find difference in dates
+    difference = set(new_ret_df.Date).difference(ret_df.Date)
+    #find which dates in the new returns are not in the current returns data
+    difference_dates = new_ret_df['Date'].isin(difference)
+    
+    #select only dates not included in original returns df
+    new_ret_df = new_ret_df[difference_dates]
+    
+    #set 'Date' column as index for both data frames
+    new_ret_df.set_index('Date', inplace = True)
+    ret_df.set_index('Date', inplace = True)
+    
+    return new_ret_df
+
+def check_returns(returns_dict):
+    #if the last day of the month is earlier than the last row in weekly returns then drop last row of weekly returns
+    if returns_dict['Monthly'].index[-1] < returns_dict['Weekly'].index[-1] :
+        returns_dict['Weekly'] = returns_dict['Weekly'][:-1]
+    
+    
+    if returns_dict['Monthly'].index[-1] < returns_dict['Quarterly'].index[-1] :
+        returns_dict['Quarterly'] = returns_dict['Quarterly'][:-1]
+        
+    return returns_dict    
+
+def update_returns_data(main_dict, new_dict):
+    
+    #get data from returns_data.xlsx into dictionary
+    # returns_dict = get_equity_hedge_returns(all_data=True)
+
+    #create dictionary that contains updated returns
+    # new_data_dict = create_update_dict()
+
+    for key in main_dict:
+        #create returns data frame
+        new_ret_df = new_dict[key].copy()
+        ret_df = main_dict[key].copy()
+        
+        #update current year returns 
+        if key == 'Yearly':
+            if ret_df.index[-1] == new_ret_df.index[-1]:
+                ret_df = ret_df[:-1]
+        #get new returns df       
+        new_ret_df = get_new_returns_df(new_ret_df, ret_df)
+        main_dict[key] = pd.concat([ret_df,new_ret_df])
+    
+    main_dict = check_returns(main_dict)
+    return main_dict
+
+def update_eq_hedge_returns():
+    #get data from returns_data.xlsx into dictionary
+    returns_dict = dm.get_equity_hedge_returns(all_data=True)
+
+    #create dictionary that contains updated returns
+    new_data_dict = create_update_dict()
+    
+    return update_returns_data(returns_dict, new_data_dict)

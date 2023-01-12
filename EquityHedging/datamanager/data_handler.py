@@ -52,7 +52,7 @@ class bmkHandler():
             else:    
                 if freq != '1D':
                     if self.include_fi:
-                        temp_ret[self.fi_bmk] = (temp_ret['Long Corp'] + temp_ret['STRIPS'])/2
+                        temp_ret[self.fi_bmk] = temp_ret['Long Corp']*0.6 + temp_ret['STRIPS']*0.4
                         returns_dict[freq_string] = temp_ret[[self.equity_bmk, self.fi_bmk]]
                     else:
                         returns_dict[freq_string] = temp_ret[[self.equity_bmk]]
