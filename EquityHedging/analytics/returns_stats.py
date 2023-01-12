@@ -191,7 +191,10 @@ def get_avg_pos_neg_ratio(return_series):
     avg_pos = get_avg_pos_neg(return_series)
     avg_neg = get_avg_pos_neg(return_series, False)
     
-    return avg_pos/abs(avg_neg)
+    try:
+        return avg_pos/abs(avg_neg)
+    except ZeroDivisionError:
+        return float('inf')
 
 def get_pct_pos_neg_periods(return_series, pos=True):
     pos_neg_series = util.get_pos_neg_df(return_series,pos)
