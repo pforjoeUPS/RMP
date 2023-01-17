@@ -258,14 +258,14 @@ def create_copy_with_fi(df_returns, equity = 'SPTR', freq='1M', include_fi=False
             strategy_returns['FI Benchmark'] = (strategy_returns['Long Corp'] + strategy_returns['STRIPS'])/2
             strategy_returns = strategy_returns[[equity, 'FI Benchmark', '99%/90% Put Spread', 
                                                  'Down Var', 'Vortex', 'VOLA','Dynamic Put Spread',
-                                                 'VRR', 'GW Dispersion', 'Corr Hedge','Def Var']]
+                                                 'VRR 2', 'VRR Trend', 'GW Dispersion', 'Corr Hedge','Def Var']]
         else:
             strategy_returns = strategy_returns[[equity, '99%/90% Put Spread', 
                                                  'Down Var', 'Vortex', 'VOLA','Dynamic Put Spread',
-                                                 'VRR', 'GW Dispersion', 'Corr Hedge','Def Var']]
+                                                 'VRR 2', 'VRR Trend', 'GW Dispersion', 'Corr Hedge','Def Var']]
     else:
         strategy_returns = strategy_returns[[equity, '99%/90% Put Spread', 'Down Var', 'Vortex',
-                                             'VOLA','Dynamic Put Spread','VRR', 
+                                             'VOLA','Dynamic Put Spread','VRR 2', 'VRR Trend', 
                                              'GW Dispersion', 'Corr Hedge','Def Var']]
     
     return strategy_returns
