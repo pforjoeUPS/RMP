@@ -6,7 +6,7 @@ Created on Sat Apr 24 00:21:46 2021
 """
 import os
 
-os.chdir('..\..')
+#os.chdir('..\..')
 
 #import libraries
 from EquityHedging.datamanager import data_manager as dm
