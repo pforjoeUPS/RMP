@@ -222,6 +222,43 @@ def convert_to_freq2(arg, freq1, freq2):
     
     return round(arg / get_freq_ratio(freq1, freq2))
 
+def get_vrr_weights(weights):
+    """
+    Returns VRR weights from notional weights
+    
+    Parameters:
+    notional weights -- list
+
+    Returns:
+    list
+    """   
+    notional_vrr_weights = [weights[4],weights[5]]
+    port_total = float(sum(notional_vrr_weights))
+    vrr_weights = [weight / port_total for weight in notional_vrr_weights]
+    return vrr_weights
+
+
+def create_vrr_portfolio(df_returns, weights):
+    """
+    Updates returns to combine VRR2 and VRRTrend returns into VRRPortfolio
+    
+    Parameters:
+    df_returns -- dataframe
+    weights -- list
+
+    Returns:
+    dataframe
+    """   
+    vrr_weights = get_vrr_weights(weights)
+    freqs = ['Daily', 'Weekly', 'Monthly', 'Quarterly', 'Yearly']
+    for freq in freqs:
+        df_returns[freq]['VRR Portfolio']=df_returns[freq]['VRR 2']*vrr_weights[0]+df_returns[freq]['VRR Trend']*vrr_weights[1]
+        df_returns[freq].drop(['VRR Trend'],inplace=True,axis=1)
+        df_returns[freq].drop(['VRR 2'],inplace=True,axis=1)
+    return df_returns
+
+
+        
 def get_notional_weights(df_returns):
     """
     Returns list of notional values for stratgies
@@ -232,7 +269,11 @@ def get_notional_weights(df_returns):
     Returns:
     list
     """
-    return [float(input('notional value (Billions) for ' + col + ': ')) for col in df_returns.columns]    
+    weights = [float(input('notional value (Billions) for ' + col + ': ')) for col in df_returns.columns]
+    #df_returns = create_vrr_portfolio(df_returns, weights)
+    #weights.append(weights[4]+weights[5])
+    #del weights[4:6]
+    return weights
 
 
 def create_copy_with_fi(df_returns, equity = 'SPTR', freq='1M', include_fi=False):

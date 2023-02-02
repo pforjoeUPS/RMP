@@ -34,10 +34,16 @@ if new_strat:
     new_strategy_dict = dm.get_data_dict(new_strategy, data_type='index')
     returns = dm.merge_dicts(returns, new_strategy_dict)
 
+
+
+
 #get notional weights
-notional_weights = [13,1,1.25,1,0.8,0.3,1,0.25,1]
-#dm.get_notional_weights(returns['Monthly'])
+
+notional_weights = dm.get_notional_weights(returns['Monthly'])
+returns = dm.create_vrr_portfolio(returns,notional_weights)
+
 df_weights = get_df_weights(notional_weights, list(returns['Monthly'].columns), include_fi)
+
 
 #compute correlations
 check_corr = False
