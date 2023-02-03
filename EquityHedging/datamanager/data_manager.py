@@ -222,23 +222,9 @@ def convert_to_freq2(arg, freq1, freq2):
     
     return round(arg / get_freq_ratio(freq1, freq2))
 
-def get_vrr_weights(weights):
-    """
-    Returns VRR weights from notional weights
-    
-    Parameters:
-    notional weights -- list
-
-    Returns:
-    list
-    """   
-    notional_vrr_weights = [weights[4],weights[5]]
-    port_total = float(sum(notional_vrr_weights))
-    vrr_weights = [weight / port_total for weight in notional_vrr_weights]
-    return vrr_weights
 
 
-def create_vrr_portfolio(df_returns, weights):
+def get_returns_VRR_Portfolio(returns, notional_weights):
     """
     Updates returns to combine VRR2 and VRRTrend returns into VRRPortfolio
     
@@ -249,14 +235,22 @@ def create_vrr_portfolio(df_returns, weights):
     Returns:
     dataframe
     """   
-    vrr_weights = get_vrr_weights(weights)
+    #get weights for VRR2 and Trend
+    VRR2_weight = notional_weights[4]/(notional_weights[4]+notional_weights[5])
+    VRRT_weight =  notional_weights[5]/(notional_weights[4]+notional_weights[5])
+    
+    #get list of strats to keep columns in order
+    strats = list(returns['Monthly'].columns)
+    strats[4] = 'VRR Portfolio'
+    strats.remove('VRR Trend')
+    
     freqs = ['Daily', 'Weekly', 'Monthly', 'Quarterly', 'Yearly']
     for freq in freqs:
-        df_returns[freq]['VRR Portfolio']=df_returns[freq]['VRR 2']*vrr_weights[0]+df_returns[freq]['VRR Trend']*vrr_weights[1]
-        df_returns[freq].drop(['VRR Trend'],inplace=True,axis=1)
-        df_returns[freq].drop(['VRR 2'],inplace=True,axis=1)
-    return df_returns
-
+        returns[freq]['VRR Portfolio'] = returns[freq]['VRR 2'] * VRR2_weight + returns[freq]['VRR Trend'] * VRRT_weight
+        returns[freq].drop(['VRR 2','VRR Trend'],inplace=True,axis=1)
+        returns[freq] = returns[freq][strats]
+    
+    return returns
 
         
 def get_notional_weights(df_returns):
