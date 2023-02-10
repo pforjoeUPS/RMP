@@ -22,8 +22,10 @@ UPDATE_DATA = RETURNS_DATA_FP + 'update_strats\\'
 EQUITY_HEDGE_DATA = RETURNS_DATA_FP + 'ups_equity_hedge\\'
 
 QIS_UNIVERSE = CWD + '\\Cluster Analysis\\data\\'
-NEW_DATA_COL_LIST = ['SPTR', 'SX5T','M1WD', 'Long Corp', 'STRIPS', 'Down Var', 'VRR 2', 'VRR Trend',
- 'Vortex', 'VOLA I', 'VOLA II','Dynamic VOLA','Dynamic Put Spread', 'GW Dispersion', 'Corr Hedge','Def Var (Mon)', 'Def Var (Fri)', 'Def Var (Wed)']
+
+NEW_DATA_COL_LIST = ['SPTR', 'SX5T','M1WD', 'Long Corp', 'STRIPS', 'Down Var',
+ 'Vortex', 'VOLA I', 'VOLA II','Dynamic VOLA','Dynamic Put Spread',
+                    'GW Dispersion', 'Corr Hedge','Def Var (Mon)', 'Def Var (Fri)', 'Def Var (Wed)']
 
 def merge_dicts(main_dict, new_dict):
     """
@@ -464,7 +466,7 @@ def get_data_to_update(col_list, filename, sheet_name = 'data', put_spread=False
     data_dict = get_data_dict(data)
     return data_dict
 
-def add_bps(vrr_dict, add_back=.0025):
+def add_bps(vrr_dict, strat_name, add_back=.0025):
     '''
     Adds bips back to the returns for the vrr strategy
 
@@ -494,13 +496,13 @@ def add_bps(vrr_dict, add_back=.0025):
         freq = switch_string_freq(key)
         
         #add to dataframe
-        temp_df['VRR'] += add_back/(switch_freq_int(freq))
+        temp_df[strat_name] += add_back/(switch_freq_int(freq))
         
         #add value to the temp dictionary
         temp_dict[key] = temp_df
     return temp_dict
 
-def merge_dicts_list(dict_list):
+def merge_dicts_list(dict_list, fillzeros = True):
     '''
     merge main dictionary with a dictionary list
 
@@ -520,7 +522,7 @@ def merge_dicts_list(dict_list):
     for dicts in dict_list:
         
         #merge each dictionary in the list of dictionaries to the main
-        main_dict = merge_dicts(main_dict,dicts)
+        main_dict = merge_dicts(main_dict,dicts, fillzeros = fillzeros )
     return main_dict
 
 def match_dict_columns(main_dict, new_dict):
@@ -582,17 +584,23 @@ def create_update_dict():
     new_data_dict = get_data_to_update(NEW_DATA_COL_LIST, 'ups_data.xlsx')
     
     #get vrr data
-    vrr_dict = get_data_to_update(['VRR'], 'vrr_tracks_data.xlsx')
+    vrr_dict = get_data_to_update(['VRR'], 'vrr_tracks_data.xlsx', sheet_name='VRR')
+    vrr2_dict = get_data_to_update(['VRR 2'], 'vrr_tracks_data.xlsx', sheet_name='VRR2')
+    vrr_trend_dict = get_data_to_update(['VRR Trend'], 'vrr_tracks_data.xlsx', sheet_name='VRR Trend')
     
     #add back 25 bps
-    vrr_dict = add_bps(vrr_dict)
-
+    vrr_dict = add_bps(vrr_dict,'VRR')
+    vrr2_dict = add_bps(vrr2_dict,'VRR 2', add_back= 0.005)
+    vrr_trend_dict =add_bps(vrr_trend_dict, 'VRR Trend', add_back= 0.005)
+    
+    
     #get put spread data
     put_spread_dict = get_data_to_update(['99 Rep', 'Short Put', '99%/90% Put Spread'], 'put_spread_data.xlsx', 'Daily', put_spread = True)
     
     #merge vrr and put spread dicts to the new_data dict
-    new_data_dict = merge_dicts_list([new_data_dict,put_spread_dict, vrr_dict])
-    
+
+    new_data_dict = merge_dicts_list([new_ups_data_dict, put_spread_dict, vrr_dict,vrr2_dict,vrr_trend_dict], fillzeros=False)
+
     #get data from returns_data.xlsx into dictionary
     returns_dict = get_equity_hedge_returns(all_data=True)
     
