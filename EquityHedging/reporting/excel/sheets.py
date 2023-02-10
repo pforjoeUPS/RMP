@@ -133,6 +133,13 @@ def set_analysis_sheet(writer, data_dict, sheet_name, spaces=3):
             worksheet.conditional_format(row+15,col+1, row+15, col_dim,{'type':'no_blanks',
                                       'format':digits_fmt})
             
+            #format var to percent
+            worksheet.conditional_format(row+16,col+1, row+16, col_dim,{'type':'no_blanks',
+                                      'format':pct_fmt})
+            
+            #format cvar to percent
+            worksheet.conditional_format(row+17,col+1, row+17, col_dim,{'type':'no_blanks',
+                                      'format':pct_fmt})
             
         #format for hedge metrics
         else:
