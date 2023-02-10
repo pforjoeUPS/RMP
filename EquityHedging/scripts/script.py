@@ -26,9 +26,9 @@ returns= dm.get_equity_hedge_returns(equity_bmk, include_fi, strat_drop_list)
 #Add new strat
 new_strat = False
 if new_strat:
-    strategy_list = ['JPM ID Var Spread','CS Def Skew']
-    filename = 'JPM_Intraday_and_CS_Skew.xlsx'
-    sheet_name = 'Sheet1'
+    strategy_list = ['Vortex_Gamma']
+    filename = 'Barclays_Vortex_Gamma.xlsx'
+    sheet_name = 'Sheet2'
     new_strategy = dm.get_new_strategy_returns_data(filename, sheet_name, strategy_list)
     new_strategy_dict = dm.get_data_dict(new_strategy, data_type='index')
     returns = dm.merge_dicts(returns, new_strategy_dict)
@@ -37,7 +37,8 @@ if new_strat:
 
 
 #get notional weights
-notional_weights = dm.get_notional_weights(returns['Monthly'])
+#notional_weights = dm.get_notional_weights(returns['Monthly'])
+notional_weights = [13.5, 0.86, 1.12, 1.01, 0.77, 0.28, 1, .23, 0.98, 1]
 returns = dm.get_returns_VRR_Portfolio(returns, notional_weights)
 notional_weights[4:6] = [notional_weights[4] + notional_weights[5]]
 df_weights = get_df_weights(notional_weights, list(returns['Monthly'].columns), include_fi)
