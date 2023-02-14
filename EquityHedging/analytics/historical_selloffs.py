@@ -40,9 +40,13 @@ COVID_19 = {'period':'Coronavirus Pandemic',
           'start': '2020-02-19', 
           'end':'2020-03-23'}
 
+RUSSIA_UKRAINE = {'period':'Coronavirus Pandemic', 
+                  'start': '2022-01-03', 
+                  'end':'2022-06-17'}
+
 
 EVENTS = [GFC, EURO_DEBT, US_DEBT, CHINA_WEAKNESS,
-          OIL_DROP, FEB_2018, Q4_2018, COVID_19]
+          OIL_DROP, FEB_2018, Q4_2018, COVID_19, RUSSIA_UKRAINE]
 
 
 def compute_event_ret(df_index, col, start, end):
