@@ -40,7 +40,7 @@ COVID_19 = {'period':'Coronavirus Pandemic',
           'start': '2020-02-19', 
           'end':'2020-03-23'}
 
-RUSSIA_UKRAINE = {'period':'Coronavirus Pandemic', 
+RUSSIA_UKRAINE = {'period':'Russo-Ukranian War Invasion', 
                   'start': '2022-01-03', 
                   'end':'2022-06-17'}
 
