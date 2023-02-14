@@ -583,6 +583,14 @@ def create_update_dict():
     #Import data from bloomberg into dataframe and create dictionary with different frequencies
     new_data_dict = get_data_to_update(NEW_DATA_COL_LIST, 'ups_data.xlsx')
     
+    #incorporating swap fee
+    new_data_dict = add_bps(new_data_dict, 'Def Var (Mon)', add_back= -0.005)
+    new_data_dict = add_bps(new_data_dict, 'Def Var (Wed)', add_back= -0.005)
+    new_data_dict = add_bps(new_data_dict, 'Def Var (Fri)', add_back= -0.005)
+    new_data_dict = add_bps(new_data_dict, 'GW Dispersion', add_back= -0.002)
+    new_data_dict = add_bps(new_data_dict, 'Dyanmic VOLA', add_back= -0.0019)
+
+    
     #get vrr data
     vrr_dict = get_data_to_update(['VRR'], 'vrr_tracks_data.xlsx', sheet_name='VRR')
     vrr2_dict = get_data_to_update(['VRR 2'], 'vrr_tracks_data.xlsx', sheet_name='VRR2')
@@ -590,12 +598,14 @@ def create_update_dict():
     
     #add back 25 bps
     vrr_dict = add_bps(vrr_dict,'VRR')
-    vrr2_dict = add_bps(vrr2_dict,'VRR 2', add_back= 0.005)
-    vrr_trend_dict =add_bps(vrr_trend_dict, 'VRR Trend', add_back= 0.005)
+    vrr2_dict = add_bps(vrr2_dict,'VRR 2', add_back= 0.0005)
+    vrr_trend_dict =add_bps(vrr_trend_dict, 'VRR Trend', add_back= 0.0005)
     
     
     #get put spread data
     put_spread_dict = get_data_to_update(['99 Rep', 'Short Put', '99%/90% Put Spread'], 'put_spread_data.xlsx', 'Daily', put_spread = True)
+    #incorporate swap fee to putspread
+    new_data_dict = add_bps(new_data_dict, '99%/90% Put Spread', add_back= -0.0015)
     
     #merge vrr and put spread dicts to the new_data dict
 
