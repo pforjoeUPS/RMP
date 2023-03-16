@@ -26,9 +26,9 @@ returns= dm.get_equity_hedge_returns(equity_bmk, include_fi, strat_drop_list)
 #Add new strat
 new_strat = False
 if new_strat:
-    strategy_list = ['Vortex_Gamma']
-    filename = 'Barclays_Vortex_Gamma.xlsx'
-    sheet_name = 'Sheet2'
+    strategy_list = ['SPTR']
+    filename = 'Book1.xlsx'
+    sheet_name = 'Weekly Historical Returns'
     new_strategy = dm.get_new_strategy_returns_data(filename, sheet_name, strategy_list)
     new_strategy_dict = dm.get_data_dict(new_strategy, data_type='index')
     returns = dm.merge_dicts(returns, new_strategy_dict)

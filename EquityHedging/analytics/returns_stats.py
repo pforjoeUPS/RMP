@@ -82,6 +82,14 @@ def get_max_dd(price_series):
     roll_max = price_series.rolling(window, min_periods=1).max()
     drawdown = price_series/roll_max - 1.0
     
+    #dd = drawdown.min()
+    
+    #find date of max dd
+    #index_list = drawdown.index[drawdown==dd].tolist()
+    
+    #this finds value at date found above (index_list)
+    #drawdown[drawdown.index == index_list[0]]
+    
     return drawdown.min()
 
 def get_max_dd_freq(price_series, freq='1M', max_3m_dd=False):
@@ -102,6 +110,7 @@ def get_max_dd_freq(price_series, freq='1M', max_3m_dd=False):
     dictionary
     """
     
+    freq = '1M'
     #convert price series into returns
     return_series = price_series.copy()
     return_series = return_series.resample(freq).ffill()
