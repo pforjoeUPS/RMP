@@ -27,7 +27,7 @@ NEW_DATA_COL_LIST = ['SPTR', 'SX5T','M1WD', 'Long Corp', 'STRIPS', 'Down Var',
  'Vortex', 'VOLA I', 'VOLA II','Dynamic VOLA','Dynamic Put Spread',
                     'GW Dispersion', 'Corr Hedge','Def Var (Mon)', 'Def Var (Fri)', 'Def Var (Wed)']
 
-def merge_dicts(main_dict, new_dict):
+def merge_dicts(main_dict, new_dict, fillzeros = True):
     """
     Merge new_dict to main_dict
     
@@ -45,7 +45,7 @@ def merge_dicts(main_dict, new_dict):
         df_main = main_dict[key]
         df_new = new_dict[key]
         if key == 'Daily':
-            merged_dict[key] = merge_data_frames(df_main, df_new, True)
+            merged_dict[key] = merge_data_frames(df_main, df_new, fillzeros)
         else:
             merged_dict[key] = merge_data_frames(df_main, df_new)
     return merged_dict
@@ -588,7 +588,7 @@ def create_update_dict():
     new_data_dict = add_bps(new_data_dict, 'Def Var (Wed)', add_back= -0.005)
     new_data_dict = add_bps(new_data_dict, 'Def Var (Fri)', add_back= -0.005)
     new_data_dict = add_bps(new_data_dict, 'GW Dispersion', add_back= -0.002)
-    new_data_dict = add_bps(new_data_dict, 'Dyanmic VOLA', add_back= -0.0019)
+    new_data_dict = add_bps(new_data_dict, 'Dynamic VOLA', add_back= -0.0019)
 
     
     #get vrr data
@@ -605,17 +605,17 @@ def create_update_dict():
     #get put spread data
     put_spread_dict = get_data_to_update(['99 Rep', 'Short Put', '99%/90% Put Spread'], 'put_spread_data.xlsx', 'Daily', put_spread = True)
     #incorporate swap fee to putspread
-    new_data_dict = add_bps(new_data_dict, '99%/90% Put Spread', add_back= -0.0015)
+    new_data_dict = add_bps(new_data_dict, 'Dynamic Put Spread', add_back= -0.0015)
     
     #merge vrr and put spread dicts to the new_data dict
 
-    new_data_dict = merge_dicts_list([new_ups_data_dict, put_spread_dict, vrr_dict,vrr2_dict,vrr_trend_dict], fillzeros=False)
+    new_ups_data_dict = merge_dicts_list([new_data_dict, put_spread_dict, vrr_dict,vrr2_dict,vrr_trend_dict], fillzeros=False)
 
     #get data from returns_data.xlsx into dictionary
     returns_dict = get_equity_hedge_returns(all_data=True)
     
     #set columns in new_data_dict to be in the same order as returns_dict
-    new_data_dict = match_dict_columns(returns_dict, new_data_dict)
+    new_data_dict = match_dict_columns(returns_dict, new_ups_data_dict)
         
     #return a dictionary
     return new_data_dict
