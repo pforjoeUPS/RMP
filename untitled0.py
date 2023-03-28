@@ -8,7 +8,20 @@ import pandas as pd
 from EquityHedging.analytics import returns_stats as rs
 from EquityHedging.datamanager import data_manager as dm
 
-price_series = dm.get_prices_df(returns["Monthly"])
+
+#import libraries
+from EquityHedging.datamanager import data_manager as dm
+from EquityHedging.analytics.util import get_df_weights
+from EquityHedging.analytics import summary
+from EquityHedging.reporting.excel import reports as rp
+from EquityHedging.reporting import formatter as plots
+
+
+filename = 'recovery_test.xlsx'
+sheet_name = 'Sheet1'
+new_strategy = pd.read_excel(dm.NEW_DATA + filename, sheet_name, index_col=0)
+
+price_series = new_strategy.copy()
 return_series = price_series.copy()
 
 #finds drawdown series
@@ -16,12 +29,15 @@ window = len(price_series)
 roll_max = price_series.rolling(window, min_periods=1).max()
 drawdown = price_series/roll_max - 1.0
 
+#get max dd statistic
 max_dd = rs.get_max_dd(return_series)
 max_dd1 = pd.DataFrame(max_dd)
 max_dd1 = max_dd1.transpose()
 strats = list(drawdown.columns)
     
+   
 #find dates of when max drawdown occurs for each strat
+#TODO: make dd dates into its own method and integrate into returns stats
 dd_dates = pd.DataFrame()
 for i in strats:
     dd_dates[i] = drawdown.index[drawdown[i] == float(max_dd1[i])]
@@ -30,14 +46,18 @@ for i in strats:
 zero_dd_dates = pd.DataFrame()
 for i in strats:
     drawdown_reverse = drawdown.loc[::-1]
+    #finds drawdown
     x = dd_dates[i][0]
     strat_drawdown = drawdown_reverse[i].loc[x:]
+    
+    #?????
     for dd_index, dd_value in enumerate(strat_drawdown):
         if dd_value == 0:
             zero_dd_dates[i] = [strat_drawdown.index[dd_index]]
             break
 
 #starts calculating recovery 'days'
+#TODO only keep recovery days
 recovery_days_list = []
 for i in strats:
     count_price_series = price_series[i].loc[zero_dd_dates[i][0]:]
