@@ -13,6 +13,7 @@ from EquityHedging.reporting.excel import reports as rp
 from EquityHedging.reporting import formatter as plots
 from EquityHedging.analytics import returns_stats as rs
 
+import pandas as pd
 
 equity_bmk = 'SPTR'
 include_fi = False
@@ -66,16 +67,18 @@ def get_recovery(price_series):
     drawdown = get_drawdown_series(price_series)
     strats = list(drawdown.columns)
 
-    recovery = pd.DataFrame()    
+    recovery = pd.DataFrame(columns = strats)    
     for i in strats:
-        count_price_series = price_series[i].loc[find_zero_dd_dates(price_series)[i][0]:]
+        zero_dd_dates = find_zero_dd_dates(price_series)[i][0]
+        #find where max dd zero
+        count_price_series = price_series[i].loc[zero_dd_dates:]
         recovery_days = 0
         for price in count_price_series[1:]:
             if price < count_price_series[0]:
                 recovery_days += 1
             else:
-                recovery[i] = [recovery]
                 break
+        recovery[i] = [recovery_days]
     return recovery
 
 x = get_recovery(price_series)
