@@ -35,7 +35,7 @@ if new_strat:
     returns = dm.merge_dicts(returns, new_strategy_dict)
 
 #get notional weights
-notional_weights = [13,1,1.25,1,1,1,0.25,1]
+notional_weights = [13,1,1.25,1,0.8,0.3,1,0.25,1]
 #dm.get_notional_weights(returns['Monthly'])
 df_weights = get_df_weights(notional_weights, list(returns['Monthly'].columns), include_fi)
 
