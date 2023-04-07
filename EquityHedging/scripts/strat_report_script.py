@@ -20,14 +20,14 @@ include_fi = False
 returns= dm.get_equity_hedge_returns(equity_bmk, include_fi, strat_drop_list, only_equity=False)
 
 #Get new strategy returns
-filename = 'UPS Commodities Risk Premia Basket Time Series BofA.xlsx'
+filename = 'Commodity Core Absolute Return Portfolio - Apr 2023.xlsx'
 sheet_name = 'Sheet1'
 new_strat = pd.read_excel(dm.NEW_DATA + filename,
                                            sheet_name = sheet_name, index_col=0)
-new_strat_dict = dm.get_data_dict(new_strat)
+new_strat_dict1 = dm.get_data_dict(new_strat)
 
 #merge dictionaries
-full_data_dict = dm.merge_dicts(returns,new_strat_dict, fillzeros=False)
+full_data_dict = dm.merge_dicts(returns, new_strat_dict, fillzeros=False)
 
 strat_report_name = 'Commodities Equity Hedge Analysis'
 selloffs = True

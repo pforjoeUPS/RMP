@@ -12,7 +12,7 @@ from EquityHedging.analytics import  util
 import scipy.interpolate
 
 RETURNS_STATS_INDEX = ['Annualized Ret','Annualized Vol','Ret/Vol', 
-                       'Max DD','Ret/Max DD',
+                       'Max DD', 'Recovery', 'Ret/Max DD',
                        'Max 1M DD','Max 1M DD Date', 'Ret/Max 1M DD',
                        'Max 3M DD','Max 3M DD Date','Ret/Max 3M DD',
                        'Skew','Avg Pos Ret/Avg Neg Ret',
@@ -324,6 +324,101 @@ def get_cvar(return_series, p=0.05):
     
     return cvar_series.mean()
 
+def get_drawdown_series(price_series):
+    """
+    Calculate drawdown series (from calculation of MaxDD)
+
+    Parameters
+    ----------
+    price_series : series
+        price series.
+
+    Returns
+    -------
+    Drawdown series
+
+    """
+    window = len(price_series)
+    roll_max = price_series.rolling(window, min_periods=1).max()
+    drawdown = price_series/roll_max - 1.0
+    return drawdown
+
+
+def find_dd_date(price_series):
+    """
+    Finds the date where Max DD occurs
+
+    Parameters
+    ----------
+    price_series : series
+        price series.
+
+    Returns
+    -------
+    Date of MaxDD in dataframe
+
+    """
+    max_dd = get_max_dd(price_series)
+    drawdown = get_drawdown_series(price_series)
+    dd_date = drawdown.index[drawdown == float(max_dd)]
+    
+    return dd_date
+    
+
+def find_zero_dd_date(price_series):
+    """
+    Finds the date where drawdown was at zero before Max DD
+
+    Parameters
+    ----------
+    price_series : series
+        price series.
+
+    Returns
+    -------
+    Date of where drawdown was at zero before MaxDD in dataframe
+
+    """
+    drawdown = get_drawdown_series(price_series)
+    drawdown_reverse = drawdown[::-1]
+    x = (find_dd_date(price_series)[0])
+    strat_drawdown = drawdown_reverse.loc[x:]
+        
+    for dd_index, dd_value in enumerate(strat_drawdown):
+        if dd_value == 0:
+            zero_dd_date = strat_drawdown.index[dd_index]
+            break
+    return zero_dd_date
+
+
+def get_recovery(price_series):
+    """
+    Finds the recovery timeline from where MaxDD occured and when strategy recoverd
+
+    Parameters
+    ----------
+    price_series : series
+        price series.
+
+    Returns
+    -------
+    The number of "days" it took for strategy to return back to 'recovery'
+
+    """
+    zero_dd_date = find_zero_dd_date(price_series)
+    zero_dd_date_price = price_series.loc[zero_dd_date]
+    dd_date = find_dd_date(price_series)
+    count_price_series = price_series.loc[dd_date[0]:]
+    recovery_days = 0
+    
+    for price in count_price_series:
+        if price < zero_dd_date_price:
+            recovery_days += 1
+        else:
+            break
+    return recovery_days
+
+
 def get_return_stats(df_returns, freq='1M', var_p = 0.05):
     """
     Return a dict of return analytics
@@ -352,6 +447,7 @@ def get_return_stats(df_returns, freq='1M', var_p = 0.05):
         ann_vol = get_ann_vol(df_strat[col], freq)
         ret_vol = get_ret_vol_ratio(df_strat[col],freq)
         max_dd = get_max_dd(df_prices[col])
+        recovery = get_recovery(df_prices[col])
         ret_dd = get_ret_max_dd_ratio(df_strat[col],df_prices[col],freq)
         max_1m_dd_dict = get_max_dd_freq(df_prices[col],freq)
         ret_1m_dd = get_ret_max_dd_freq_ratio(df_strat[col], df_prices[col],freq,False)   
@@ -363,7 +459,7 @@ def get_return_stats(df_returns, freq='1M', var_p = 0.05):
         sortino = get_sortino_ratio(df_strat[col], freq)
         var = get_var(df_strat[col], p = var_p)
         cvar = get_cvar(df_strat[col], p = var_p)
-        returns_stats_dict[col] = [ann_ret, ann_vol, ret_vol, max_dd, ret_dd,
+        returns_stats_dict[col] = [ann_ret, ann_vol, ret_vol, max_dd, recovery, ret_dd,
                              max_1m_dd_dict['max_dd'], max_1m_dd_dict['index'], ret_1m_dd,
                              max_3m_dd_dict['max_dd'], max_3m_dd_dict['index'], ret_3m_dd,
                              skew, avg_pos_neg, down_stdev, sortino, var, cvar]
@@ -374,5 +470,4 @@ def get_return_stats(df_returns, freq='1M', var_p = 0.05):
     #Converts hedge_dict to a data grame
     df_returns_stats = util.convert_dict_to_df(returns_stats_dict, new_returns_stats_index)
     return df_returns_stats
-
 
