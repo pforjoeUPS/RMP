@@ -27,6 +27,7 @@ def format_return_stats(anayltics_df):
                   ,"Annualized Vol":lambda x: f"{x:.2%}"
                   ,"Ret/Vol":lambda x: f"{x:.2f}"
                   ,"Max DD":lambda x: f"{x:.2%}"
+                  ,"Recovery":lambda x:f"{x:.2f}"
                   ,"Ret/Max DD":lambda x: f"{x:.2f}"
                   ,"Max 1M DD":lambda x: f"{x:.2%}"
                   ,"Max 1M DD Date":lambda x: x.to_pydatetime().strftime("%Y-%m-%d")
