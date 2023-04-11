@@ -31,4 +31,4 @@ full_data_dict = dm.merge_dicts(returns, new_strat_dict, fillzeros=False)
 
 strat_report_name = 'Commodities Equity Hedge Analysis'
 selloffs = True
-rp.generate_strat_report(strat_report_name, full_data_dict, selloffs = True, remove_bmk = False )
+rp.generate_strat_report(strat_report_name, full_data_dict, selloffs = True)
