@@ -172,7 +172,7 @@ def get_rolling_cum_ret_report(report_name, df_returns, freq, notional_weights):
     print_report_info(report_name, file_path)
     writer.save()
 
-def generate_strat_report(report_name, returns_dict, selloffs=False):
+def generate_strat_report(report_name, returns_dict,  remove_bmk = True, selloffs=False):
     """
     Generate strat analysis report
     
@@ -204,7 +204,7 @@ def generate_strat_report(report_name, returns_dict, selloffs=False):
         
         #get analytics
         analysis_data = summary.get_analysis_sheet_data(returns_dict[freq], 
-                                                        freq=dm.switch_string_freq(freq))
+                                                        freq=dm.switch_string_freq(freq), remove_bmk = remove_bmk)
 
         corr_sheet =  freq + ' Analysis'
         return_sheet = freq + ' Historical Returns'

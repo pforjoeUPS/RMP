@@ -15,7 +15,7 @@ from .historical_selloffs import get_hist_sim_table
 from .rolling_cum import get_rolling_cum
 
 
-def get_analysis(df_returns, notional_weights=[], include_fi=False, new_strat=False, freq='1M', weighted = False):
+def get_analysis(df_returns, notional_weights=[], include_fi=False, new_strat=False, remove_bmk = True, freq='1M', weighted = False):
     """
     Returns a dictionary of dataframes containing:
     1. Return Statistics
@@ -81,9 +81,9 @@ def get_analysis(df_returns, notional_weights=[], include_fi=False, new_strat=Fa
     
     # Create pandas DataFrame for hedge metrics
     df_hedge_metrics = get_hedge_metrics(hedge_returns,freq)
-    
-    #remove equity col
-    df_hedge_metrics.drop([col_list[0]],axis=1,inplace=True)
+    if remove_bmk:
+        #remove equity col
+        df_hedge_metrics.drop([col_list[0]],axis=1,inplace=True)
     
     #remove decay metrics if frequency is 1M, 1Q, 1Y
     if dm.switch_freq_int(freq) <= 12:
