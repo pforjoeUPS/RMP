@@ -89,7 +89,7 @@ def get_equity_hedge_report(report_name, returns_dict, notional_weights=[],
         return_sheet = freq + ' Historical Returns'
         
         #create sheets
-        sheets.set_analysis_sheet(writer,analysis_data, corr_sheet)
+        sheets.set_analysis_sheet(writer,analysis_data, corr_sheet, dm.switch_freq_int(dm.switch_string_freq(freq)))
         sheets.set_hist_return_sheet(writer,df_weighted_returns, return_sheet)
     
     #get historical selloffs data if selloffs == True
@@ -211,7 +211,7 @@ def generate_strat_report(report_name, returns_dict, selloffs=False):
         spaces = 3
         
         #create sheets
-        sheets.set_analysis_sheet(writer,analysis_data, corr_sheet, spaces)
+        sheets.set_analysis_sheet(writer,analysis_data, corr_sheet, spaces, freq = dm.switch_string_freq(freq))
         sheets.set_hist_return_sheet(writer,returns_dict[freq], return_sheet)
 
     if selloffs:
