@@ -8,7 +8,7 @@ Created on Mon Mar 29 12:30:00 2021
 import pandas as pd
 from ..datamanager.data_manager import switch_freq_int
 
-def format_return_stats(anayltics_df):
+def format_return_stats(anayltics_df, freq='1M'):
     """
     Formats the return stats analytics
 
@@ -22,24 +22,41 @@ def format_return_stats(anayltics_df):
     formatters : formatter
 
     """
-    
-    formatters = {"Annualized Ret":lambda x: f"{x:.2%}"
-                  ,"Annualized Vol":lambda x: f"{x:.2%}"
-                  ,"Ret/Vol":lambda x: f"{x:.2f}"
-                  ,"Max DD":lambda x: f"{x:.2%}"
-                  ,"Recovery":lambda x:f"{x:.2f}"
-                  ,"Ret/Max DD":lambda x: f"{x:.2f}"
-                  ,"Max 1M DD":lambda x: f"{x:.2%}"
-                  ,"Max 1M DD Date":lambda x: x.to_pydatetime().strftime("%Y-%m-%d")
-                  ,"Ret/Max 1M DD":lambda x: f"{x:.2f}"
-                  ,"Max 3M DD":lambda x: f"{x:.2%}"
-                  ,"Max 3M DD Date":lambda x: x.to_pydatetime().strftime("%Y-%m-%d")
-                  ,"Ret/Max 3M DD":lambda x: f"{x:.2f}"
-                  ,"Skew":lambda x: f"{x:.2f}"
-                  ,"Avg Pos Ret/Avg Neg Ret":lambda x: f"{x:.2f}"
-                  ,"Downside Deviation":lambda x: f"{x:.2%}"
-                  ,"Sortino Ratio":lambda x: f"{x:.2f}"
-                  }
+    if switch_freq_int(freq) <= 12:
+        formatters = {"Annualized Ret":lambda x: f"{x:.2%}"
+                      ,"Annualized Vol":lambda x: f"{x:.2%}"
+                      ,"Ret/Vol":lambda x: f"{x:.2f}"
+                      ,"Max DD":lambda x: f"{x:.2%}"
+                      ,"Ret/Max DD":lambda x: f"{x:.2f}"
+                      ,"Max 1M DD":lambda x: f"{x:.2%}"
+                      ,"Max 1M DD Date":lambda x: x.to_pydatetime().strftime("%Y-%m-%d")
+                      ,"Ret/Max 1M DD":lambda x: f"{x:.2f}"
+                      ,"Max 3M DD":lambda x: f"{x:.2%}"
+                      ,"Max 3M DD Date":lambda x: x.to_pydatetime().strftime("%Y-%m-%d")
+                      ,"Ret/Max 3M DD":lambda x: f"{x:.2f}"
+                      ,"Skew":lambda x: f"{x:.2f}"
+                      ,"Avg Pos Ret/Avg Neg Ret":lambda x: f"{x:.2f}"
+                      ,"Downside Deviation":lambda x: f"{x:.2%}"
+                      ,"Sortino Ratio":lambda x: f"{x:.2f}"
+                      }
+    else:
+        formatters = {"Annualized Ret":lambda x: f"{x:.2%}"
+                      ,"Annualized Vol":lambda x: f"{x:.2%}"
+                      ,"Ret/Vol":lambda x: f"{x:.2f}"
+                      ,"Max DD":lambda x: f"{x:.2%}"
+                      ,"Recovery":lambda x:f"{x:.2f}"
+                      ,"Ret/Max DD":lambda x: f"{x:.2f}"
+                      ,"Max 1M DD":lambda x: f"{x:.2%}"
+                      ,"Max 1M DD Date":lambda x: x.to_pydatetime().strftime("%Y-%m-%d")
+                      ,"Ret/Max 1M DD":lambda x: f"{x:.2f}"
+                      ,"Max 3M DD":lambda x: f"{x:.2%}"
+                      ,"Max 3M DD Date":lambda x: x.to_pydatetime().strftime("%Y-%m-%d")
+                      ,"Ret/Max 3M DD":lambda x: f"{x:.2f}"
+                      ,"Skew":lambda x: f"{x:.2f}"
+                      ,"Avg Pos Ret/Avg Neg Ret":lambda x: f"{x:.2f}"
+                      ,"Downside Deviation":lambda x: f"{x:.2%}"
+                      ,"Sortino Ratio":lambda x: f"{x:.2f}"
+                      }
     return formatters 
 
 def format_hedge_metrics(anayltics_df, freq='1M'):
