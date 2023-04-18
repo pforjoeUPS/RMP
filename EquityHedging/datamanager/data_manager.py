@@ -62,7 +62,7 @@ def merge_data_frames(df_main, df_new,fillzeros=False):
     dataframe
     """
     
-    df = pd.merge(df_main, df_new, left_index=True, right_index=True, how='outer')
+    df = pd.merge(df_main, df_new, left_index=True, right_index=True, how='left')
     if fillzeros:
         df = df.fillna(0)
     else:
