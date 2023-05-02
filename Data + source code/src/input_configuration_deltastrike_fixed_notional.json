@@ -1,0 +1,66 @@
+{
+  "Type": "RollOptions",
+  "Calendar": {
+    "LaunchDate": "2001-01-01",
+    "EndDate": "2022-10-14",
+    "Holidays": "RINY"
+  },
+  "Parameters": {
+    "Groups": [
+      {
+        "Type": "PUT",
+        "Roll": {
+          "Frequency": "DAILY"
+        },
+        "NextMaturity": 60,
+        "LongShort": "SHORT",
+        "NominalType": "FIXED",
+        "NbOptions": 60,
+        "EntryType": "PROGRESSIVE",
+        "Leverage": "DPR_fixed_notional",
+        "VegaEntryFees": 0.3,
+        "VegaExitFees": 0,
+        "DeltaHedged": true,
+        "DeltaStrike": -0.10,
+        "WeightScheme": "InverseDollarGamma_times_vol_impli_sq",
+        "Fwd_hedge": true
+      },
+      {
+        "Type": "PUT",
+        "Roll": {
+          "Frequency": "DAILY"
+        },
+        "NextMaturity": 60,
+        "LongShort": "LONG",
+        "NominalType": "FIXED",
+        "NbOptions": 60,
+        "EntryType": "PROGRESSIVE",
+        "Leverage": "DPR_fixed_notional",
+        "VegaEntryFees": 0.0,
+        "VegaExitFees": 0,
+        "DeltaHedged": true,
+        "DeltaStrike": -0.05,
+        "WeightScheme": "InverseDollarGamma_times_vol_impli_sq",
+        "Fwd_hedge": true
+      }
+    ],
+    "Pricing": "BlackScholes"
+  },
+  "Underlyings": [
+    {
+      "Index": {
+        "Type": "DBSeries",
+        "Name": "SPX Index"
+      }
+    },
+    {
+      "Index": {
+        "Type": "DBSeries",
+        "Name": "SGBVRES1 Index"
+    },
+      "Parameters": {
+        "Tag": "HEDGE"
+      }
+    }
+  ]
+}
