@@ -37,10 +37,12 @@ if new_strat:
 
 
 
+
 #get notional weights
 
 notional_weights = dm.get_notional_weights(returns['Monthly'])
 returns = dm.create_vrr_portfolio(returns,notional_weights)
+notional_weights[4:6] = [notional_weights[4] + notional_weights[5]]
 
 df_weights = get_df_weights(notional_weights, list(returns['Monthly'].columns), include_fi)
 
