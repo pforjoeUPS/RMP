@@ -23,7 +23,8 @@ QIS_UNIVERSE = CWD + '\\Cluster Analysis\\data\\'
 
 NEW_DATA_COL_LIST = ['SPTR', 'SX5T','M1WD', 'Long Corp', 'STRIPS', 'Down Var',
  'Vortex', 'VOLA I', 'VOLA II','Dynamic VOLA','Dynamic Put Spread',
-                    'GW Dispersion', 'Corr Hedge','Def Var (Mon)', 'Def Var (Fri)', 'Def Var (Wed)']
+                    'GW Dispersion', 'Corr Hedge','Def Var (Mon)', 'Def Var (Fri)', 'Def Var (Wed)', 
+                    'Commodity Basket']
 
 def merge_dicts(main_dict, new_dict, fillzeros = True):
     """
@@ -238,7 +239,7 @@ def get_vrr_weights(weights):
     return vrr_weights
 
 
-def create_vrr_portfolio(df_returns, weights):
+def create_vrr_portfolio(returns, weights):
     """
     Updates returns to combine VRR2 and VRRTrend returns into VRRPortfolio
     
@@ -249,13 +250,15 @@ def create_vrr_portfolio(df_returns, weights):
     Returns:
     dataframe
     """   
+    returns_dict = returns.copy()
     vrr_weights = get_vrr_weights(weights)
     freqs = ['Daily', 'Weekly', 'Monthly', 'Quarterly', 'Yearly']
     for freq in freqs:
-        df_returns[freq]['VRR Portfolio']=df_returns[freq]['VRR 2']*vrr_weights[0]+df_returns[freq]['VRR Trend']*vrr_weights[1]
-        df_returns[freq].drop(['VRR Trend'],inplace=True,axis=1)
-        df_returns[freq].drop(['VRR 2'],inplace=True,axis=1)
-    return df_returns
+        vrr_portfolio = returns_dict[freq]['VRR 2']*vrr_weights[0]+returns_dict[freq]['VRR Trend']*vrr_weights[1]
+        returns_dict[freq].insert(loc = 4, column = 'VRR Portfolio',value = vrr_portfolio)
+        returns_dict[freq].drop(['VRR Trend'],inplace=True,axis=1)
+        returns_dict[freq].drop(['VRR 2'],inplace=True,axis=1)
+    return returns_dict
 
 
         
@@ -301,15 +304,15 @@ def create_copy_with_fi(df_returns, equity = 'SPTR', freq='1M', include_fi=False
             strategy_returns['FI Benchmark'] = (strategy_returns['Long Corp'] + strategy_returns['STRIPS'])/2
             strategy_returns = strategy_returns[[equity, 'FI Benchmark', '99%/90% Put Spread', 
                                                  'Down Var', 'Vortex', 'VOLA 3','Dynamic Put Spread',
-                                                  'VRR 2', 'VRR Trend', 'GW Dispersion', 'Corr Hedge','Def Var']]
+                                                  'VRR 2', 'VRR Trend', 'GW Dispersion', 'Corr Hedge','Def Var','Commodity Basket']]
         else:
             strategy_returns = strategy_returns[[equity, '99%/90% Put Spread', 
                                                  'Down Var', 'Vortex', 'VOLA 3','Dynamic Put Spread',
-                                                 'VRR 2', 'VRR Trend', 'GW Dispersion', 'Corr Hedge','Def Var']]
+                                                 'VRR 2', 'VRR Trend', 'GW Dispersion', 'Corr Hedge','Def Var','Commodity Basket']]
     else:
         strategy_returns = strategy_returns[[equity, '99%/90% Put Spread', 'Down Var', 'Vortex',
                                              'VOLA 3','Dynamic Put Spread', 'VRR 2', 'VRR Trend', 
-                                             'GW Dispersion', 'Corr Hedge','Def Var']]
+                                             'GW Dispersion', 'Corr Hedge','Def Var','Commodity Basket']]
     
     return strategy_returns
 
