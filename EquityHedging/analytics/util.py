@@ -7,8 +7,10 @@ Created on Thu Apr 22 00:02:00 2021
 
 import pandas as pd
 import numpy as np
-from ..datamanager.data_manager import get_notional_weights
+from EquityHedging.datamanager import data_manager as dm
 from sklearn.preprocessing import MinMaxScaler
+from openpyxl import load_workbook
+
 
 def get_pos_neg_df(return_series, pos=True):
     """
@@ -168,6 +170,8 @@ def get_df_weights(notional_weights, col_list, include_fi=False):
                   'Percentage Weights',
                   'Strategy Weights']
     
+
+    
     #compute percentage and strategy weights
     pct_weights = get_pct_weights(notional_weights, include_fi)
     strat_weights = get_strat_weights(notional_weights, include_fi)
@@ -202,7 +206,7 @@ def check_notional(df_returns, notional_weights=[]):
     #get notional weights for weighted strategy returns if not accurate
     if len(col_list) != len(notional_weights):
         notional_weights = []
-        notional_weights = get_notional_weights(df_returns)
+        notional_weights = dm.get_notional_weights(df_returns)
     
     return notional_weights
 
@@ -411,3 +415,27 @@ def change_to_neg(df):
                 df_reverse[col_name][x] = -(df_reverse[col_name][x])
             
     return df_reverse
+
+def get_sheetnames_xlsx(filepath):
+    wb = load_workbook(filepath, read_only=True, keep_links=False)
+    return wb.sheetnames
+
+def append_dict_dfs(dictionary):
+    '''
+    
+
+    Parameters
+    ----------
+    dictionary : dictionary
+
+    Returns
+    -------
+    Dataframe that appends all dataframes within dictionary into one. 
+
+    '''
+    df = pd.DataFrame()
+    for i in list(dictionary.keys()):
+        temp_df = dictionary[i]
+        df = df.append(temp_df)
+            
+    return df
