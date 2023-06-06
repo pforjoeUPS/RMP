@@ -28,7 +28,7 @@ new_strat = False
 if new_strat:
     strategy_list = ['SPTR']
     filename = 'Book1.xlsx'
-    sheet_name = 'Weekly Historical Returns'
+    sheet_name = 'Sheet1'
     new_strategy = dm.get_new_strategy_returns_data(filename, sheet_name, strategy_list)
     new_strategy_dict = dm.get_data_dict(new_strategy, data_type='index')
     returns = dm.merge_dicts(returns, new_strategy_dict)
