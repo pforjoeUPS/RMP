@@ -38,6 +38,8 @@ def format_return_stats(anayltics_df):
                   ,"Avg Pos Ret/Avg Neg Ret":lambda x: f"{x:.2f}"
                   ,"Downside Deviation":lambda x: f"{x:.2%}"
                   ,"Sortino Ratio":lambda x: f"{x:.2f}"
+                  ,"VaR 95%":lambda x: f"{x:.2%}"
+                  ,"CVaR 95%":lambda x: f"{x:.2%}"
                   }
     return formatters 
 
