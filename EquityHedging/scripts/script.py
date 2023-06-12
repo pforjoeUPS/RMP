@@ -25,7 +25,7 @@ new_strat = False
 returns= dm.get_equity_hedge_returns(equity_bmk, include_fi, strat_drop_list)
 
 #Add new strat
-new_strat = False
+new_strat = True
 if new_strat:
     strategy_list = ['JPM Skew','CITI Put Ratio']
     filename = 'JPM_Skew_and_CITI_Put.xlsx'
