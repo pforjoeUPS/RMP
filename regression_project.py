@@ -51,6 +51,10 @@ print(f"Regression equation: {comparison_strategy} = {coefficient:.4f} * SPTR + 
 beta = coefficient
 print(f"Beta: {beta:.4f}")
 
+#TODO : Great job on the plot. However, the chart shoud be a scatter plot of all returns
+# with 2 different regression lines on it 
+#one regression line fitting only returns when sptr<0 and another regression line when sptr>=0
+# refer to the screen shot in the email for the proj descrription :)
 #plot the scatter plot of the data points and the regression line
 plt.scatter(X, y, color='b', label='Data Points')
 plt.plot(x_range, y_pred, color='r', label='Regression Line')
