@@ -248,7 +248,7 @@ def get_weighted_strats_df(df_returns, notional_weights=[], include_fi=False, ne
             pct_weights_old[len(pct_weights_old) - i] = 0
 
         col_names = list(df_returns.columns)
-        wgt_strat_wo_name = 'Weighted Strats w/o New Strategies
+        wgt_strat_wo_name = 'Weighted Strats w/o New Strategies'
         df_weighted_strats[wgt_strat_wo_name] = df_returns.dot(tuple(pct_weights_old)).to_frame()
     
     return df_weighted_strats
