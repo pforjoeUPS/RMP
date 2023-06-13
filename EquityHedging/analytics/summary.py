@@ -15,7 +15,7 @@ from .historical_selloffs import get_hist_sim_table
 from .rolling_cum import get_rolling_cum
 
 
-def get_analysis(df_returns, notional_weights=[], include_fi=False, new_strat=False, freq='1M', weighted = False):
+def get_analysis(df_returns, notional_weights=[], include_fi=False, new_strat=False, freq='1M', weighted = False,num_new_strats=1):
     """
     Returns a dictionary of dataframes containing:
     1. Return Statistics
@@ -35,7 +35,8 @@ def get_analysis(df_returns, notional_weights=[], include_fi=False, new_strat=Fa
         frequency. The default is '1M'.
     weighted : boolean, optional
         Include weighgted hedges and weighgted strats. The default is False.
-
+    num_new_strats: integer, optional
+        Number of new strategies to consider. The default is 1.
     Returns
     -------
     dict
@@ -52,7 +53,7 @@ def get_analysis(df_returns, notional_weights=[], include_fi=False, new_strat=Fa
     
     #if weighted, compute weighted hedges and strats
     if weighted:
-        df_weighted_returns = get_weighted_data(df_returns,notional_weights,include_fi,new_strat)
+        df_weighted_returns = get_weighted_data(df_returns,notional_weights,include_fi,new_strat,num_new_strats=1)
         
         # Create pandas DataFrame for return statistics
         df_return_stats = get_return_stats(df_weighted_returns, freq)
@@ -92,7 +93,7 @@ def get_analysis(df_returns, notional_weights=[], include_fi=False, new_strat=Fa
         
     return {'return_stats':df_return_stats, 'hedge_metrics':df_hedge_metrics}
 
-def get_analysis_sheet_data(df_returns, notional_weights=[], include_fi=False, new_strat=False,freq='1M', weighted=False):
+def get_analysis_sheet_data(df_returns, notional_weights=[], include_fi=False, new_strat=False,freq='1M', weighted=False,num_new_strats=1):
     """
     Returns data for analysis excel sheet into a dictionary
 
@@ -110,6 +111,8 @@ def get_analysis_sheet_data(df_returns, notional_weights=[], include_fi=False, n
         frequency. The default is '1M'.
     weighted : boolean, optional
         Include weighgted hedges and weighgted strats. The default is False.
+    num_new_strats: integer, optional
+        Number of new strategies to consider. The default is 1.
 
     Returns
     -------
@@ -136,7 +139,7 @@ def get_analysis_sheet_data(df_returns, notional_weights=[], include_fi=False, n
     corr_dict = get_corr_analysis(df_returns, notional_weights, include_fi, weighted)
     
     #compute return stats and hedge metrics
-    analytics_dict = get_analysis(df_returns, notional_weights, include_fi, new_strat, freq,weighted)
+    analytics_dict = get_analysis(df_returns, notional_weights, include_fi, new_strat, freq,weighted,num_new_strats)
     
     #compute portfolio weightings    
     df_weights = []
@@ -499,7 +502,7 @@ def get_rolling_cum_data(df_returns, freq='1W', notional_weights=[]):
     else:
         print('Frequency of data has to be weekly to run this function')
         
-def get_weighted_data(df_returns, notional_weights=[], include_fi=False, new_strat=False):
+def get_weighted_data(df_returns, notional_weights=[], include_fi=False, new_strat=False,num_new_strats=1):
     """
     Returns dataframe containg df_returns plus the weighted strats and hedges data
 
@@ -513,6 +516,8 @@ def get_weighted_data(df_returns, notional_weights=[], include_fi=False, new_str
         Include Fixed Income benchmark. The default is False.
     new_strat : boolean, optional
         Does analysis involve a new strategy. The default is False.
+    num_new_strats: integer, optional
+        Number of new strategies to consider. The default is 1.
 
     Returns
     -------
@@ -525,7 +530,7 @@ def get_weighted_data(df_returns, notional_weights=[], include_fi=False, new_str
     
     #Get weighted strategies with and without new strategy (if new_strat = True)
     df_weighted_strats = util.get_weighted_strats_df(df_returns, notional_weights, include_fi,
-                                                  new_strat)
+                                                  new_strat,num_new_strats)
 
     #merge weighted_strats with returns with and 
     #without new strategy (weighted_strats_old)
@@ -533,7 +538,7 @@ def get_weighted_data(df_returns, notional_weights=[], include_fi=False, new_str
                                    right_index=True, how='outer')
     
     #Get weighted hedges with and without new strategy (if new_strat = True)
-    df_weighted_hedges = util.get_weighted_hedges(df_returns, notional_weights, include_fi,new_strat)
+    df_weighted_hedges = util.get_weighted_hedges(df_returns, notional_weights, include_fi,new_strat,num_new_strats)
     
     #merge weighted hedges with weighted returns
     df_weighted_hedges.drop(list(df_returns.columns), axis=1, inplace=True)

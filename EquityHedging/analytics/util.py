@@ -210,7 +210,7 @@ def check_notional(df_returns, notional_weights=[]):
     
     return notional_weights
 
-def get_weighted_strats_df(df_returns, notional_weights=[], include_fi=False, new_strat=False):
+def get_weighted_strats_df(df_returns, notional_weights=[], include_fi=False, new_strat=False,num_new_strats=1):
     """
     Return dataframe of weighted strategy returns, with and without newest strategy
 
@@ -224,7 +224,8 @@ def get_weighted_strats_df(df_returns, notional_weights=[], include_fi=False, ne
         Include Fixed Income benchmark. The default is False.
     new_strat : boolean, optional
         Does analysis involve a new strategy. The default is False.
-    
+    num_new_strats: integer, optional
+        Number of new strategies to consider. The default is 1.
     Returns
     -------
     df_weighted_strats : dataframe
@@ -242,14 +243,17 @@ def get_weighted_strats_df(df_returns, notional_weights=[], include_fi=False, ne
     #get weighted strategies without new strat
     if new_strat:
         pct_weights_old = pct_weights.copy()
-        pct_weights_old[len(pct_weights_old)-1] = 0
+        #pct_weights_old[len(pct_weights_old)-num_new_strats] = 0
+        for i in range(1, num_new_strats + 1):
+            pct_weights_old[len(pct_weights_old) - i] = 0
+
         col_names = list(df_returns.columns)
-        wgt_strat_wo_name = 'Weighted Strats w/o ' + col_names[len(col_names)-1]
+        wgt_strat_wo_name = 'Weighted Strats w/o New Strategies
         df_weighted_strats[wgt_strat_wo_name] = df_returns.dot(tuple(pct_weights_old)).to_frame()
     
     return df_weighted_strats
 
-def get_weighted_hedges(df_returns, notional_weights, include_fi=False, new_strat=False, weight_col = 'Weighted Hedges'):
+def get_weighted_hedges(df_returns, notional_weights, include_fi=False, new_strat=False, weight_col = 'Weighted Hedges', num_new_strats=1):
     """
     Return dataframe of weighted hedge returns, with and without newest strategy
 
@@ -263,7 +267,8 @@ def get_weighted_hedges(df_returns, notional_weights, include_fi=False, new_stra
         Include Fixed Income benchmark. The default is False.
     new_strat : boolean, optional
         Does analysis involve a new strategy. The default is False.
-
+    num_new_strats: integer, optional
+        Number of new strategies to consider. The default is 1.
     Returns
     -------
     df_weighted_hedges : dataframe
@@ -274,15 +279,17 @@ def get_weighted_hedges(df_returns, notional_weights, include_fi=False, new_stra
     df_weighted_hedges = df_returns.copy()
     notional_weights = check_notional(df_weighted_hedges,notional_weights)
     strat_weights = get_strat_weights(notional_weights, include_fi)
-    df_weighted_hedges[weight_col] = df_weighted_hedges.dot(tuple(strat_weights))
+    df_weighted_hedges['Weighted Hedges'] = df_weighted_hedges.dot(tuple(strat_weights))
     
     #get weighted hedges w/o new strategy
     if new_strat:
         col_list = list(df_returns.columns)
         temp_weights = notional_weights.copy()
-        temp_weights[len(temp_weights)-1] = 0
+        #temp_weights[len(temp_weights)-num_new_strats] = 0
+        for i in range(1, num_new_strats + 1):
+            temp_weights[len(temp_weights) - i] = 0
         temp_strat_weights = get_strat_weights(temp_weights, include_fi)
-        wgt_hedge_wo_name = weight_col +' w/o ' + col_list[len(col_list)-1]
+        wgt_hedge_wo_name = 'Weighted Hedges w/o New Strategies'
         df_weighted_hedges[wgt_hedge_wo_name] = df_returns.dot(tuple(temp_strat_weights))
 
     return df_weighted_hedges

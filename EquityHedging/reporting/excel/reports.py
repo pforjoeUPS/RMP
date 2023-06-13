@@ -37,7 +37,7 @@ def get_report_path(report_name):
     return cwd + reports_fp + file_name
     
 def get_equity_hedge_report(report_name, returns_dict, notional_weights=[],
-                            include_fi=False, new_strat=False, weighted=False, selloffs=False, grouped = False, monthly_ret_table = True):
+                            include_fi=False, new_strat=False, weighted=False, selloffs=False, grouped = False, monthly_ret_table = True,num_new_strats=1):
     """
     Generate equity hedge analysis report
     
@@ -57,6 +57,8 @@ def get_equity_hedge_report(report_name, returns_dict, notional_weights=[],
         Include weighgted hedges and weighgted strats. The default is False.
     selloffs : boolean, optional
         Include historical selloffs. The default is False.
+    num_new_strats: integer, optional
+        Number of new strategies to consider. The default is 1.
 
     Returns
     -------
@@ -81,9 +83,9 @@ def get_equity_hedge_report(report_name, returns_dict, notional_weights=[],
         #get analytics
         analysis_data = summary.get_analysis_sheet_data(returns_dict[freq], notional_weights,
                                                           include_fi,new_strat,
-                                                          dm.switch_string_freq(freq), weighted)
+                                                          dm.switch_string_freq(freq), weighted,num_new_strats)
         df_weighted_returns = summary.get_weighted_data(returns_dict[freq],notional_weights,
-                                                          include_fi,new_strat)
+                                                          include_fi,new_strat,num_new_strats)
         
         corr_sheet =  freq + ' Analysis'
         return_sheet = freq + ' Historical Returns'

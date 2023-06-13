@@ -5,6 +5,9 @@ Created on Sat Apr 24 00:21:46 2021
 @author: Powis Forjoe, Zach Wells and Maddie Choi
 """
 import os
+import pandas as pd
+
+
 
 os.chdir('..\..')
 
@@ -14,6 +17,7 @@ from EquityHedging.analytics.util import get_df_weights
 from EquityHedging.analytics import summary
 from EquityHedging.reporting.excel import reports as rp
 from EquityHedging.reporting import formatter as plots
+from functools import reduce
 
 
 #import returns data
@@ -24,19 +28,49 @@ strat_drop_list = ['99%/90% Put Spread', 'Vortex']
 new_strat = False
 returns= dm.get_equity_hedge_returns(equity_bmk, include_fi, strat_drop_list)
 
+# =============================================================================
+# #Add new strat
+# 
+# new_strat = True
+# 
+# if new_strat:
+#     strategy_list = ['CSDefensiveSkew']
+#     strategy_list1 = ['SGPulse']
+#     filename = 'CS_Strat.xlsx'
+#     sheet_name1 = 'CS_Defensive_Skew'
+#     sheet_name2 = 'SG_Pulse'
+#     new_strategy1 = dm.get_new_strategy_returns_data(filename, sheet_name1, strategy_list)
+#     new_strategy2 = dm.get_new_strategy_returns_data(filename, sheet_name2, strategy_list1)
+#     new_strategy = dm.merge_data_frames(new_strategy1,new_strategy2)
+#     new_strategy_dict = dm.get_data_dict(new_strategy, data_type='index')
+#     returns = dm.merge_dicts(returns, new_strategy_dict)
+# 
+# =============================================================================
+
 #Add new strat
 new_strat = True
+num_new_strats = 0
 if new_strat:
-    strategy_list = ['CSDefensiveSkew']
-    strategy_list1 = ['SGPulse']
+    strategy_list = [['CSDefensiveSkew'],['SGPulse']]
+    num_new_strats = len(strategy_list)
     filename = 'CS_Strat.xlsx'
-    sheet_name1 = 'CS_Defensive_Skew'
-    sheet_name2 = 'SG_Pulse'
-    new_strategy1 = dm.get_new_strategy_returns_data(filename, sheet_name1, strategy_list)
-    new_strategy2 = dm.get_new_strategy_returns_data(filename, sheet_name2, strategy_list1)
-    new_strategy = dm.merge_data_frames(new_strategy1,new_strategy2)
+    sheet_name = ['CS_Defensive_Skew','SG_Pulse']
+    new_strategies = []
+    #i = 0
+    for i in range(len(strategy_list)):
+        temp_df = dm.get_new_strategy_returns_data(filename,sheet_name[i],strategy_list[i])
+        new_strategies.append(temp_df)
+    nonzero_strats = [df for df in new_strategies if (df != 0).all().all()]
+    if nonzero_strats:
+       new_strategy = reduce(lambda  left,right: pd.merge(left,right,on=['Dates'],
+                                            how='outer'), nonzero_strats).fillna(0)
+       new_strategy.dropna(inplace=True)
+    #new_strategy = dm.get_new_strategy_returns_data(filename, sheet_name, strategy_list)
     new_strategy_dict = dm.get_data_dict(new_strategy, data_type='index')
+    #new_strategy_dict = {key: value.iloc[1:] for key, value in new_strategy_dict.items()}
+    new_strategy_dict = {key: value[~value.isin([float('inf')]).any(axis=1)] for key, value in new_strategy_dict.items()}
     returns = dm.merge_dicts(returns, new_strategy_dict)
+
 
 
 
@@ -93,11 +127,11 @@ if monthly_ret_table:
     month_returns_table = dm.month_ret_table(returns['Monthly'], strategy = strategy)
     full_month_returns_table = dm.all_strat_month_ret_table(returns['Monthly'])
 #run report
-equity_hedge_report = 'equity_hedge_analysis_CSStrat'
+equity_hedge_report = 'equity_hedge_analysis_Test3'
 selloffs = True
 grouped = True
 # start = time.time()
-rp.get_equity_hedge_report(equity_hedge_report, returns,notional_weights, include_fi, new_strat, weighted[0], selloffs, grouped, monthly_ret_table)
+rp.get_equity_hedge_report(equity_hedge_report, returns,notional_weights, include_fi, new_strat, weighted[0], selloffs, grouped, monthly_ret_table,num_new_strats)
 # end = time.time()
 # print(end - start)
 

@@ -406,7 +406,7 @@ def get_prices_df(df_returns):
     
     for i in range(1, len(df_returns)):
         for col in df_returns.columns:
-            df_prices[col][i] = (df_returns[col][i] + 1) * df_prices[col][i-1]
+               df_prices[col][i] = (df_returns[col][i] + 1) * df_prices[col][i-1]
     return df_prices
 
 def get_new_strategy_returns_data(report_name, sheet_name, strategy_list=[], freq = '1D'):
