@@ -48,19 +48,25 @@ returns= dm.get_equity_hedge_returns(equity_bmk, include_fi, strat_drop_list)
 # =============================================================================
 
 #Add new strat
+
+#TODO : Make method in data_manager and call that method in this script
 new_strat = True
 num_new_strats = 0
 if new_strat:
     strategy_list = [['CSDefensiveSkew'],['SGPulse']]
     num_new_strats = len(strategy_list)
-    filename = 'CS_Strat.xlsx'
-    sheet_name = ['CS_Defensive_Skew','SG_Pulse']
+    #TODO : only reading in 1 file name. have ability to define multiple file names
+    filename = 'JPM Moments.xlsx'
+    sheet_name = ['esprso','Sheet2']
     new_strategies = []
     #i = 0
     for i in range(len(strategy_list)):
         temp_df = dm.get_new_strategy_returns_data(filename,sheet_name[i],strategy_list[i])
         new_strategies.append(temp_df)
     nonzero_strats = [df for df in new_strategies if (df != 0).all().all()]
+    
+    #TODO : use dm.merge and merge left. when we save new strats, we do not necessarily name the 
+    # column with the dates as "Dates"
     if nonzero_strats:
        new_strategy = reduce(lambda  left,right: pd.merge(left,right,on=['Dates'],
                                             how='outer'), nonzero_strats).fillna(0)
