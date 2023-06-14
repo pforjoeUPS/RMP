@@ -5,8 +5,7 @@ Created on Sat Apr 24 00:21:46 2021
 @author: Powis Forjoe, Zach Wells and Maddie Choi
 """
 import os
-import pandas as pd
-
+#import pandas as pd
 
 
 os.chdir('..\..')
@@ -17,7 +16,7 @@ from EquityHedging.analytics.util import get_df_weights
 from EquityHedging.analytics import summary
 from EquityHedging.reporting.excel import reports as rp
 from EquityHedging.reporting import formatter as plots
-from functools import reduce
+#from functools import reduce
 
 
 #import returns data
@@ -51,28 +50,15 @@ returns= dm.get_equity_hedge_returns(equity_bmk, include_fi, strat_drop_list)
 new_strat = True
 num_new_strats = 0
 if new_strat:
-    strategy_list = [['CSDefensiveSkew'],['SGPulse']]
+    strategy_list = [['CSDefensiveSkew'],['VolCalNDX']]
     num_new_strats = len(strategy_list)
-    filename = 'CS_Strat.xlsx'
-    sheet_name = ['CS_Defensive_Skew','SG_Pulse']
-    new_strategies = []
-    #i = 0
-    for i in range(len(strategy_list)):
-        temp_df = dm.get_new_strategy_returns_data(filename,sheet_name[i],strategy_list[i])
-        new_strategies.append(temp_df)
-    nonzero_strats = [df for df in new_strategies if (df != 0).all().all()]
-    if nonzero_strats:
-       new_strategy = reduce(lambda  left,right: pd.merge(left,right,on=['Dates'],
-                                            how='outer'), nonzero_strats).fillna(0)
-       new_strategy.dropna(inplace=True)
-    #new_strategy = dm.get_new_strategy_returns_data(filename, sheet_name, strategy_list)
+    filename_list = ['CS_Strat.xlsx','MS_Vol_Calendars.xlsx']
+    sheet_name_list = ['CS_Defensive_Skew','Sheet2']
+    new_strategy = dm.merge_multiple_strats(strategy_list, filename_list, sheet_name_list)
     new_strategy_dict = dm.get_data_dict(new_strategy, data_type='index')
-    #new_strategy_dict = {key: value.iloc[1:] for key, value in new_strategy_dict.items()}
+    #Removing the infinity values from the dictionary
     new_strategy_dict = {key: value[~value.isin([float('inf')]).any(axis=1)] for key, value in new_strategy_dict.items()}
     returns = dm.merge_dicts(returns, new_strategy_dict)
-
-
-
 
 
 
@@ -127,7 +113,7 @@ if monthly_ret_table:
     month_returns_table = dm.month_ret_table(returns['Monthly'], strategy = strategy)
     full_month_returns_table = dm.all_strat_month_ret_table(returns['Monthly'])
 #run report
-equity_hedge_report = 'equity_hedge_analysis_Test3'
+equity_hedge_report = 'equity_hedge_analysis_Test2'
 selloffs = True
 grouped = True
 # start = time.time()
