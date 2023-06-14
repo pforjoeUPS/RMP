@@ -47,6 +47,8 @@ returns= dm.get_equity_hedge_returns(equity_bmk, include_fi, strat_drop_list)
 # =============================================================================
 
 #Add new strat
+
+#TODO : Make method in data_manager and call that method in this script
 new_strat = True
 num_new_strats = 0
 if new_strat:
