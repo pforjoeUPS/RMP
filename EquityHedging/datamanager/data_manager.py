@@ -12,6 +12,7 @@ from datetime import datetime as dt
 from math import prod
 from EquityHedging.analytics import summary 
 from EquityHedging.analytics import  util
+from functools import reduce
 
 CWD = os.getcwd()
 RETURNS_DATA_FP = CWD +'\\EquityHedging\\data\\'
@@ -781,3 +782,16 @@ def get_qis_uni_dict():
         index_price = pd.read_excel(QIS_UNIVERSE + "QIS Universe Time Series TEST.xlsx", sheet_name = sheet, index_col=0,header = 1)
         qis_uni[sheet] = format_data(index_price, freq = '1W')
     return qis_uni
+
+def merge_multiple_strats(strategy_list,filename_list,sheet_name_list):
+    new_strategies=[]
+    for i in range(len(strategy_list)):
+        temp_df = get_new_strategy_returns_data(filename_list[i],sheet_name_list[i],strategy_list[i])
+        new_strategies.append(temp_df)
+    nonzero_strats = [df for df in new_strategies if (df != 0).all().all()]
+    if nonzero_strats:
+       new_strategy = reduce(lambda  left,right: pd.merge(left,right,on=['Dates'],
+                                            how='outer'), nonzero_strats).fillna(0)
+       new_strategy.dropna(inplace=True)
+    return new_strategy
+    
