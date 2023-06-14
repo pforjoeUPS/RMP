@@ -15,6 +15,7 @@ from EquityHedging.analytics import summary
 from EquityHedging.reporting.excel import reports as rp
 from EquityHedging.reporting import formatter as plots
 
+#Comments: Line 16 is causing us problems with the requent use of "plots" 
 
 #import returns data
 equity_bmk = 'SPTR'
@@ -27,25 +28,16 @@ returns= dm.get_equity_hedge_returns(equity_bmk, include_fi, strat_drop_list)
 #Add new strat
 new_strat = True
 if new_strat:
-    strategy_list = ['JPM Skew','CITI Put Ratio']
-    filename = 'JPM_Skew_and_CITI_Put.xlsx'
-    sheet_name = 'Sheet1'
+    strategy_list = ['VolCalendar1']
+    filename = 'MS_Vol_Calendars.xlsx'
+    sheet_name = 'Sheet2'
     new_strategy = dm.get_new_strategy_returns_data(filename, sheet_name, strategy_list)
     new_strategy_dict = dm.get_data_dict(new_strategy, data_type='index')
     returns = dm.merge_dicts(returns, new_strategy_dict)
 
-
-
-
-
 #get notional weights
-
 notional_weights = dm.get_notional_weights(returns['Monthly'])
-returns = dm.create_vrr_portfolio(returns,notional_weights)
-notional_weights[4:6] = [notional_weights[4] + notional_weights[5]]
-
 df_weights = get_df_weights(notional_weights, list(returns['Monthly'].columns), include_fi)
-
 
 #compute correlations
 check_corr = False
@@ -82,18 +74,15 @@ if check_quint:
 check_ann = False
 if check_ann:
     annual_dollar_returns = summary.get_annual_dollar_returns(returns, notional_weights)
-    
-strategy = "VOLA 3"
-monthly_ret_table = True
-if monthly_ret_table:
-    month_returns_table = dm.month_ret_table(returns['Monthly'], strategy = strategy)
-    full_month_returns_table = dm.all_strat_month_ret_table(returns['Monthly'])
+
+#runs linear regression
+dm.regression_project('Down Var','Daily')
+
 #run report
-equity_hedge_report = 'equity_hedge_analysis_test'
+equity_hedge_report = 'equity_hedge_analysis_VolCalendar1'
 selloffs = True
-grouped = True
 # start = time.time()
-rp.get_equity_hedge_report(equity_hedge_report, returns,notional_weights, include_fi, new_strat, weighted[0], selloffs, grouped, monthly_ret_table)
+rp.get_equity_hedge_report(equity_hedge_report, returns,notional_weights, include_fi, new_strat, weighted[0], selloffs)
 # end = time.time()
 # print(end - start)
 
