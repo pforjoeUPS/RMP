@@ -53,9 +53,9 @@ intercept_neg = regression_model_neg.intercept_
 coefficient_neg = regression_model_neg.coef_[0]
 intercept_all = regression_model_all.intercept_
 coefficient_all = regression_model_all.coef_[0]
+print(f"Regression equation (All Data): {comparison_strategy} = {coefficient_all:.4f} * {equity_bmk} + {intercept_all:.4f}")
 print(f"Regression equation (SPTR >= 0): {comparison_strategy} = {coefficient_pos:.4f} * {equity_bmk} + {intercept_pos:.4f}")
 print(f"Regression equation (SPTR < 0): {comparison_strategy} = {coefficient_neg:.4f} * {equity_bmk} + {intercept_neg:.4f}")
-print(f"Regression equation (All Data): {comparison_strategy} = {coefficient_all:.4f} * {equity_bmk} + {intercept_all:.4f}")
 
 #prints seperate bets for each condition
 beta_pos = coefficient_pos
