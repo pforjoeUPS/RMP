@@ -791,7 +791,7 @@ def merge_multiple_strats(strategy_list,filename_list,sheet_name_list):
     nonzero_strats = [df for df in new_strategies if (df != 0).all().all()]
     if nonzero_strats:
        new_strategy = reduce(lambda  left,right: pd.merge(left,right,on=['Dates'],
-                                            how='outer'), nonzero_strats).fillna(0)
+                                            how='left'), nonzero_strats).fillna(0)
        new_strategy.dropna(inplace=True)
     return new_strategy
     
