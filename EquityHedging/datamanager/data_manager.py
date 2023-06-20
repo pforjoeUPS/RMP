@@ -26,7 +26,7 @@ NEW_DATA_COL_LIST = ['SPTR', 'SX5T','M1WD', 'Long Corp', 'STRIPS', 'Down Var',
                     'GW Dispersion', 'Corr Hedge','Def Var (Mon)', 'Def Var (Fri)', 'Def Var (Wed)', 
                     'Commodity Basket']
 
-def merge_dicts(main_dict, new_dict, fillzeros = True):
+def merge_dicts(main_dict, new_dict, fillzeros = False):
     """
     Merge new_dict to main_dict
     
@@ -61,7 +61,7 @@ def merge_data_frames(df_main, df_new,fillzeros=False):
     dataframe
     """
     
-    df = pd.merge(df_main, df_new, left_index=True, right_index=True, how='outer')
+    df = pd.merge(df_main, df_new, left_index=True, right_index=True, how='left')
     if fillzeros:
         df = df.fillna(0)
     else:
@@ -85,7 +85,7 @@ def format_data(df_index, freq="1M"):
        data = data.resample(freq).ffill()
     data = data.pct_change(1)
     data.dropna(inplace=True)
-    data = data.loc[(data!=0).any(1)]
+    #data = data.loc[(data!=0).any(1)]
     return data
 
 def get_min_max_dates(df_returns):
