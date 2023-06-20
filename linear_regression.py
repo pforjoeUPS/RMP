@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 from sklearn.linear_model import LinearRegression
+from matplotlib.ticker import PercentFormatter
 
 #import returns data
 equity_bmk = 'SPTR'
@@ -65,11 +66,16 @@ print(f"Beta (SPTR >= 0): {beta_pos:.4f}")
 print(f"Beta (SPTR < 0): {beta_neg:.4f}")
 
 #creates graph of points, line of best fit, etc.
-plt.scatter(X_pos, y_pos, color='b', label='Data Points (SPTR >= 0)')
-plt.scatter(X_neg, y_neg, color='g', label='Data Points (SPTR < 0)')
+plt.scatter(X_pos, y_pos, color='g', label='Data Points (SPTR >= 0)')
+plt.scatter(X_neg, y_neg, color='b', label='Data Points (SPTR < 0)')
 plt.plot(x_range_pos, y_pred_pos, color='r', label='Regression Line (SPTR >= 0)')
-plt.plot(x_range_neg, y_pred_neg, color='r', label='Regression Line (SPTR < 0)')
+plt.plot(x_range_neg, y_pred_neg, color='orange', label='Regression Line (SPTR < 0)')
 plt.xlabel(equity_bmk)
 plt.ylabel(comparison_strategy)
 plt.title(f'Regression Analysis: {equity_bmk} vs {comparison_strategy} ({frequency} Returns)')
+#change axis labels into percentages
+plt.gca().yaxis.set_major_formatter(PercentFormatter(xmax=1, decimals=1))
+plt.gca().xaxis.set_major_formatter(PercentFormatter(xmax=1, decimals=1))
 plt.plot
+
+#create method in plots and bring that to script

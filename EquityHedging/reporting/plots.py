@@ -8,7 +8,7 @@ Created on Tue Oct  1 17:59:28 2019
 import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
-from heatmap import corrplot
+#from heatmap import corrplot
 from ..analytics.corr_stats import get_corr_analysis
 import pandas as pd
 
@@ -220,75 +220,62 @@ def get_colors(df_normal, grey=False):
    
     return color_df
 
-def regression_project(strategy,frequency):
-        equity_bmk = 'SPTR'
-        returns = dm.get_equity_hedge_returns(equity_bmk)
+def reg(x_position, y_position):
+    reg_data = []    
+    regression_model_pos = LinearRegression()
+    regression_model_pos.fit(x_position, y_position)
+    x_range_pos = np.linspace(min(x_position), max(x_position), 100)
+    y_pred_pos = regression_model_pos.predict(x_range_pos.reshape(-1, 1))
+    intercept_pos = regression_model_pos.intercept_
+    coefficient_pos = regression_model_pos.coef_[0]
+    beta_pos = coefficient_pos
+    reg_data.append(x_range_pos)
+    reg_data.append(y_pred_pos)
+    reg_data.append(intercept_pos)
+    reg_data.append(coefficient_pos)
+    reg_data.append(beta_pos)
+    return reg_data
 
-        comparison_strategy = strategy
-        frequency = frequency
 
-        #load the returns data for SPTR and the selected strategy
-        sptr_returns = returns[frequency][equity_bmk]
-        comparison_returns = returns[frequency][comparison_strategy]
+def get_regression_plot(frequency, strategy_y, strategy_x = 'SPTR'):
+    returns = dm.get_equity_hedge_returns(strategy_x)
+    comparison_strategy = strategy_y
+    strategy_x_returns = returns[frequency][strategy_x]
+    comparison_returns = returns[frequency][comparison_strategy]
+    data = pd.concat([strategy_x_returns, comparison_returns], axis=1)
+    data.columns = [strategy_x, comparison_strategy]
+     #splits the data accordingly
+    data_sptr_pos = data[data[strategy_x] >= 0]
+    data_sptr_neg = data[data[strategy_x] < 0]
 
-        #creates a dataframe of the isolated returns
-        data = pd.concat([sptr_returns, comparison_returns], axis=1)
-        data.columns = [equity_bmk, comparison_strategy]
+    x_pos = data_sptr_pos[strategy_x].values.reshape(-1, 1)
+    y_pos = data_sptr_pos[comparison_strategy].values
+    x_neg = data_sptr_neg[strategy_x].values.reshape(-1, 1)
+    y_neg = data_sptr_neg[comparison_strategy].values
+    x_all = data[strategy_x].values.reshape(-1, 1)
+    y_all = data[comparison_strategy].values
+    
+    positive_data = reg(x_pos,y_pos)
+    negative_data = reg(x_neg, y_neg)
+    all_data = reg(x_all,y_all)
+    
+    print(f"Regression equation (All Data): {comparison_strategy} = {all_data[3]:.4f} * {strategy_x} + {all_data[2]:.4f}")
+    print(f"Regression equation (SPTR >= 0): {comparison_strategy} = {positive_data[3]:.4f} * {strategy_x} + {positive_data[2]:.4f}")
+    print(f"Regression equation (SPTR < 0): {comparison_strategy} = {negative_data[3]:.4f} * {strategy_x} + {negative_data[2]:.4f}")
+    
+    print(f"Beta (All Data): {all_data[4]:.4f}")
+    print(f"Beta (SPTR >= 0): {positive_data[4]:.4f}")
+    print(f"Beta (SPTR < 0): {negative_data[4]:.4f}")
 
-        #splits the data accordingly
-        data_sptr_pos = data[data[equity_bmk] >= 0]
-        data_sptr_neg = data[data[equity_bmk] < 0]
-
-        #prepares the input features (SPTR) and target variable (selected strategy) for each subset
-        X_pos = data_sptr_pos[equity_bmk].values.reshape(-1, 1)
-        y_pos = data_sptr_pos[comparison_strategy].values
-        X_neg = data_sptr_neg[equity_bmk].values.reshape(-1, 1)
-        y_neg = data_sptr_neg[comparison_strategy].values
-        X_all = data[equity_bmk].values.reshape(-1, 1)
-        y_all = data[comparison_strategy].values
-
-        #fits separate linear regressions
-        regression_model_pos = LinearRegression()
-        regression_model_pos.fit(X_pos, y_pos)
-        regression_model_neg = LinearRegression()
-        regression_model_neg.fit(X_neg, y_neg)
-        regression_model_all = LinearRegression()
-        regression_model_all.fit(X_all, y_all)
-
-        #get the regression line coordinates
-        x_range_pos = np.linspace(min(X_pos), max(X_pos), 100)
-        y_pred_pos = regression_model_pos.predict(x_range_pos.reshape(-1, 1))
-        x_range_neg = np.linspace(min(X_neg), max(X_neg), 100)
-        y_pred_neg = regression_model_neg.predict(x_range_neg.reshape(-1, 1))
-
-        #prints seperate linear equations 
-        intercept_pos = regression_model_pos.intercept_
-        coefficient_pos = regression_model_pos.coef_[0]
-        intercept_neg = regression_model_neg.intercept_
-        coefficient_neg = regression_model_neg.coef_[0]
-        intercept_all = regression_model_all.intercept_
-        coefficient_all = regression_model_all.coef_[0]
-        print(f"Regression equation (All Data): {comparison_strategy} = {coefficient_all:.4f} * {equity_bmk} + {intercept_all:.4f}")
-        print(f"Regression equation (SPTR >= 0): {comparison_strategy} = {coefficient_pos:.4f} * {equity_bmk} + {intercept_pos:.4f}")
-        print(f"Regression equation (SPTR < 0): {comparison_strategy} = {coefficient_neg:.4f} * {equity_bmk} + {intercept_neg:.4f}")
-
-        #prints seperate bets for each condition
-        beta_pos = coefficient_pos
-        beta_neg = coefficient_neg
-        beta_all = coefficient_all
-        print(f"Beta (All Data): {beta_all:.4f}")
-        print(f"Beta (SPTR >= 0): {beta_pos:.4f}")
-        print(f"Beta (SPTR < 0): {beta_neg:.4f}")
-
-        #creates graph of points, line of best fit, etc.
-        plt.scatter(X_pos, y_pos, color='g', label='Data Points (SPTR >= 0)')
-        plt.scatter(X_neg, y_neg, color='b', label='Data Points (SPTR < 0)')
-        plt.plot(x_range_pos, y_pred_pos, color='r', label='Regression Line (SPTR >= 0)')
-        plt.plot(x_range_neg, y_pred_neg, color='orange', label='Regression Line (SPTR < 0)')
-        plt.xlabel(equity_bmk)
-        plt.ylabel(comparison_strategy)
-        plt.title(f'Regression Analysis: {equity_bmk} vs {comparison_strategy} ({frequency} Returns)')
-        #change axis labels into percentages
-        plt.gca().yaxis.set_major_formatter(PercentFormatter(xmax=1, decimals=1))
-        plt.gca().xaxis.set_major_formatter(PercentFormatter(xmax=1, decimals=1))
-        plt.plot
+    #creates graph of points, line of best fit, etc.
+    plt.scatter(x_pos, y_pos, color='g', label='Data Points (SPTR >= 0)')
+    plt.scatter(x_neg, y_neg, color='b', label='Data Points (SPTR < 0)')
+    plt.plot(positive_data[0], positive_data[1], color='r', label='Regression Line (SPTR >= 0)')
+    plt.plot(negative_data[0], negative_data[1], color='orange', label='Regression Line (SPTR < 0)')
+    plt.xlabel(strategy_x)
+    plt.ylabel(comparison_strategy)
+    plt.title(f'Regression Analysis: {strategy_x} vs {comparison_strategy} ({frequency} Returns)')
+    #change axis labels into percentages
+    plt.gca().yaxis.set_major_formatter(PercentFormatter(xmax=1, decimals=1))
+    plt.gca().xaxis.set_major_formatter(PercentFormatter(xmax=1, decimals=1))
+    plt.plot
