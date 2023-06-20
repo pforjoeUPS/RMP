@@ -52,7 +52,7 @@ def set_analysis_sheet(writer, data_dict, sheet_name, freq, spaces=3):
     #currency format
     currency_fmt = formats.set_number_format(workbook,num_format='$##0.0')
     #date format
-    date_fmt = formats.set_number_format(workbook, num_format='d mmmm yyyy')
+    date_fmt = formats.set_number_format(workbook, num_format='mm/dd/yyyy')
     
     int_fmt = formats.set_number_format(workbook, num_format='0')
         
