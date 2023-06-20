@@ -39,6 +39,7 @@ def format_return_stats(anayltics_df, freq='1M'):
                       ,"Downside Deviation":lambda x: f"{x:.2%}"
                       ,"Sortino Ratio":lambda x: f"{x:.2f}"
                       }
+        
     else:
         formatters = {"Annualized Ret":lambda x: f"{x:.2%}"
                       ,"Annualized Vol":lambda x: f"{x:.2%}"
@@ -57,6 +58,7 @@ def format_return_stats(anayltics_df, freq='1M'):
                       ,"Downside Deviation":lambda x: f"{x:.2%}"
                       ,"Sortino Ratio":lambda x: f"{x:.2f}"
                       }
+
     return formatters 
 
 def format_hedge_metrics(anayltics_df, freq='1M'):

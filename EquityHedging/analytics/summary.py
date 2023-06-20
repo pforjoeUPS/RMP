@@ -89,9 +89,11 @@ def get_analysis(df_returns, notional_weights=[], include_fi=False, new_strat=Fa
     if dm.switch_freq_int(freq) <= 12:
         df_hedge_metrics.drop(['Decay Days (50% retrace)','Decay Days (25% retrace)',
                              'Decay Days (10% retrace)'],inplace=True)
+    
     #remove recovery metrics if frequency is 1M, 1Q, 1Y    
     if dm.switch_freq_int(freq) <= 12:
         df_return_stats.drop(['Recovery'],inplace=True)    
+
         
         
     return {'return_stats':df_return_stats, 'hedge_metrics':df_hedge_metrics}

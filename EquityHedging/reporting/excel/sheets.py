@@ -86,71 +86,123 @@ def set_analysis_sheet(writer, data_dict, sheet_name, freq, spaces=3):
             
         #format for return stats
         elif n==4:
-            #format ann. ret and ann. vol to percent
-            worksheet.conditional_format(row+1,col+1, row+2, col_dim,{'type':'no_blanks',
-                                      'format':pct_fmt})
-            #format ret/vol to digits
-            worksheet.conditional_format(row+3,col+1, row+3, col_dim,{'type':'no_blanks',
-                                      'format':digits_fmt})
-            #format max_dd to percent
-            worksheet.conditional_format(row+4,col+1, row+4, col_dim,{'type':'no_blanks',
-                                      'format':pct_fmt})
             
-            if freq >12:
-     
-                #format recovery to int
+            if freq <= 12:
+                #format ann. ret and ann. vol to percent
+                worksheet.conditional_format(row+1,col+1, row+2, col_dim,{'type':'no_blanks',
+                                          'format':pct_fmt})
+                #format ret/vol to digits
+                worksheet.conditional_format(row+3,col+1, row+3, col_dim,{'type':'no_blanks',
+                                          'format':digits_fmt})
+                #format max_dd to percent
+                worksheet.conditional_format(row+4,col+1, row+4, col_dim,{'type':'no_blanks',
+                                          'format':pct_fmt})
+                #format ret/dd to digits
+                worksheet.conditional_format(row+5,col+1, row+5, col_dim,{'type':'no_blanks',
+                                          'format':digits_fmt})
+                #format max_1m_dd to percent
+                worksheet.conditional_format(row+6,col+1, row+6, col_dim,{'type':'no_blanks',
+                                          'format':pct_fmt})
+                #format max_1m_dd date to date
+                #TODO: figure mout way to format date to short date
+                worksheet.conditional_format(row+7,col+1, row+7, col_dim,{'type':'no_blanks',
+                                          'format':date_fmt})
+                #format ret_max1m_dd to digita
+                worksheet.conditional_format(row+8,col+1, row+8, col_dim,{'type':'no_blanks',
+                                          'format':digits_fmt})
+                
+                #format max_3m_dd to percent
+                worksheet.conditional_format(row+9,col+1, row+9, col_dim,{'type':'no_blanks',
+                                          'format':pct_fmt})
+                #format max_3m_dd date to date
+                
+                #TODO: figure mout way to format date to short date
+                worksheet.conditional_format(row+10,col+1, row+10, col_dim,{'type':'no_blanks',
+                                          'format':date_fmt})
+
+                #format ret_max1q_dd to digit
+                worksheet.conditional_format(row+11,col+1, row+11, col_dim,{'type':'no_blanks',
+                                          'format':digits_fmt})
+                
+                #format skew to digits and avg_pos_ret/avg_neg_ret to digits
+                worksheet.conditional_format(row+12,col+1, row+13, col_dim,{'type':'no_blanks',
+                                          'format':digits_fmt})
+                
+                #format downside dev to percent
+                worksheet.conditional_format(row+14,col+1, row+14, col_dim,{'type':'no_blanks',
+                                          'format':pct_fmt})
+                #format sortino to digits
+                worksheet.conditional_format(row+15,col+1, row+15, col_dim,{'type':'no_blanks',
+                                          'format':digits_fmt})
+                
+                #format var to percent
+                worksheet.conditional_format(row+16,col+1, row+16, col_dim,{'type':'no_blanks',
+                                          'format':pct_fmt})
+                
+                #format cvar to percent
+                worksheet.conditional_format(row+17,col+1, row+17, col_dim,{'type':'no_blanks',
+                                          'format':pct_fmt})
+            else:
+                #format ann. ret and ann. vol to percent
+                worksheet.conditional_format(row+1,col+1, row+2, col_dim,{'type':'no_blanks',
+                                          'format':pct_fmt})
+                #format ret/vol to digits
+                worksheet.conditional_format(row+3,col+1, row+3, col_dim,{'type':'no_blanks',
+                                          'format':digits_fmt})
+                #format max_dd to percent
+                worksheet.conditional_format(row+4,col+1, row+4, col_dim,{'type':'no_blanks',
+                                          'format':pct_fmt})
+                
+                #format recovery to integer
                 worksheet.conditional_format(row+5,col+1, row+5, col_dim,{'type':'no_blanks',
                                           'format':int_fmt})
-                row_rs= 2
-            else: 
-                row_rs= 1
-           
-            #format ret/dd to digits
-            worksheet.conditional_format(row_rs+6,col+1, row_rs+6, col_dim,{'type':'no_blanks',
-                                      'format':digits_fmt})
-            #format max_1m_dd to percent
-            worksheet.conditional_format(row_rs+7,col+1, row_rs+7, col_dim,{'type':'no_blanks',
-                                      'format':pct_fmt})
-            #format max_1m_dd date to date
-            #TODO: figure mout way to format date to short date
-            worksheet.conditional_format(row_rs+8,col+1, row_rs+8, col_dim,{'type':'no_blanks',
-                                      'format':date_fmt})
-            #format ret_max1m_dd to digita
-            worksheet.conditional_format(row_rs+9,col+1, row_rs+9, col_dim,{'type':'no_blanks',
-                                      'format':digits_fmt})
-            
-            #format max_3m_dd to percent
-            worksheet.conditional_format(row_rs+10,col+1, row_rs+10, col_dim,{'type':'no_blanks',
-                                      'format':pct_fmt})
-            #format max_3m_dd date to date
-            
-            #TODO: figure mout way to format date to short date
-            worksheet.conditional_format(row_rs+11,col+1, row_rs+11, col_dim,{'type':'no_blanks',
-                                      'format':date_fmt})
+                
+                #format ret/dd to digits
+                worksheet.conditional_format(row+6,col+1, row+6, col_dim,{'type':'no_blanks',
+                                          'format':digits_fmt})
+                #format max_1m_dd to percent
+                worksheet.conditional_format(row+7,col+1, row+7, col_dim,{'type':'no_blanks',
+                                          'format':pct_fmt})
+                #format max_1m_dd date to date
+                #TODO: figure mout way to format date to short date
+                worksheet.conditional_format(row+8,col+1, row+8, col_dim,{'type':'no_blanks',
+                                          'format':date_fmt})
+                #format ret_max1m_dd to digita
+                worksheet.conditional_format(row+9,col+1, row+9, col_dim,{'type':'no_blanks',
+                                          'format':digits_fmt})
+                
+                #format max_3m_dd to percent
+                worksheet.conditional_format(row+10,col+1, row+10, col_dim,{'type':'no_blanks',
+                                          'format':pct_fmt})
+                #format max_3m_dd date to date
+                
+                #TODO: figure mout way to format date to short date
+                worksheet.conditional_format(row+11,col+1, row+11, col_dim,{'type':'no_blanks',
+                                          'format':date_fmt})
+    
+                #format ret_max1q_dd to digit
+                worksheet.conditional_format(row+12,col+1, row+12, col_dim,{'type':'no_blanks',
+                                          'format':digits_fmt})
+                
+                #format skew to digits and avg_pos_ret/avg_neg_ret to digits
+                worksheet.conditional_format(row+13,col+1, row+14, col_dim,{'type':'no_blanks',
+                                          'format':digits_fmt})
+                
+                #format downside dev to percent
+                worksheet.conditional_format(row+15,col+1, row+15, col_dim,{'type':'no_blanks',
+                                          'format':pct_fmt})
+                #format sortino to digits
+                worksheet.conditional_format(row+16,col+1, row+16, col_dim,{'type':'no_blanks',
+                                          'format':digits_fmt})
+                
+                #format var to percent
+                worksheet.conditional_format(row+17,col+1, row+17, col_dim,{'type':'no_blanks',
+                                          'format':pct_fmt})
+                
+                #format cvar to percent
+                worksheet.conditional_format(row+18,col+1, row+18, col_dim,{'type':'no_blanks',
+                                          'format':pct_fmt})
 
-            #format ret_max1q_dd to digit
-            worksheet.conditional_format(row_rs+12,col+1, row_rs+12, col_dim,{'type':'no_blanks',
-                                      'format':digits_fmt})
-            
-            #format skew to digits and avg_pos_ret/avg_neg_ret to digits
-            worksheet.conditional_format(row_rs+13,col+1, row_rs+14, col_dim,{'type':'no_blanks',
-                                      'format':digits_fmt})
-            
-            #format downside dev to percent
-            worksheet.conditional_format(row_rs+15,col+1, row_rs+15, col_dim,{'type':'no_blanks',
-                                      'format':pct_fmt})
-            #format sortino to digits
-            worksheet.conditional_format(row_rs+16,col+1, row_rs+16, col_dim,{'type':'no_blanks',
-                                      'format':digits_fmt})
-            
-            #format var to percent
-            worksheet.conditional_format(row_rs+17,col+1, row_rs+17, col_dim,{'type':'no_blanks',
-                                      'format':pct_fmt})
-            
-            #format cvar to percent
-            worksheet.conditional_format(row_rs+18,col+1, row_rs+18, col_dim,{'type':'no_blanks',
-                                      'format':pct_fmt})
-            
         #format for hedge metrics
         else:
             #format benefit count to int
