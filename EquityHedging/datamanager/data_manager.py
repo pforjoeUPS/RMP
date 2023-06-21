@@ -13,10 +13,6 @@ from math import prod
 from EquityHedging.analytics import summary 
 from EquityHedging.analytics import  util
 
-import matplotlib.pyplot as plt
-from sklearn.linear_model import LinearRegression
-from matplotlib.ticker import PercentFormatter
-
 CWD = os.getcwd()
 RETURNS_DATA_FP = CWD +'\\EquityHedging\\data\\'
 EQUITY_HEDGING_RETURNS_DATA = RETURNS_DATA_FP + 'ups_equity_hedge\\returns_data.xlsx'

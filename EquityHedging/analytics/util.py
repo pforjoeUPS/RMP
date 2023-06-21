@@ -11,6 +11,7 @@ from EquityHedging.datamanager import data_manager as dm
 from sklearn.preprocessing import MinMaxScaler
 from openpyxl import load_workbook
 
+from sklearn.linear_model import LinearRegression
 
 def get_pos_neg_df(return_series, pos=True):
     """
@@ -439,3 +440,19 @@ def append_dict_dfs(dictionary):
         df = df.append(temp_df)
             
     return df
+
+def reg(x_position, y_position):
+    reg_data = []    
+    regression_model_pos = LinearRegression()
+    regression_model_pos.fit(x_position, y_position)
+    x_range_pos = np.linspace(min(x_position), max(x_position), 100)
+    y_pred_pos = regression_model_pos.predict(x_range_pos.reshape(-1, 1))
+    intercept_pos = regression_model_pos.intercept_
+    coefficient_pos = regression_model_pos.coef_[0]
+    beta_pos = coefficient_pos
+    reg_data.append(x_range_pos)
+    reg_data.append(y_pred_pos)
+    reg_data.append(intercept_pos)
+    reg_data.append(coefficient_pos)
+    reg_data.append(beta_pos)
+    return reg_data

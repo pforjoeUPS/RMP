@@ -13,9 +13,8 @@ from ..analytics.corr_stats import get_corr_analysis
 import pandas as pd
 
 from EquityHedging.datamanager import data_manager as dm
-from sklearn.linear_model import LinearRegression
 from matplotlib.ticker import PercentFormatter
-
+from EquityHedging.analytics import util
 
 sns.set(color_codes=True, font_scale=1.2)
 
@@ -220,22 +219,6 @@ def get_colors(df_normal, grey=False):
    
     return color_df
 
-def reg(x_position, y_position):
-    reg_data = []    
-    regression_model_pos = LinearRegression()
-    regression_model_pos.fit(x_position, y_position)
-    x_range_pos = np.linspace(min(x_position), max(x_position), 100)
-    y_pred_pos = regression_model_pos.predict(x_range_pos.reshape(-1, 1))
-    intercept_pos = regression_model_pos.intercept_
-    coefficient_pos = regression_model_pos.coef_[0]
-    beta_pos = coefficient_pos
-    reg_data.append(x_range_pos)
-    reg_data.append(y_pred_pos)
-    reg_data.append(intercept_pos)
-    reg_data.append(coefficient_pos)
-    reg_data.append(beta_pos)
-    return reg_data
-
 
 def get_regression_plot(frequency, strategy_y, strategy_x = 'SPTR'):
     returns = dm.get_equity_hedge_returns(strategy_x)
@@ -245,19 +228,23 @@ def get_regression_plot(frequency, strategy_y, strategy_x = 'SPTR'):
     data = pd.concat([strategy_x_returns, comparison_returns], axis=1)
     data.columns = [strategy_x, comparison_strategy]
      #splits the data accordingly
-    data_sptr_pos = data[data[strategy_x] >= 0]
-    data_sptr_neg = data[data[strategy_x] < 0]
+     # add percentile notes
+    #data_sptr_pos = data[data[strategy_x] >= 0]
+    #data_sptr_neg = data[data[strategy_x] < 0]
 
-    x_pos = data_sptr_pos[strategy_x].values.reshape(-1, 1)
-    y_pos = data_sptr_pos[comparison_strategy].values
-    x_neg = data_sptr_neg[strategy_x].values.reshape(-1, 1)
-    y_neg = data_sptr_neg[comparison_strategy].values
+    data_sptr_low = data[data[strategy_x] <= data[strategy_x].quantile(0.025)]
+    data_sptr_high = data[data[strategy_x] >= data[strategy_x].quantile(0.975)]
+
+    x_pos = data_sptr_high[strategy_x].values.reshape(-1, 1)
+    y_pos = data_sptr_high[comparison_strategy].values
+    x_neg = data_sptr_low[strategy_x].values.reshape(-1, 1)
+    y_neg = data_sptr_low[comparison_strategy].values
     x_all = data[strategy_x].values.reshape(-1, 1)
     y_all = data[comparison_strategy].values
     
-    positive_data = reg(x_pos,y_pos)
-    negative_data = reg(x_neg, y_neg)
-    all_data = reg(x_all,y_all)
+    positive_data = util.reg(x_pos,y_pos)
+    negative_data = util.reg(x_neg, y_neg)
+    all_data = util.reg(x_all,y_all)
     
     print(f"Regression equation (All Data): {comparison_strategy} = {all_data[3]:.4f} * {strategy_x} + {all_data[2]:.4f}")
     print(f"Regression equation (SPTR >= 0): {comparison_strategy} = {positive_data[3]:.4f} * {strategy_x} + {positive_data[2]:.4f}")
