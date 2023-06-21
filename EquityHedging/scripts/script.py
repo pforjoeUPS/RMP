@@ -16,7 +16,7 @@ from EquityHedging.analytics.util import get_df_weights
 from EquityHedging.analytics import summary
 from EquityHedging.reporting.excel import reports as rp
 from EquityHedging.reporting import formatter as plots
-#from functools import reduce
+
 
 
 #import returns data
@@ -115,7 +115,7 @@ if monthly_ret_table:
     month_returns_table = dm.month_ret_table(returns['Monthly'], strategy = strategy)
     full_month_returns_table = dm.all_strat_month_ret_table(returns['Monthly'])
 #run report
-equity_hedge_report = 'equity_hedge_analysis_2test'
+equity_hedge_report = 'equity_hedge_analysis_TestDates'
 selloffs = True
 grouped = True
 # start = time.time()

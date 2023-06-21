@@ -783,15 +783,42 @@ def get_qis_uni_dict():
         qis_uni[sheet] = format_data(index_price, freq = '1W')
     return qis_uni
 
-def merge_multiple_strats(strategy_list,filename_list,sheet_name_list):
-    new_strategies=[]
-    for i in range(len(strategy_list)):
-        temp_df = get_new_strategy_returns_data(filename_list[i],sheet_name_list[i],strategy_list[i])
-        new_strategies.append(temp_df)
-    nonzero_strats = [df for df in new_strategies if (df != 0).all().all()]
-    if nonzero_strats:
-       new_strategy = reduce(lambda  left,right: pd.merge(left,right,on=['Dates'],
-                                            how='left'), nonzero_strats).fillna(0)
-       new_strategy.dropna(inplace=True)
-    return new_strategy
+#def merge_multiple_strats(strategy_list,filename_list,sheet_name_list):
+# =============================================================================
+#     new_strategies=[]
+#     common_dates = None
+# 
+#     for i in range(len(strategy_list)):
+#         temp_df = get_new_strategy_returns_data(filename_list[i],sheet_name_list[i],strategy_list[i])
+#         new_strategies.append(temp_df)
+#     nonzero_strats = [df for df in new_strategies if (df != 0).all().all()]
+#     if nonzero_strats:
+#        new_strategy = reduce(lambda  left,right: pd.merge(left,right,on=['Dates'],
+#                                             how='left'), nonzero_strats).fillna(0)
+#        new_strategy.dropna(inplace=True)
+#     return new_strategy
+# =============================================================================
     
+def merge_multiple_strats(strategy_list, filename_list, sheet_name_list):
+    new_strategies = []
+    common_dates = None 
+
+    # Iterate over each strategy
+    for i in range(len(strategy_list)):
+        temp_df = get_new_strategy_returns_data(filename_list[i], sheet_name_list[i], strategy_list[i])
+        new_strategies.append(temp_df)
+        if common_dates is None:
+            common_dates = set(temp_df['Dates'])
+        else:
+            common_dates = common_dates.intersection(temp_df['Dates'])
+
+    # Filter dataframes to include only common dates
+    new_strategies = [df[df['Dates'].isin(common_dates)] for df in new_strategies]
+
+    nonzero_strats = [df for df in new_strategies if (df != 0).all().all()]
+
+    if nonzero_strats:
+        new_strategy = reduce(lambda left, right: pd.merge(left, right, on=['Dates'], how='left'), nonzero_strats).fillna(0)
+        new_strategy.dropna(inplace=True)
+
+    return new_strategy
