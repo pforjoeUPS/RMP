@@ -102,7 +102,6 @@ def get_max_dd_freq(price_series, freq='1M', max_3m_dd=False):
     dictionary
     """
     
-    freq = '1M'
     #convert price series into returns
     return_series = price_series.copy()
     return_series = return_series.resample(freq).ffill()
