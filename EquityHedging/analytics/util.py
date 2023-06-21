@@ -170,9 +170,7 @@ def get_df_weights(notional_weights, col_list, include_fi=False):
                   'Percentage Weights',
                   'Strategy Weights']
     
-    #delete VRR2 and VRRTrend weights and VRRPort weight
-    notional_weights.append(notional_weights[4]+notional_weights[5])
-    del notional_weights[4:6]
+ 
     
     #compute percentage and strategy weights
     pct_weights = get_pct_weights(notional_weights, include_fi)
