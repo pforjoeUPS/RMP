@@ -38,7 +38,7 @@ if new_strat:
 
 #get notional weights
 #notional_weights = dm.get_notional_weights(returns['Monthly'])
-notional_weights = [13.5, 0.86, 1.12, 1.01, 0.77, 0.28, 1, .23, 0.98]
+notional_weights = [13.5, 0.85, 1.09, 1.00, 0.8, 0.26, 1, .23, 1.00]
 returns = dm.get_returns_VRR_Portfolio(returns, notional_weights)
 
 notional_weights[4:6] = [notional_weights[4] + notional_weights[5]]
