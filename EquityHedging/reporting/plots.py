@@ -24,7 +24,7 @@ def draw_corrplot(corr_df,size_scale=1000):
     """
     """
     plt.figure(figsize=corr_df.shape)
-    corrplot(corr_df, size_scale)
+    #corrplot(corr_df, size_scale)
     
 def draw_heatmap(corr_df, half=True):
     """
@@ -232,9 +232,9 @@ def get_regression_plot(frequency, strategy_y, strategy_x = 'SPTR'):
     #data_sptr_pos = data[data[strategy_x] >= 0]
     #data_sptr_neg = data[data[strategy_x] < 0]
 
-    data_sptr_low = data[data[strategy_x] <= data[strategy_x].quantile(0.025)]
-    data_sptr_high = data[data[strategy_x] >= data[strategy_x].quantile(0.975)]
-
+    data_sptr_low = data[data[strategy_x] < np.quantile(data[strategy_x],.025)]
+    data_sptr_high = data[data[strategy_x] >= np.quantile(data[strategy_x],.025)]
+    
     x_pos = data_sptr_high[strategy_x].values.reshape(-1, 1)
     y_pos = data_sptr_high[comparison_strategy].values
     x_neg = data_sptr_low[strategy_x].values.reshape(-1, 1)
@@ -247,12 +247,12 @@ def get_regression_plot(frequency, strategy_y, strategy_x = 'SPTR'):
     all_data = util.reg(x_all,y_all)
     
     print(f"Regression equation (All Data): {comparison_strategy} = {all_data[3]:.4f} * {strategy_x} + {all_data[2]:.4f}")
-    print(f"Regression equation (SPTR >= 0): {comparison_strategy} = {positive_data[3]:.4f} * {strategy_x} + {positive_data[2]:.4f}")
-    print(f"Regression equation (SPTR < 0): {comparison_strategy} = {negative_data[3]:.4f} * {strategy_x} + {negative_data[2]:.4f}")
+    print(f"Regression equation (SPTR Highest 97.5%): {comparison_strategy} = {positive_data[3]:.4f} * {strategy_x} + {positive_data[2]:.4f}")
+    print(f"Regression equation (SPTR Lowest 2.5%): {comparison_strategy} = {negative_data[3]:.4f} * {strategy_x} + {negative_data[2]:.4f}")
     
     print(f"Beta (All Data): {all_data[4]:.4f}")
-    print(f"Beta (SPTR >= 0): {positive_data[4]:.4f}")
-    print(f"Beta (SPTR < 0): {negative_data[4]:.4f}")
+    print(f"Beta (SPTR Highest 97.5%): {positive_data[4]:.4f}")
+    print(f"Beta (SPTR Lowest 2.5%): {negative_data[4]:.4f}")
 
     #creates graph of points, line of best fit, etc.
     plt.scatter(x_pos, y_pos, color='g', label='Data Points (SPTR >= 0)')
