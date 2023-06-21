@@ -52,17 +52,16 @@ returns= dm.get_equity_hedge_returns(equity_bmk, include_fi, strat_drop_list)
 new_strat = True
 num_new_strats = 0
 if new_strat:
-    strategy_list = [['vortexe'],['esprso']]
+    strategy_list = [['JPM Moments'],['CS Def Skew']]
     num_new_strats = len(strategy_list)
-    filename_list = ['vortexe.xlsx','esprso.xlsx']
-    sheet_name_list = ['Sheet1','Sheet1']
+    filename_list = ['JPM Moments.xlsx','CS Def Skew.xlsx']
+    sheet_name_list = ['Sheet2','data']
     new_strategy = dm.merge_multiple_strats(strategy_list, filename_list, sheet_name_list)
     new_strategy_dict = dm.get_data_dict(new_strategy, data_type='index')
     #Removing the infinity values from the dictionary
     #new_strategy_dict = {key: value[~value.isin([float('inf')]).any(axis=1)] for key, value in new_strategy_dict.items()}
     new_strategy_dict = {key: value.replace(float('inf'), 0) for key, value in new_strategy_dict.items()}
     returns = dm.merge_dicts(returns, new_strategy_dict)
-
 
 
 #get notional weights
@@ -116,7 +115,7 @@ if monthly_ret_table:
     month_returns_table = dm.month_ret_table(returns['Monthly'], strategy = strategy)
     full_month_returns_table = dm.all_strat_month_ret_table(returns['Monthly'])
 #run report
-equity_hedge_report = 'equity_hedge_analysis_Test4'
+equity_hedge_report = 'equity_hedge_analysis_2test'
 selloffs = True
 grouped = True
 # start = time.time()

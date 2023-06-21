@@ -244,8 +244,9 @@ def get_weighted_strats_df(df_returns, notional_weights=[], include_fi=False, ne
     if new_strat:
         pct_weights_old = pct_weights.copy()
         #pct_weights_old[len(pct_weights_old)-num_new_strats] = 0
-        for i in range(1, num_new_strats + 1):
-            pct_weights_old[len(pct_weights_old) - i] = 0
+        for i in range(num_new_strats):
+            pct_weights_old[len(pct_weights_old) - (i+1)] = 0
+    
 
         col_names = list(df_returns.columns)
         wgt_strat_wo_name = 'Weighted Strats w/o New Strategies'
@@ -286,11 +287,12 @@ def get_weighted_hedges(df_returns, notional_weights, include_fi=False, new_stra
         col_list = list(df_returns.columns)
         temp_weights = notional_weights.copy()
         #temp_weights[len(temp_weights)-num_new_strats] = 0
-        for i in range(1, num_new_strats + 1):
-            temp_weights[len(temp_weights) - i] = 0
+        for i in range(num_new_strats):
+            temp_weights[len(temp_weights) - (i+1)] = 0
         temp_strat_weights = get_strat_weights(temp_weights, include_fi)
         wgt_hedge_wo_name = 'Weighted Hedges w/o New Strategies'
         df_weighted_hedges[wgt_hedge_wo_name] = df_returns.dot(tuple(temp_strat_weights))
+        
 
     return df_weighted_hedges
 

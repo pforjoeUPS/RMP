@@ -53,7 +53,7 @@ def get_analysis(df_returns, notional_weights=[], include_fi=False, new_strat=Fa
     
     #if weighted, compute weighted hedges and strats
     if weighted:
-        df_weighted_returns = get_weighted_data(df_returns,notional_weights,include_fi,new_strat,num_new_strats=1)
+        df_weighted_returns = get_weighted_data(df_returns,notional_weights,include_fi,new_strat,num_new_strats)
         
         # Create pandas DataFrame for return statistics
         df_return_stats = get_return_stats(df_weighted_returns, freq)
