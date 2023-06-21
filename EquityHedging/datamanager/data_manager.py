@@ -14,6 +14,7 @@ from EquityHedging.analytics import summary
 from EquityHedging.analytics import  util
 from functools import reduce
 
+
 CWD = os.getcwd()
 RETURNS_DATA_FP = CWD +'\\EquityHedging\\data\\'
 EQUITY_HEDGING_RETURNS_DATA = RETURNS_DATA_FP + 'ups_equity_hedge\\returns_data.xlsx'

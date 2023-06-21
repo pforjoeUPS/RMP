@@ -13,6 +13,11 @@ from ..analytics.corr_stats import get_corr_analysis
 import pandas as pd
 
 
+from EquityHedging.datamanager import data_manager as dm
+from matplotlib.ticker import PercentFormatter
+from EquityHedging.analytics import util
+
+
 sns.set(color_codes=True, font_scale=1.2)
 
 CMAP_DEFAULT = sns.diverging_palette(20, 220, as_cmap=True)
@@ -215,3 +220,52 @@ def get_colors(df_normal, grey=False):
         color_df.iloc[i] = color_list
    
     return color_df
+
+
+def get_regression_plot(frequency, strategy_y, strategy_x = 'SPTR'):
+    returns = dm.get_equity_hedge_returns(strategy_x)
+    comparison_strategy = strategy_y
+    strategy_x_returns = returns[frequency][strategy_x]
+    comparison_returns = returns[frequency][comparison_strategy]
+    data = pd.concat([strategy_x_returns, comparison_returns], axis=1)
+    data.columns = [strategy_x, comparison_strategy]
+     #splits the data accordingly
+     # add percentile notes
+    #data_sptr_pos = data[data[strategy_x] >= 0]
+    #data_sptr_neg = data[data[strategy_x] < 0]
+
+    data_sptr_low = data[data[strategy_x] <= data[strategy_x].quantile(0.025)]
+    data_sptr_high = data[data[strategy_x] >= data[strategy_x].quantile(0.975)]
+
+    x_pos = data_sptr_high[strategy_x].values.reshape(-1, 1)
+    y_pos = data_sptr_high[comparison_strategy].values
+    x_neg = data_sptr_low[strategy_x].values.reshape(-1, 1)
+    y_neg = data_sptr_low[comparison_strategy].values
+    x_all = data[strategy_x].values.reshape(-1, 1)
+    y_all = data[comparison_strategy].values
+    
+    positive_data = util.reg(x_pos,y_pos)
+    negative_data = util.reg(x_neg, y_neg)
+    all_data = util.reg(x_all,y_all)
+    
+    print(f"Regression equation (All Data): {comparison_strategy} = {all_data[3]:.4f} * {strategy_x} + {all_data[2]:.4f}")
+    print(f"Regression equation (SPTR >= 0): {comparison_strategy} = {positive_data[3]:.4f} * {strategy_x} + {positive_data[2]:.4f}")
+    print(f"Regression equation (SPTR < 0): {comparison_strategy} = {negative_data[3]:.4f} * {strategy_x} + {negative_data[2]:.4f}")
+    
+    print(f"Beta (All Data): {all_data[4]:.4f}")
+    print(f"Beta (SPTR >= 0): {positive_data[4]:.4f}")
+    print(f"Beta (SPTR < 0): {negative_data[4]:.4f}")
+
+    #creates graph of points, line of best fit, etc.
+    plt.scatter(x_pos, y_pos, color='g', label='Data Points (SPTR >= 0)')
+    plt.scatter(x_neg, y_neg, color='b', label='Data Points (SPTR < 0)')
+    plt.plot(positive_data[0], positive_data[1], color='r', label='Regression Line (SPTR >= 0)')
+    plt.plot(negative_data[0], negative_data[1], color='orange', label='Regression Line (SPTR < 0)')
+    plt.xlabel(strategy_x)
+    plt.ylabel(comparison_strategy)
+    plt.title(f'Regression Analysis: {strategy_x} vs {comparison_strategy} ({frequency} Returns)')
+    #change axis labels into percentages
+    plt.gca().yaxis.set_major_formatter(PercentFormatter(xmax=1, decimals=1))
+    plt.gca().xaxis.set_major_formatter(PercentFormatter(xmax=1, decimals=1))
+    plt.plot
+
