@@ -774,3 +774,21 @@ def update_returns_data():
     
     returns_dict = check_returns(returns_dict)
     return returns_dict
+
+
+
+#Note: this is essentially test/pseudocode to see if this is the objective/what youre looking for
+# right now it is adding strategy name to column list through append... this can be an issue if you run multiple times
+# --> quick solution, add strategy name straight to colum list variable at top
+def add_new_strat_to_returns_data(new_strat_name= 'Test', filename = 'macq_basket.xlsx', sheet_name='Sheet2'):
+    new_strat = pd.read_excel(NEW_DATA + filename,
+                                           sheet_name = sheet_name, index_col=0)
+    
+    data = pd.read_excel(UPDATE_DATA + 'ups_data.xlsx', sheet_name= 'data', index_col=0)
+    total_data = merge_data_frames(data, new_strat)
+    NEW_DATA_COL_LIST.append(new_strat_name)
+    total_data.columns = NEW_DATA_COL_LIST
+    
+    data_dict = get_data_dict(total_data)
+    
+    return data_dict

@@ -14,3 +14,10 @@ returns_dict = dm.update_returns_data()
 #create new returns report
 rp.get_returns_report('returns_data_new', returns_dict)
 
+
+
+#testing function here
+
+returns_dict = dm.add_new_strat_to_returns_data(new_strat_name= 'Test', filename = 'macq_basket.xlsx', sheet_name='Sheet2')
+rp.get_returns_report('returns_data_test', returns_dict)
+
