@@ -52,10 +52,10 @@ returns= dm.get_equity_hedge_returns(equity_bmk, include_fi, strat_drop_list)
 new_strat = True
 num_new_strats = 0
 if new_strat:
-    strategy_list = [['JPM Moments'],['CS Def Skew']]
+    strategy_list = [['evolcon'],['vix tail hedge']]
     num_new_strats = len(strategy_list)
-    filename_list = ['JPM Moments.xlsx','CS Def Skew.xlsx']
-    sheet_name_list = ['Sheet2','data']
+    filename_list = ['evolcon.xlsx','vix tail hedge.xlsx']
+    sheet_name_list = ['Sheet1','Sheet2']
     new_strategy = dm.merge_multiple_strats(strategy_list, filename_list, sheet_name_list)
     new_strategy_dict = dm.get_data_dict(new_strategy, data_type='index')
     #Removing the infinity values from the dictionary
