@@ -780,7 +780,7 @@ def update_returns_data():
 #Note: this is essentially test/pseudocode to see if this is the objective/what youre looking for
 # right now it is adding strategy name to column list through append... this can be an issue if you run multiple times
 # --> quick solution, add strategy name straight to colum list variable at top
-def add_new_strat_to_returns_data(new_strat_name= 'Test', filename = 'macq_basket.xlsx', sheet_name='Sheet2'):
+def add_new_strat_to_returns_data(new_strat_name= '', filename = '', sheet_name=''):
     new_strat = pd.read_excel(NEW_DATA + filename,
                                            sheet_name = sheet_name, index_col=0)
     
