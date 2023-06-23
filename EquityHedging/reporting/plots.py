@@ -8,7 +8,7 @@ Created on Tue Oct  1 17:59:28 2019
 import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
-from heatmap import corrplot
+#from heatmap import corrplot
 from ..analytics.corr_stats import get_corr_analysis
 import pandas as pd
 
