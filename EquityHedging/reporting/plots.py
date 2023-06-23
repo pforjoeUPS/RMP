@@ -233,9 +233,12 @@ def get_regression_plot(frequency, strategy_y, strategy_x = 'SPTR'):
      # add percentile notes
     #data_sptr_pos = data[data[strategy_x] >= 0]
     #data_sptr_neg = data[data[strategy_x] < 0]
-
-    data_sptr_low = data[data[strategy_x] < np.quantile(data[strategy_x],.025)]
-    data_sptr_high = data[data[strategy_x] >= np.quantile(data[strategy_x],.025)]
+    if(strategy_x == 'VIX' or strategy_x == 'UX3'):
+        data_sptr_low = data[data[strategy_x] >= np.quantile(data[strategy_x],.025)]
+        data_sptr_high = data[data[strategy_x] < np.quantile(data[strategy_x],.025)]
+    else:
+        data_sptr_low = data[data[strategy_x] < np.quantile(data[strategy_x],.025)]
+        data_sptr_high = data[data[strategy_x] >= np.quantile(data[strategy_x],.025)]
     
     x_pos = data_sptr_high[strategy_x].values.reshape(-1, 1)
     y_pos = data_sptr_high[comparison_strategy].values
