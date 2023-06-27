@@ -450,7 +450,7 @@ def append_dict_dfs(dictionary):
             
     return df
 
-def reg(x_position, y_position):
+def reg_helper(x_position, y_position):
     reg_data = []    
     regression_model_pos = LinearRegression()
     regression_model_pos.fit(x_position, y_position)
@@ -465,3 +465,44 @@ def reg(x_position, y_position):
     reg_data.append(coefficient_pos)
     reg_data.append(beta_pos)
     return reg_data
+
+def regression(frequency, returns, strategy_y, strategy_x = 'SPTR'):
+    comparison_strategy = strategy_y
+    strategy_x_returns = returns[frequency][strategy_x]
+    comparison_returns = returns[frequency][comparison_strategy]
+    data = pd.concat([strategy_x_returns, comparison_returns], axis=1)
+    data.columns = [strategy_x, comparison_strategy]
+    if(strategy_x == 'VIX' or strategy_x == 'UX3'):
+        # data_sptr_low = returns[frequency]['SPTR'] >= np.quantile(returns[frequency]['SPTR'],.025)
+        # data_sptr_low = data_sptr_low['strategy_x']
+        
+        # data_sptr_high = returns[frequency]['SPTR'] < np.quantile(returns[frequency]['SPTR'],.025)
+        # data_sptr_high = data_sptr_high['strategy_x']
+        sptr_high_threshold = np.quantile(returns[frequency]['SPTR'], 0.975)
+        data_sptr_high = data[data[strategy_x] >= sptr_high_threshold]
+        data_sptr_low = data[data[strategy_x] < sptr_high_threshold]
+        
+    else:
+        data_sptr_low = data[data[strategy_x] < np.quantile(data[strategy_x],.025)]
+        data_sptr_high = data[data[strategy_x] >= np.quantile(data[strategy_x],.025)]
+ 
+    x_pos = data_sptr_high[strategy_x].values.reshape(-1, 1)
+    y_pos = data_sptr_high[comparison_strategy].values
+    x_neg = data_sptr_low[strategy_x].values.reshape(-1, 1)
+    y_neg = data_sptr_low[comparison_strategy].values
+    x_all = data[strategy_x].values.reshape(-1, 1)
+    y_all = data[comparison_strategy].values
+    
+    positive_data = reg_helper(x_pos,y_pos)
+    negative_data = reg_helper(x_neg, y_neg)
+    all_data = reg_helper(x_all,y_all)
+    
+    print(f"Regression equation (All Data): {comparison_strategy} = {all_data[3]:.4f} * {strategy_x} + {all_data[2]:.4f}")
+    print(f"Regression equation ({strategy_x} Highest 97.5%): {comparison_strategy} = {positive_data[3]:.4f} * {strategy_x} + {positive_data[2]:.4f}")
+    print(f"Regression equation ({strategy_x} Lowest 2.5%): {comparison_strategy} = {negative_data[3]:.4f} * {strategy_x} + {negative_data[2]:.4f}")
+    
+    print(f"Beta (All Data): {all_data[4]:.4f}")
+    print(f"Beta ({strategy_x} Highest 97.5%): {positive_data[4]:.4f}")
+    print(f"Beta ({strategy_x} Lowest 2.5%): {negative_data[4]:.4f}")
+    return x_pos, y_pos, x_neg, y_neg, positive_data, negative_data 
+    
