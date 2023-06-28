@@ -471,20 +471,15 @@ def regression(frequency, returns, strategy_y, strategy_x = 'SPTR'):
     strategy_x_returns = returns[frequency][strategy_x]
     comparison_returns = returns[frequency][comparison_strategy]
     data = pd.concat([strategy_x_returns, comparison_returns], axis=1)
-    data.columns = [strategy_x, comparison_strategy]
+    #data.columns = [strategy_x, comparison_strategy]
     if(strategy_x == 'VIX' or strategy_x == 'UX3'):
-        # data_sptr_low = returns[frequency]['SPTR'] >= np.quantile(returns[frequency]['SPTR'],.025)
-        # data_sptr_low = data_sptr_low['strategy_x']
-        
-        # data_sptr_high = returns[frequency]['SPTR'] < np.quantile(returns[frequency]['SPTR'],.025)
-        # data_sptr_high = data_sptr_high['strategy_x']
-        sptr_high_threshold = np.quantile(returns[frequency]['SPTR'], 0.975)
-        data_sptr_high = data[data[strategy_x] >= sptr_high_threshold]
-        data_sptr_low = data[data[strategy_x] < sptr_high_threshold]
+       data_sptr_low = data[returns[frequency]['SPTR'] >= np.quantile(returns[frequency]['SPTR'],.975)]
+       data_sptr_high = data[returns[frequency]['SPTR'] < np.quantile(returns[frequency]['SPTR'],.975)]
         
     else:
-        data_sptr_low = data[data[strategy_x] < np.quantile(data[strategy_x],.025)]
-        data_sptr_high = data[data[strategy_x] >= np.quantile(data[strategy_x],.025)]
+         data_sptr_low = data[data[strategy_x] < np.quantile(data[strategy_x],.025)]
+         data_sptr_high = data[data[strategy_x] >= np.quantile(data[strategy_x],.025)]
+    
  
     x_pos = data_sptr_high[strategy_x].values.reshape(-1, 1)
     y_pos = data_sptr_high[comparison_strategy].values
