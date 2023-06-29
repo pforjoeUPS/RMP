@@ -221,20 +221,35 @@ def get_colors(df_normal, grey=False):
    
     return color_df
 
-
-def get_regression_plot(frequency, returns, strategy_y, strategy_x = 'SPTR'):
-    comparison_strategy = strategy_y
-    x_pos, y_pos, x_neg, y_neg, positive_data, negative_data = util.regression(frequency, returns, strategy_y, strategy_x)
-    #creates graph of points, line of best fit, etc.
-    plt.scatter(x_pos, y_pos, color='g', label='Data Points ({strategy_x} >= 0)')
-    plt.scatter(x_neg, y_neg, color='b', label='Data Points ({strategy_x} < 0)')
-    plt.plot(positive_data[0], positive_data[1], color='r', label='Regression Line ({strategy_x} >= 0)')
-    plt.plot(negative_data[0], negative_data[1], color='orange', label='Regression Line ({strategy_x} < 0)')
+def get_regression_plot(frequency, returns, strategy_y, strategy_x='SPTR'):
+    """
+    Generates a regression plot to analyze the relationship between two variables.
+    
+    Args:
+        frequency (str): The frequency of returns data.
+        returns (list): The returns data.
+        strategy_y (str): The dependent variable for the regression analysis.
+        strategy_x (str, optional): The equity benchmark i.e. independent variable for the regression analysis.
+                                    Defaults to 'SPTR'.
+    """
+    
+    # Perform regression analysis to obtain data points and regression lines
+    x_pos, y_pos, x_neg, y_neg, normal_data, tail_data = util.regression(frequency, returns, strategy_y, strategy_x)
+    
+    # Plot the data points and regression lines
+    plt.scatter(x_pos, y_pos, color='g', label=f'Data Points ({strategy_x} >= 0)')
+    plt.scatter(x_neg, y_neg, color='b', label=f'Data Points ({strategy_x} < 0)')
+    plt.plot(normal_data[0], normal_data[1], color='r', label=f'Regression Line ({strategy_x} >= 0)')
+    plt.plot(tail_data[0], tail_data[1], color='orange', label=f'Regression Line ({strategy_x} < 0)')
+    
+    # Set labels and title for the plot
     plt.xlabel(strategy_x)
-    plt.ylabel(comparison_strategy)
-    plt.title(f'Regression Analysis: {strategy_x} vs {comparison_strategy} ({frequency} Returns)')
-    #change axis labels into percentages
+    plt.ylabel(strategy_y)
+    plt.title(f'Regression Analysis: {strategy_x} vs {strategy_y} ({frequency} Returns)')
+    
+    # Format the axis labels as percentages
     plt.gca().yaxis.set_major_formatter(PercentFormatter(xmax=1, decimals=1))
     plt.gca().xaxis.set_major_formatter(PercentFormatter(xmax=1, decimals=1))
-    plt.plot
-
+    
+    # Show the plot
+    plt.show()
