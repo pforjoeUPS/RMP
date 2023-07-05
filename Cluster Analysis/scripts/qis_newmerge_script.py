@@ -14,11 +14,11 @@ from openpyxl.utils.dataframe import dataframe_to_rows
 CWD = os.getcwd()
 
 
-# Replace 'strategies.xlsx' with the path to your original Excel file
+# Replace with the path to your original Excel file
 existing_file = 'QIS Universe Time Series.xlsx'
 existing_sheet_name = 'CS'
 
-# Replace 'new_data.xlsx' with the path to your new Excel file
+# Replace  with the path to your new Excel file
 new_file = 'update_QIS_uni.xlsx'
 new_sheet_name = 'Sheet1'
 
