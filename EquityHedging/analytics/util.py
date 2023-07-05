@@ -450,18 +450,113 @@ def append_dict_dfs(dictionary):
             
     return df
 
-def reg(x_position, y_position):
-    reg_data = []    
+def reg_helper(x_position, y_position):
+    '''
+    Perform linear regression analysis and return regression data.
+
+    Parameters:
+        x_position (numpy.ndarray): The independent variable data.
+        y_position (numpy.ndarray): The dependent variable data.
+
+    Returns:
+        list: A list containing the regression data.
+            - Index 0: x values for plotting the regression line.
+            - Index 1: Predicted y values for the corresponding x values.
+            - Index 2: Intercept of the regression line.
+            - Index 3: Coefficient of x in the regression equation.
+            - Index 4: Beta value (same as the coefficient).
+
+    '''
+    reg_data = []  # Create an empty list to store regression data
+    
+    # Create a linear regression model and fit it with the given data
     regression_model_pos = LinearRegression()
     regression_model_pos.fit(x_position, y_position)
+    
+    # Generate a range of x values for plotting the regression line
     x_range_pos = np.linspace(min(x_position), max(x_position), 100)
+    
+    # Predict the corresponding y values for the generated x values
     y_pred_pos = regression_model_pos.predict(x_range_pos.reshape(-1, 1))
+    
+    # Extract the intercept and coefficient of the regression model
     intercept_pos = regression_model_pos.intercept_
     coefficient_pos = regression_model_pos.coef_[0]
+    
+    # Calculate the beta (coefficient) value
     beta_pos = coefficient_pos
-    reg_data.append(x_range_pos)
-    reg_data.append(y_pred_pos)
-    reg_data.append(intercept_pos)
-    reg_data.append(coefficient_pos)
-    reg_data.append(beta_pos)
+    
+    # Append the regression data to the reg_data list
+    reg_data.append(x_range_pos)  # x values for plotting
+    reg_data.append(y_pred_pos)   # predicted y values
+    reg_data.append(intercept_pos)  # intercept of the regression line
+    reg_data.append(coefficient_pos)  # coefficient of x in the regression equation
+    reg_data.append(beta_pos)  # beta value
+    
     return reg_data
+
+
+def regression(frequency, returns, strategy_y, strategy_x = 'SPTR'):
+    '''
+    Perform regression analysis on the given data.
+
+    Parameters:
+    frequency (str): The frequency of the returns data.
+    returns (pandas.DataFrame): The returns data.
+    strategy_y (str): The dependent variable strategy.
+    strategy_x (str, optional): The equity benchmark. Defaults to 'SPTR'.
+
+    Returns:
+    tuple: A tuple containing the regression data.
+        - x_pos (numpy.ndarray): Independent variable values for normal data.
+        - y_pos (numpy.ndarray): Dependent variable values for normal data.
+        - x_neg (numpy.ndarray): Independent variable values for tail data.
+        - y_neg (numpy.ndarray): Dependent variable values for tail data.
+        - normal_data (list): Regression data for normal data.
+        - tail_data (list): Regression data for tail data.
+
+    '''
+    # Set the strategy for comparison with an equity benchmark
+    comparison_strategy = strategy_y
+    # Copy the returns data for the specified frequency
+    data = returns[frequency].copy()
+
+    # Check if strategy_x is 'VIX' or 'UX3'
+    if(strategy_x == 'VIX' or strategy_x == 'UX3'):
+        # Filter data based on 'SPTR' values below the 2.5th percentile
+        data_tail = data[data['SPTR'] < np.quantile(data['SPTR'],.025)]
+        # Filter data based on 'SPTR' values above or equal to the 2.5th percentile
+        data_normal = data[data['SPTR'] >= np.quantile(data['SPTR'],.025)]
+    else:
+        # Filter data based on strategy_x values below the 2.5th percentile
+        data_tail = data[data[strategy_x] < np.quantile(data[strategy_x],.025)]
+        # Filter data based on strategy_x values above or equal to the 2.5th percentile
+        data_normal = data[data[strategy_x] >= np.quantile(data[strategy_x],.025)]
+
+    # Prepare data for regression analysis
+    x_pos = data_normal[strategy_x].values.reshape(-1, 1)
+    y_pos = data_normal[comparison_strategy].values
+    x_neg = data_tail[strategy_x].values.reshape(-1, 1)
+    y_neg = data_tail[comparison_strategy].values
+    x_all = data[strategy_x].values.reshape(-1, 1)
+    y_all = data[comparison_strategy].values
+
+    # Perform regression analysis on normal data
+    normal_data = reg_helper(x_pos, y_pos)
+    # Perform regression analysis on tail data
+    tail_data = reg_helper(x_neg, y_neg)
+    # Perform regression analysis on all data
+    all_data = reg_helper(x_all, y_all)
+
+    # Print regression equations
+    print(f"Regression equation (All Data): {comparison_strategy} = {all_data[3]:.4f} * {strategy_x} + {all_data[2]:.4f}")
+    print(f"Regression equation ({strategy_x} Highest 97.5%): {comparison_strategy} = {normal_data[3]:.4f} * {strategy_x} + {normal_data[2]:.4f}")
+    print(f"Regression equation ({strategy_x} Lowest 2.5%): {comparison_strategy} = {tail_data[3]:.4f} * {strategy_x} + {tail_data[2]:.4f}")
+
+    # Print beta values
+    print(f"Beta (All Data): {all_data[4]:.4f}")
+    print(f"Beta ({strategy_x} Highest 97.5%): {normal_data[4]:.4f}")
+    print(f"Beta ({strategy_x} Lowest 2.5%): {tail_data[4]:.4f}")
+
+    # Return the data for further analysis if needed
+    return x_pos, y_pos, x_neg, y_neg, normal_data, tail_data

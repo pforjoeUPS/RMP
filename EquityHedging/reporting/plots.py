@@ -8,7 +8,7 @@ Created on Tue Oct  1 17:59:28 2019
 import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
-from heatmap import corrplot
+#from heatmap import corrplot
 from ..analytics.corr_stats import get_corr_analysis
 import pandas as pd
 
@@ -221,51 +221,35 @@ def get_colors(df_normal, grey=False):
    
     return color_df
 
-
-def get_regression_plot(frequency, strategy_y, strategy_x = 'SPTR'):
-    returns = dm.get_equity_hedge_returns(strategy_x)
-    comparison_strategy = strategy_y
-    strategy_x_returns = returns[frequency][strategy_x]
-    comparison_returns = returns[frequency][comparison_strategy]
-    data = pd.concat([strategy_x_returns, comparison_returns], axis=1)
-    data.columns = [strategy_x, comparison_strategy]
-     #splits the data accordingly
-     # add percentile notes
-    #data_sptr_pos = data[data[strategy_x] >= 0]
-    #data_sptr_neg = data[data[strategy_x] < 0]
-
-    data_sptr_low = data[data[strategy_x] < np.quantile(data[strategy_x],.025)]
-    data_sptr_high = data[data[strategy_x] >= np.quantile(data[strategy_x],.025)]
+def get_regression_plot(frequency, returns, strategy_y, strategy_x='SPTR'):
+    """
+    Generates a regression plot to analyze the relationship between two variables.
     
-    x_pos = data_sptr_high[strategy_x].values.reshape(-1, 1)
-    y_pos = data_sptr_high[comparison_strategy].values
-    x_neg = data_sptr_low[strategy_x].values.reshape(-1, 1)
-    y_neg = data_sptr_low[comparison_strategy].values
-    x_all = data[strategy_x].values.reshape(-1, 1)
-    y_all = data[comparison_strategy].values
+    Args:
+        frequency (str): The frequency of returns data.
+        returns (list): The returns data.
+        strategy_y (str): The dependent variable for the regression analysis.
+        strategy_x (str, optional): The equity benchmark i.e. independent variable for the regression analysis.
+                                    Defaults to 'SPTR'.
+    """
     
-    positive_data = util.reg(x_pos,y_pos)
-    negative_data = util.reg(x_neg, y_neg)
-    all_data = util.reg(x_all,y_all)
+    # Perform regression analysis to obtain data points and regression lines
+    x_pos, y_pos, x_neg, y_neg, normal_data, tail_data = util.regression(frequency, returns, strategy_y, strategy_x)
     
-    print(f"Regression equation (All Data): {comparison_strategy} = {all_data[3]:.4f} * {strategy_x} + {all_data[2]:.4f}")
-    print(f"Regression equation (SPTR Highest 97.5%): {comparison_strategy} = {positive_data[3]:.4f} * {strategy_x} + {positive_data[2]:.4f}")
-    print(f"Regression equation (SPTR Lowest 2.5%): {comparison_strategy} = {negative_data[3]:.4f} * {strategy_x} + {negative_data[2]:.4f}")
+    # Plot the data points and regression lines
+    plt.scatter(x_pos, y_pos, color='g', label=f'Data Points ({strategy_x} >= 0)')
+    plt.scatter(x_neg, y_neg, color='b', label=f'Data Points ({strategy_x} < 0)')
+    plt.plot(normal_data[0], normal_data[1], color='r', label=f'Regression Line ({strategy_x} >= 0)')
+    plt.plot(tail_data[0], tail_data[1], color='orange', label=f'Regression Line ({strategy_x} < 0)')
     
-    print(f"Beta (All Data): {all_data[4]:.4f}")
-    print(f"Beta (SPTR Highest 97.5%): {positive_data[4]:.4f}")
-    print(f"Beta (SPTR Lowest 2.5%): {negative_data[4]:.4f}")
-
-    #creates graph of points, line of best fit, etc.
-    plt.scatter(x_pos, y_pos, color='g', label='Data Points (SPTR >= 0)')
-    plt.scatter(x_neg, y_neg, color='b', label='Data Points (SPTR < 0)')
-    plt.plot(positive_data[0], positive_data[1], color='r', label='Regression Line (SPTR >= 0)')
-    plt.plot(negative_data[0], negative_data[1], color='orange', label='Regression Line (SPTR < 0)')
+    # Set labels and title for the plot
     plt.xlabel(strategy_x)
-    plt.ylabel(comparison_strategy)
-    plt.title(f'Regression Analysis: {strategy_x} vs {comparison_strategy} ({frequency} Returns)')
-    #change axis labels into percentages
+    plt.ylabel(strategy_y)
+    plt.title(f'Regression Analysis: {strategy_x} vs {strategy_y} ({frequency} Returns)')
+    
+    # Format the axis labels as percentages
     plt.gca().yaxis.set_major_formatter(PercentFormatter(xmax=1, decimals=1))
     plt.gca().xaxis.set_major_formatter(PercentFormatter(xmax=1, decimals=1))
-    plt.plot
-
+    
+    # Show the plot
+    plt.show()
