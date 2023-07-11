@@ -208,10 +208,9 @@ def generate_strat_report(report_name, returns_dict, selloffs=False):
 
         corr_sheet =  freq + ' Analysis'
         return_sheet = freq + ' Historical Returns'
-        spaces = 3
         
         #create sheets
-        sheets.set_analysis_sheet(writer,analysis_data, corr_sheet, spaces, freq = dm.switch_string_freq(freq))
+        sheets.set_analysis_sheet(writer,analysis_data, corr_sheet, dm.switch_freq_int(dm.switch_string_freq(freq)))
         sheets.set_hist_return_sheet(writer,returns_dict[freq], return_sheet)
 
     if selloffs:
