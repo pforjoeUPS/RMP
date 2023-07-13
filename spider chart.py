@@ -27,7 +27,7 @@ returns_df = returns['Daily']
 #get weighted strats and weighted hedges
 r = summary.get_weighted_data(returns_df, notional_weights)
 
-# Step 3: Compute hedge metrics, ask to find where to find dataframe of the returns
+# Step 3: Compute hedge metrics, this line causes an error for some reason but the rest of it runs fine. 
 df_hedge_metrics = hm.get_hedge_metrics(r,freq = "1D", full_list=True)
 
 # Step 4: Select specific metrics for spider chart
@@ -37,21 +37,32 @@ metrics = metrics_to_plot[["Benefit Cum", "Convexity Cum", "Cost Cum", "Downside
 # Step 5: Normalize the hedge metrics
 normalized_data = ut.get_normalized_data(metrics)
 
-test = normalized_data.transpose()
-x = test['SPTR']
+# Get the strategy names
+strategies = normalized_data.index
 
-# Step 6: Create a spider chart for each strategy
-for strategy in normalized_data.index:
-    values = normalized_data.loc[strategy].tolist()
-    values.append(values[0])  # Close the loop
-    labels = metrics_to_plot + [metrics_to_plot[0]]  # Add the first label at the end for closed loop
+# Get the values for each strategy
+values = normalized_data.values
+
+# Create a radar chart for each strategy
+for i in range(len(strategies)):
+    # Get the values for the current strategy
+    strategy_values = values[i].tolist()
+    strategy_values.append(strategy_values[0])  # Close the loop
     
-    # Plot the spider chart
-    angles = [n / float(len(labels)) * 2 * np.pi for n in range(len(labels))]
+    # Create a new figure and polar axis for the radar chart
+    fig, ax = plt.subplots(figsize=(6, 6), subplot_kw={'projection': 'polar'})
+    
+    # Set the angles and plot the strategy values
+    angles = np.linspace(0, 2 * np.pi, len(metrics.columns), endpoint=False).tolist()
     angles += angles[:1]  # Close the loop
-    plt.polar(angles, values)
-    plt.fill(angles, values, alpha=0.25)
-    plt.xticks(angles[:-1], labels[:-1])
-    plt.yticks([])
-    plt.title(strategy)
+    ax.plot(angles, strategy_values)
+    
+    # Set the labels for each angle
+    ax.set_xticks(angles[:-1])
+    ax.set_xticklabels(metrics.columns)
+    
+    # Set the title as the strategy name
+    ax.set_title(strategies[i])
+    
+    # Show the plot
     plt.show()
