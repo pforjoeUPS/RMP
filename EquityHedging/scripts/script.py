@@ -24,7 +24,7 @@ new_strat = False
 returns= dm.get_equity_hedge_returns(equity_bmk, include_fi, strat_drop_list)
 
 #Add new strat
-new_strat = False
+new_strat = True
 if new_strat:
     strategy_list = ['JPM Skew','CITI Put Ratio']
     filename = 'JPM_Skew_and_CITI_Put.xlsx'
@@ -33,9 +33,20 @@ if new_strat:
     new_strategy_dict = dm.get_data_dict(new_strategy, data_type='index')
     returns = dm.merge_dicts(returns, new_strategy_dict)
 
+
+
+
+
 #get notional weights
+
+
 notional_weights = dm.get_notional_weights(returns['Monthly'])
+returns = dm.create_vrr_portfolio(returns,notional_weights)
+notional_weights[4:6] = [notional_weights[4] + notional_weights[5]]
+
+
 df_weights = get_df_weights(notional_weights, list(returns['Monthly'].columns), include_fi)
+
 
 #compute correlations
 check_corr = False

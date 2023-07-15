@@ -9,6 +9,8 @@ import pandas as pd
 import numpy as np
 from ..datamanager.data_manager import get_notional_weights
 from sklearn.preprocessing import MinMaxScaler
+from openpyxl import load_workbook
+
 
 def get_pos_neg_df(return_series, pos=True):
     """
@@ -167,7 +169,9 @@ def get_df_weights(notional_weights, col_list, include_fi=False):
     index_list = ['Notional Weights (Billions)',
                   'Percentage Weights',
                   'Strategy Weights']
-
+    
+ 
+    
     #compute percentage and strategy weights
     pct_weights = get_pct_weights(notional_weights, include_fi)
     strat_weights = get_strat_weights(notional_weights, include_fi)
@@ -411,3 +415,27 @@ def change_to_neg(df):
                 df_reverse[col_name][x] = -(df_reverse[col_name][x])
             
     return df_reverse
+
+def get_sheetnames_xlsx(filepath):
+    wb = load_workbook(filepath, read_only=True, keep_links=False)
+    return wb.sheetnames
+
+def append_dict_dfs(dictionary):
+    '''
+    
+
+    Parameters
+    ----------
+    dictionary : dictionary
+
+    Returns
+    -------
+    Dataframe that appends all dataframes within dictionary into one. 
+
+    '''
+    df = pd.DataFrame()
+    for i in list(dictionary.keys()):
+        temp_df = dictionary[i]
+        df = df.append(temp_df)
+            
+    return df

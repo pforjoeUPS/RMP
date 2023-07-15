@@ -12,6 +12,7 @@ import os
 from datetime import datetime as dt
 from math import prod
 from EquityHedging.analytics import summary 
+from EquityHedging.analytics import  util
 
 
 CWD = os.getcwd()
@@ -20,11 +21,16 @@ EQUITY_HEDGING_RETURNS_DATA = RETURNS_DATA_FP + 'ups_equity_hedge\\returns_data.
 NEW_DATA = RETURNS_DATA_FP + 'new_strats\\'
 UPDATE_DATA = RETURNS_DATA_FP + 'update_strats\\'
 EQUITY_HEDGE_DATA = RETURNS_DATA_FP + 'ups_equity_hedge\\'
-NEW_DATA_COL_LIST = ['SPTR', 'SX5T','M1WD', 'Long Corp', 'STRIPS', 'Down Var', 'VRR 2', 'VRR Trend',
-                    'Vortex', 'VOLA I', 'VOLA II','Dynamic VOLA','Dynamic Put Spread',
-                    'GW Dispersion', 'Corr Hedge','Def Var (Mon)', 'Def Var (Fri)', 'Def Var (Wed)']
 
-def merge_dicts(main_dict, new_dict):
+QIS_UNIVERSE = CWD + '\\Cluster Analysis\\data\\'
+
+NEW_DATA_COL_LIST = ['SPTR', 'SX5T','M1WD', 'Long Corp', 'STRIPS', 'Down Var',
+ 'Vortex', 'VOLA I', 'VOLA II','Dynamic VOLA','Dynamic Put Spread',
+                    'GW Dispersion', 'Corr Hedge','Def Var (Mon)', 'Def Var (Fri)', 'Def Var (Wed)', 
+                    'Commodity Basket']
+
+def merge_dicts(main_dict, new_dict, fillzeros = False):
+
     """
     Merge new_dict to main_dict
     
@@ -59,7 +65,7 @@ def merge_data_frames(df_main, df_new,fillzeros=False):
     dataframe
     """
     
-    df = pd.merge(df_main, df_new, left_index=True, right_index=True, how='outer')
+    df = pd.merge(df_main, df_new, left_index=True, right_index=True, how='left')
     if fillzeros:
         df = df.fillna(0)
     else:
@@ -83,7 +89,7 @@ def format_data(df_index, freq="1M"):
        data = data.resample(freq).ffill()
     data = data.pct_change(1)
     data.dropna(inplace=True)
-    data = data.loc[(data!=0).any(1)]
+    #data = data.loc[(data!=0).any(1)]
     return data
 
 def get_min_max_dates(df_returns):
@@ -221,6 +227,45 @@ def convert_to_freq2(arg, freq1, freq2):
     
     return round(arg / get_freq_ratio(freq1, freq2))
 
+def get_vrr_weights(weights):
+    """
+    Returns VRR weights from notional weights
+    
+    Parameters:
+    notional weights -- list
+
+    Returns:
+    list
+    """   
+    notional_vrr_weights = [weights[4],weights[5]]
+    port_total = float(sum(notional_vrr_weights))
+    vrr_weights = [weight / port_total for weight in notional_vrr_weights]
+    return vrr_weights
+
+
+def create_vrr_portfolio(returns, weights):
+    """
+    Updates returns to combine VRR2 and VRRTrend returns into VRRPortfolio
+    
+    Parameters:
+    df_returns -- dataframe
+    weights -- list
+
+    Returns:
+    dataframe
+    """   
+    returns_dict = returns.copy()
+    vrr_weights = get_vrr_weights(weights)
+    freqs = ['Daily', 'Weekly', 'Monthly', 'Quarterly', 'Yearly']
+    for freq in freqs:
+        vrr_portfolio = returns_dict[freq]['VRR 2']*vrr_weights[0]+returns_dict[freq]['VRR Trend']*vrr_weights[1]
+        returns_dict[freq].insert(loc = 4, column = 'VRR Portfolio',value = vrr_portfolio)
+        returns_dict[freq].drop(['VRR Trend'],inplace=True,axis=1)
+        returns_dict[freq].drop(['VRR 2'],inplace=True,axis=1)
+    return returns_dict
+
+
+        
 def get_notional_weights(df_returns):
     """
     Returns list of notional values for stratgies
@@ -231,7 +276,11 @@ def get_notional_weights(df_returns):
     Returns:
     list
     """
-    return [float(input('notional value (Billions) for ' + col + ': ')) for col in df_returns.columns]    
+    weights = [float(input('notional value (Billions) for ' + col + ': ')) for col in df_returns.columns]
+    #df_returns = create_vrr_portfolio(df_returns, weights)
+    #weights.append(weights[4]+weights[5])
+    #del weights[4:6]
+    return weights
 
 def create_copy_with_fi(df_returns, equity = 'SPTR', freq='1M', include_fi=False):
     """
@@ -256,17 +305,18 @@ def create_copy_with_fi(df_returns, equity = 'SPTR', freq='1M', include_fi=False
         if include_fi:
             strategy_returns['FI Benchmark'] = (strategy_returns['Long Corp'] + strategy_returns['STRIPS'])/2
             strategy_returns = strategy_returns[[equity, 'FI Benchmark', '99%/90% Put Spread', 
-                                                 'Down Var', 'Vortex', 'VOLA','Dynamic Put Spread',
-                                                 'VRR', 'GW Dispersion', 'Corr Hedge','Def Var']]
+
+                                                 'Down Var', 'Vortex', 'VOLA 3','Dynamic Put Spread',
+                                                  'VRR 2', 'VRR Trend', 'GW Dispersion', 'Corr Hedge','Def Var','Commodity Basket']]
         else:
             strategy_returns = strategy_returns[[equity, '99%/90% Put Spread', 
-                                                 'Down Var', 'Vortex', 'VOLA','Dynamic Put Spread',
-                                                 'VRR', 'GW Dispersion', 'Corr Hedge','Def Var']]
+                                                 'Down Var', 'Vortex', 'VOLA 3','Dynamic Put Spread',
+                                                 'VRR 2', 'VRR Trend', 'GW Dispersion', 'Corr Hedge','Def Var','Commodity Basket']]
     else:
         strategy_returns = strategy_returns[[equity, '99%/90% Put Spread', 'Down Var', 'Vortex',
-                                             'VOLA','Dynamic Put Spread','VRR', 
-                                             'GW Dispersion', 'Corr Hedge','Def Var']]
-    
+                                             'VOLA 3','Dynamic Put Spread', 'VRR 2', 'VRR Trend', 
+                                             'GW Dispersion', 'Corr Hedge','Def Var','Commodity Basket']]
+
     return strategy_returns
 
 def get_real_cols(df):
@@ -428,7 +478,7 @@ def get_data_to_update(col_list, filename, sheet_name = 'data', put_spread=False
     data_dict = get_data_dict(data)
     return data_dict
 
-def add_bps(vrr_dict, add_back=.0025):
+def add_bps(vrr_dict, strat_name, add_back=.0025):
     '''
     Adds bips back to the returns for the vrr strategy
 
@@ -458,13 +508,13 @@ def add_bps(vrr_dict, add_back=.0025):
         freq = switch_string_freq(key)
         
         #add to dataframe
-        temp_df['VRR'] += add_back/(switch_freq_int(freq))
+        temp_df[strat_name] += add_back/(switch_freq_int(freq))
         
         #add value to the temp dictionary
         temp_dict[key] = temp_df
     return temp_dict
 
-def merge_dicts_list(dict_list):
+def merge_dicts_list(dict_list, fillzeros = True):
     '''
     merge main dictionary with a dictionary list
 
@@ -484,7 +534,7 @@ def merge_dicts_list(dict_list):
     for dicts in dict_list:
         
         #merge each dictionary in the list of dictionaries to the main
-        main_dict = merge_dicts(main_dict,dicts)
+        main_dict = merge_dicts(main_dict,dicts, fillzeros = fillzeros )
     return main_dict
 
 def match_dict_columns(main_dict, new_dict):
@@ -546,17 +596,24 @@ def create_update_dict():
     new_data_dict = get_data_to_update(NEW_DATA_COL_LIST, 'ups_data.xlsx')
     
     #get vrr data
-    vrr_dict = get_data_to_update(['VRR'], 'vrr_tracks_data.xlsx')
+    vrr_dict = get_data_to_update(['VRR'], 'vrr_tracks_data.xlsx', sheet_name='VRR')
+    vrr2_dict = get_data_to_update(['VRR 2'], 'vrr_tracks_data.xlsx', sheet_name='VRR2')
+    vrr_trend_dict = get_data_to_update(['VRR Trend'], 'vrr_tracks_data.xlsx', sheet_name='VRR Trend')
     
     #add back 25 bps
-    vrr_dict = add_bps(vrr_dict)
 
+    vrr_dict = add_bps(vrr_dict,'VRR')
+    vrr2_dict = add_bps(vrr2_dict,'VRR 2', add_back= 0.005)
+    vrr_trend_dict =add_bps(vrr_trend_dict, 'VRR Trend', add_back= 0.005)
+    
+ 
     #get put spread data
     put_spread_dict = get_data_to_update(['99 Rep', 'Short Put', '99%/90% Put Spread'], 'put_spread_data.xlsx', 'Daily', put_spread = True)
     
     #merge vrr and put spread dicts to the new_data dict
-    new_data_dict = merge_dicts_list([new_data_dict,put_spread_dict, vrr_dict])
-    
+
+    new_data_dict = merge_dicts_list([new_ups_data_dict, put_spread_dict, vrr_dict,vrr2_dict,vrr_trend_dict], fillzeros=False)
+
     #get data from returns_data.xlsx into dictionary
     returns_dict = get_equity_hedge_returns(all_data=True)
     
@@ -719,4 +776,15 @@ def update_returns_data():
         returns_dict[key] = ret_df.append(new_ret_df)
     
     returns_dict = check_returns(returns_dict)
+
     return returns_dict
+
+
+def get_qis_uni_dict():
+    qis_uni = {}
+    sheet_names = util.get_sheetnames_xlsx(QIS_UNIVERSE + "QIS Universe Time Series TEST.xlsx")
+    for sheet in sheet_names:
+        index_price = pd.read_excel(QIS_UNIVERSE + "QIS Universe Time Series TEST.xlsx", sheet_name = sheet, index_col=0,header = 1)
+        qis_uni[sheet] = format_data(index_price, freq = '1W')
+    return qis_uni
+
