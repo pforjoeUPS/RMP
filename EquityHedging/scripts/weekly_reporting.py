@@ -27,8 +27,8 @@ def copy_cells(source_file, destination_file, source_sheet, destination_sheet, c
     print("Cells copied successfully!")
 
 # Dollar Returns
-source_file = r'C:\Users\HQP6CBS\Documents\Weekly Reporting\June23\NISA - Total Program Dollar Returns - 06-23-2023.xlsx'
-destination_file = r'C:\Users\HQP6CBS\Documents\Weekly Reporting\June23\Weekly Strategy Report for IC - 06-23-2023.xlsx'
+source_file = r'C:\Users\HQP6CBS\Documents\Weekly Reporting\July7\NISA - Total Program Dollar Returns - 07-07-2023.xlsx'
+destination_file = r'C:\Users\HQP6CBS\Documents\Weekly Reporting\July7\Weekly Strategy Report for IC - 07-07-2023.xlsx'
 source_sheet = 'Dollar Returns'
 destination_sheet = 'Dollar Returns'
 
@@ -41,8 +41,8 @@ cell_mappings = {
 copy_cells(source_file, destination_file, source_sheet, destination_sheet, cell_mappings)
 
 #Currencies
-source_file = r'C:\Users\HQP6CBS\Documents\Weekly Reporting\June23\UPS Profit-Loss Daily Update - June 23, 2023.xlsx'
-destination_file = r'C:\Users\HQP6CBS\Documents\Weekly Reporting\June23\Weekly Strategy Report for IC - 06-23-2023.xlsx'
+source_file = r'C:\Users\HQP6CBS\Documents\Weekly Reporting\July7\UPS Profit-Loss Daily Update - July 07, 2023.xlsx'
+#destination_file = r'C:\Users\HQP6CBS\Documents\Weekly Reporting\June23\Weekly Strategy Report for IC - 06-23-2023.xlsx'
 source_sheet = 'UPS Summary'
 destination_sheet = 'Currencies'
 
@@ -57,8 +57,8 @@ cell_mappings = {
 copy_cells(source_file, destination_file, source_sheet, destination_sheet, cell_mappings)
 
 #ART
-source_file = r'C:\Users\HQP6CBS\Documents\Weekly Reporting\June23\NISA - UPS ART Program Holdings - 06-23-2023.xlsx'
-destination_file = r'C:\Users\HQP6CBS\Documents\Weekly Reporting\June23\Weekly Strategy Report for IC - 06-23-2023.xlsx'
+source_file = r'C:\Users\HQP6CBS\Documents\Weekly Reporting\July7\NISA - UPS ART Program Holdings - 07-07-2023.xlsx'
+#destination_file = r'C:\Users\HQP6CBS\Documents\Weekly Reporting\June23\Weekly Strategy Report for IC - 06-23-2023.xlsx'
 source_sheet = 'Program Overview'
 source_sheet2 = 'Volatility'
 destination_sheet = 'ART'

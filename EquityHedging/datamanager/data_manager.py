@@ -778,16 +778,16 @@ def update_returns_data():
 
 def get_qis_uni_dict():
     qis_uni = {}
-    sheet_names = util.get_sheetnames_xlsx(QIS_UNIVERSE + "QIS Universe Time Series TEST.xlsx")
+    #sheet_names = util.get_sheetnames_xlsx(QIS_UNIVERSE + "QIS Universe Time Series TEST.xlsx")
+    sheet_names = util.get_sheetnames_xlsx(QIS_UNIVERSE + "latest_QIS_TimeSeries.xlsx")
     for sheet in sheet_names:
-        index_price = pd.read_excel(QIS_UNIVERSE + "QIS Universe Time Series TEST.xlsx", sheet_name = sheet, index_col=0,header = 1)
-        qis_uni[sheet] = format_data(index_price, freq = '1W')
+        #index_price = pd.read_excel(QIS_UNIVERSE + "QIS Universe Time Series TEST.xlsx", sheet_name = sheet, index_col=0,header = 1)
+        index_price = pd.read_excel(QIS_UNIVERSE + "latest_QIS_TimeSeries.xlsx", sheet_name = sheet, index_col=0,header = 1)
+        qis_uni[sheet] = format_data(index_price, freq = '1D')
     return qis_uni
 
 def merge_multiple_strats(strategy_list,filename_list,sheet_name_list):
     new_strategies=[]
-    common_dates = None
-
     for i in range(len(strategy_list)):
         temp_df = get_new_strategy_returns_data(filename_list[i],sheet_name_list[i],strategy_list[i])
         new_strategies.append(temp_df)
