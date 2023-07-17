@@ -11,16 +11,20 @@ import numpy as np
 import os
 from datetime import datetime as dt
 from math import prod
-from EquityHedging.analytics import summary 
-from EquityHedging.analytics import  util
+# from EquityHedging.analytics import util
+from openpyxl import load_workbook
 
 
 CWD = os.getcwd()
-RETURNS_DATA_FP = CWD +'\\EquityHedging\\data\\'
-EQUITY_HEDGING_RETURNS_DATA = RETURNS_DATA_FP + 'ups_equity_hedge\\returns_data.xlsx'
+DATA_FP = CWD +'\\EquityHedging\\data\\'
+RETURNS_DATA_FP = DATA_FP +'returns_data\\'
+EQUITY_HEDGING_RETURNS_DATA = RETURNS_DATA_FP + 'eq_hedge_returns.xlsx'
+# RETURNS_DATA_FP = CWD +'\\EquityHedging\\data\\'
+# EQUITY_HEDGING_RETURNS_DATA = DATA_FP + 'ups_equity_hedge\\returns_data.xlsx'
 NEW_DATA = RETURNS_DATA_FP + 'new_strats\\'
-UPDATE_DATA = RETURNS_DATA_FP + 'update_strats\\'
-EQUITY_HEDGE_DATA = RETURNS_DATA_FP + 'ups_equity_hedge\\'
+# UPDATE_DATA = RETURNS_DATA_FP + 'update_strats\\'
+UPDATE_DATA = DATA_FP + 'update_data\\'
+EQUITY_HEDGE_DATA = DATA_FP + 'ups_equity_hedge\\'
 
 QIS_UNIVERSE = CWD + '\\Cluster Analysis\\data\\'
 
@@ -593,7 +597,7 @@ def create_update_dict():
 
     '''
     #Import data from bloomberg into dataframe and create dictionary with different frequencies
-    new_data_dict = get_data_to_update(NEW_DATA_COL_LIST, 'ups_data.xlsx')
+    new_ups_data_dict = get_data_to_update(NEW_DATA_COL_LIST, 'ups_data.xlsx')
     
     #get vrr data
     vrr_dict = get_data_to_update(['VRR'], 'vrr_tracks_data.xlsx', sheet_name='VRR')
@@ -682,45 +686,6 @@ def month_ret_table(returns_df, strategy):
 
     return table
 
-    
-
-def all_strat_month_ret_table(returns_df, notional_weights = [], include_fi = False, new_strat = False, weighted = False):
-    '''
-    
-
-    Parameters
-    ----------
-    returns_df : Data Frame
-        Data Frame containing monthly returns data
-    strat_list : List
-        DESCRIPTION. The default is ['Down Var','VOLA', 'Dynamic Put Spread', 'VRR', 'GW Dispersion','Corr Hedge','Def Var'].
-
-    Returns
-    -------
-    month_table : TYPE
-        DESCRIPTION.
-
-    '''
-    #make strat list the columns of returns_df
-    
-    if weighted == True:
-        
-        #get weighted strats and weighted hedges 
-        returns_df = summary.get_weighted_data(returns_df,notional_weights,include_fi, new_strat)
-        
-    
-    #create strat list from the columns of the returns data
-    strat_list = returns_df.columns
-    
-    #create moth table dict
-    month_table_dict = {}
-    
-    #loop through each strategy in the list and get the monthly returns table
-    for strat in strat_list:
-       month_table_dict[strat] = month_ret_table(returns_df, strat)
-       #month_table_dict[strat] = month_table_dict[strat][:-1]
-    return month_table_dict
-
 
 def get_new_returns_df(new_ret_df,ret_df):
     #reset both data frames index to make current index (dates) into a column
@@ -779,12 +744,40 @@ def update_returns_data():
 
     return returns_dict
 
+def get_sheetnames_xlsx(filepath):
+    wb = load_workbook(filepath, read_only=True, keep_links=False)
+    return wb.sheetnames
 
 def get_qis_uni_dict():
     qis_uni = {}
-    sheet_names = util.get_sheetnames_xlsx(QIS_UNIVERSE + "QIS Universe Time Series TEST.xlsx")
+    sheet_names = get_sheetnames_xlsx(QIS_UNIVERSE + "QIS Universe Time Series TEST.xlsx")
     for sheet in sheet_names:
         index_price = pd.read_excel(QIS_UNIVERSE + "QIS Universe Time Series TEST.xlsx", sheet_name = sheet, index_col=0,header = 1)
         qis_uni[sheet] = format_data(index_price, freq = '1W')
     return qis_uni
 
+def check_notional(df_returns, notional_weights=[]):
+    """
+    Get notional weights if some weights are missing
+
+    Parameters
+    ----------
+    df_returns : dataframe
+        dataframe of returns
+    notional_weights : list, optional
+        notional weights of strategies. The default is [].
+    
+    Returns
+    -------
+    notional_weights : list
+
+    """
+    #create list of df_returns column names
+    col_list = list(df_returns.columns)
+    
+    #get notional weights for weighted strategy returns if not accurate
+    if len(col_list) != len(notional_weights):
+        notional_weights = []
+        notional_weights = get_notional_weights(df_returns)
+    
+    return notional_weights
