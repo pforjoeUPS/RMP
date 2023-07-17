@@ -7,7 +7,7 @@ Created on Tue Oct  1 17:59:28 2019
 
 import pandas as pd
 import numpy as np
-from ..datamanager.data_manager import get_min_max_dates
+from EquityHedging.datamanager import data_manager as dm
 from .import util
 
 def get_corr_analysis(df_returns, notional_weights=[], include_fi=False, weighted=False):
@@ -47,7 +47,7 @@ def get_corr_analysis(df_returns, notional_weights=[], include_fi=False, weighte
     equity_down = (strategy_returns[strategy_returns[equity_id] < 0])
 
     #TODO: fix bug in title
-    dates = get_min_max_dates(strategy_returns)
+    dates = dm.get_min_max_dates(strategy_returns)
     data_range = str(dates['start']).split()[0] + ' to ' + str(dates['end']).split()[0]
     title = 'Correlation of ' + str(len(strategy_returns)) + ' Historical Observations (' + data_range + ')'
 
