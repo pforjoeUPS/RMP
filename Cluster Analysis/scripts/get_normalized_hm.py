@@ -63,7 +63,8 @@ for key, df in qis_returns.items():
         demerged_df = pd.DataFrame(index=ubs_dates)
         demerged_df = pd.merge(demerged_df, df, left_index=True, right_index=True, how='left')
         demerged_dfs[key] = demerged_df
-        
+
+demerged_dfs['UBS'] = ubs_df        
 #compute raw hedge metrics
 print('compute hedge metrics')
 def_dict = {}
