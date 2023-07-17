@@ -590,3 +590,40 @@ def get_norm_hedge_metrics(df_returns, notional_weights=[], freq='1W', drop_bmk=
     
     #create dict with hedge met and normalized data
     return {'Hedge Metrics': df_hm, 'Normalized Data': df_norm_hm}
+
+def all_strat_month_ret_table(returns_df, notional_weights = [], include_fi = False, new_strat = False, weighted = False):
+    '''
+    
+
+    Parameters
+    ----------
+    returns_df : Data Frame
+        Data Frame containing monthly returns data
+    strat_list : List
+        DESCRIPTION. The default is ['Down Var','VOLA', 'Dynamic Put Spread', 'VRR', 'GW Dispersion','Corr Hedge','Def Var'].
+
+    Returns
+    -------
+    month_table : TYPE
+        DESCRIPTION.
+
+    '''
+    #make strat list the columns of returns_df
+    
+    if weighted == True:
+        
+        #get weighted strats and weighted hedges 
+        returns_df = get_weighted_data(returns_df,notional_weights,include_fi, new_strat)
+        
+    
+    #create strat list from the columns of the returns data
+    strat_list = returns_df.columns
+    
+    #create moth table dict
+    month_table_dict = {}
+    
+    #loop through each strategy in the list and get the monthly returns table
+    for strat in strat_list:
+       month_table_dict[strat] = dm.month_ret_table(returns_df, strat)
+       #month_table_dict[strat] = month_table_dict[strat][:-1]
+    return month_table_dict
