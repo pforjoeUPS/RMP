@@ -240,7 +240,7 @@ def get_reliability_stats(df_returns, col_name, tail=False):
     
     return reliability
     
-def get_hedge_metrics(df_returns, freq="1M", full_list=True):
+def get_hedge_metrics(df_returns, freq="1M", full_list=True, for_qis=False):
     """
     Return a dataframe of hedge metrics
 
@@ -275,23 +275,31 @@ def get_hedge_metrics(df_returns, freq="1M", full_list=True):
                                convexity['cumulative'],cost['count'],cost['median'],cost['mean'], 
                                cost['cumulative'],decay['half'],decay['quarter'],decay['tenth']]
     else:
-        for col in df_returns.columns:
-            #benefit = get_benefit_stats(df_returns, col)
-            reliability = get_reliability_stats(df_returns, col,True)
-            convexity = get_convexity_stats(df_returns, col)
-            cost = get_cost_stats(df_returns, col)
-            decay = get_decay_days(df_returns, col, freq)
-            #avg_ret = benefit['cumulative']+ convexity['cumulative'] + cost['cumulative']
-            
-            # hedge_dict[col] = [benefit['cumulative'],
-            #                   reliability['down'],reliability['up'],
-            #                   convexity['cumulative'], cost['cumulative'], decay,
-            #                   avg_ret, reliability['tail'],reliability['non_tail']]
-            
-            hedge_dict[col] = [reliability['down'],reliability['up'],
-                              convexity['cumulative'], cost['cumulative'], decay['quarter'],
-                              reliability['tail'],reliability['non_tail']]
-    
+        if for_qis:
+            for col in df_returns.columns:
+                reliability = get_reliability_stats(df_returns, col,True)
+                convexity = get_convexity_stats(df_returns, col)
+                cost = get_cost_stats(df_returns, col)
+                decay = get_decay_days(df_returns, col, freq)
+                
+                hedge_dict[col] = [reliability['down'],reliability['up'],
+                                  convexity['cumulative'], cost['cumulative'], decay['quarter'],
+                                  reliability['tail'],reliability['non_tail']]
+        else:
+                    for col in df_returns.columns:
+                        benefit = get_benefit_stats(df_returns, col)
+                        reliability = get_reliability_stats(df_returns, col,True)
+                        convexity = get_convexity_stats(df_returns, col)
+                        cost = get_cost_stats(df_returns, col)
+                        decay = get_decay_days(df_returns, col, freq)
+                        avg_ret = benefit['cumulative']+ convexity['cumulative'] + cost['cumulative']
+                        
+                        hedge_dict[col] = [benefit['cumulative'],
+                                           reliability['down'],reliability['up'],
+                                           convexity['cumulative'], cost['cumulative'], decay,
+                                           avg_ret, reliability['tail'],reliability['non_tail']]
+                       
+
     #Converts hedge_dict to a data grame
     df_hedge_metrics = util.convert_dict_to_df(hedge_dict, get_hm_index_list(full_list))
     return df_hedge_metrics

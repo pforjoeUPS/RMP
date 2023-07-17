@@ -39,29 +39,40 @@ qis_returns = dm.merge_dicts(sp_dict,qis_uni)
 
 qis_returns['Weighted Hedges'] = df_weighted_hedges
 
-# Get a list of DataFrames from the dictionary
-dfs = list(qis_returns.values())
+# Get the dataframe from the 'UBS' key in qis_returns
+ubs_df = qis_returns['UBS']
 
-# Initialize the merged DataFrame with the first DataFrame from the list
-merged_df = dfs[0]
+# Initialize the merged DataFrame with the UBS DataFrame
+merged_df = ubs_df
 
-# Iterate over the remaining DataFrames and merge them based on the dates
-for df in dfs[1:]:
-    merged_df = pd.merge(merged_df, df, left_index=True, right_index=True, how='inner')
-
+# Iterate over the remaining DataFrames in qis_returns and merge them with the merged_df
+for key, df in qis_returns.items():
+    if key != 'UBS':
+        merged_df = pd.merge(merged_df, df, left_index=True, right_index=True, how='left')
+        merged_df.fillna(method='ffill', inplace=True)
 # Rename the index column to 'Date'
 merged_df.index.name = 'Date'
 
+# Get the dates from the UBS dataframe
+ubs_dates = ubs_df.index
 
+# Demerge the dataframes using the UBS dates
+demerged_dfs = {}
+for key, df in qis_returns.items():
+    if key != 'UBS':
+        demerged_df = pd.DataFrame(index=ubs_dates)
+        demerged_df = pd.merge(demerged_df, df, left_index=True, right_index=True, how='left')
+        demerged_dfs[key] = demerged_df
+        
 #compute raw hedge metrics
-
 print('compute hedge metrics')
 def_dict = {}
 for key in qis_uni:
-     print(key)
-     hm = summary.get_hedge_metrics(qis_returns[key], freq='1W', full_list=False)
-     hm.drop(hm.columns[0], axis = 1,inplace=True)
-     def_dict[key]=hm.transpose()
+      print(key)
+      hm = summary.get_hedge_metrics(demerged_dfs[key], freq='1W', full_list=False, for_qis=True)
+      hm.drop(hm.columns[0], axis = 1,inplace=True)
+      def_dict[key]=hm.transpose()
+
     
 #merge dicts
 print('merge hedge metric data frames')
