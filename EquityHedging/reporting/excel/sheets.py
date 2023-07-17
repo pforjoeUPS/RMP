@@ -523,3 +523,41 @@ def set_corr_rank_sheet(writer,corr_pack,dates):
         
         row = row_dim + spaces + 1
     return 0
+
+def set_mv_sheet(writer,df_returns,sheet_name='Market Values'):
+    """
+    Create excel sheet for historical returns
+    
+    Parameters:
+    writer -- excel writer
+    df_returns -- dataframe
+    sheet_name -- string
+    """
+
+    workbook = writer.book
+    cell_format = formats.set_worksheet_format(workbook)
+    df_empty = pd.DataFrame()
+    df_empty.to_excel(writer, sheet_name=sheet_name, startrow=0, startcol=0)
+    worksheet = writer.sheets[sheet_name]
+    worksheet.set_column(0, 1000, 21, cell_format)
+    row = 0
+    col = 0
+    #    title_format = set_title_format(workbook)
+    
+    #currency format
+    ccy_fmt = formats.set_number_format(workbook,num_format='$#,##0.00')
+    
+    #date format
+    date_fmt = formats.set_number_format(workbook, num_format='mm/dd/yyyy')
+        
+    row_dim = row + df_returns.shape[0]
+    col_dim = col + df_returns.shape[1]
+    #    worksheet.write(row-1, 1, sheet_name, title_format)
+    df_returns.to_excel(writer, sheet_name=sheet_name, startrow=row , startcol=col)   
+    # worksheet.conditional_format(row+1,col+1, row_dim, col_dim,{'type':'no_blanks',
+    #                               'format':pct_fmt})
+    worksheet.conditional_format(row,col, row_dim, col,{'type':'no_blanks',
+                                  'format':date_fmt})
+    worksheet.conditional_format(row+1,col+1, row_dim, col_dim,{'type':'no_blanks',
+                              'format':ccy_fmt})
+    return 0

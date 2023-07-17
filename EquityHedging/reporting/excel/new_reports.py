@@ -14,7 +14,7 @@ import pandas as pd
 from .import new_sheets
 import os
 
-def get_filepath_path(report_name, data_file=False):
+def get_filepath(report_name, data_file=False):
     """
     Gets the file path where the report will be stored
 
@@ -75,12 +75,12 @@ class setReport():
         """
         self.report_name = report_name
         self.data_file = data_file
-        self.file_path = get_filepath_path(self.report_name, self.data_file)
+        self.file_path = get_filepath(self.report_name, self.data_file)
         self.writer = pd.ExcelWriter(self.file_path, engine='xlsxwriter')
 
 class getReturnsReport(setReport):
     def __init__(self, report_name, data_dict, data_file=True):
-       """
+        """
         Generates excel file containing historical returns for different frequencies
 
         Parameters
@@ -96,6 +96,7 @@ class getReturnsReport(setReport):
         -------
         None. An excel report called [report_name].xlsx is created
         """
+        setReport(self,report_name, data_file)
         setReport.__init__(self, report_name, data_file)
         self.data_dict = data_dict
         self.generate_report()
