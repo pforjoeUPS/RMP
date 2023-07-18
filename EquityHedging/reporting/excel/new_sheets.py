@@ -147,7 +147,7 @@ class setMVSheet(setHistReturnSheet):
         self.worksheet.conditional_format(self.row+1,self.col+1, self.row_dim, 
                                           self.col_dim,{'type':'no_blanks','format':self.ccy_fmt})
 
-class setVRRSheet(setSheet):
+class SetVRRSheet(setSheet):
     def __init__(self, writer, df, sheet_name):
         """
         Create Excel sheet for VRR returns
