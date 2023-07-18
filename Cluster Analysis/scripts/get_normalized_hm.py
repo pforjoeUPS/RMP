@@ -60,6 +60,7 @@ ubs_dates = ubs_df.index
 demerged_dfs = {}
 for key, df in qis_returns.items():
     if key != 'UBS':
+        #demerged_df = df.reindex(ubs_dates)
         demerged_df = pd.DataFrame(index=ubs_dates)
         demerged_df = pd.merge(demerged_df, df, left_index=True, right_index=True, how='left')
         demerged_dfs[key] = demerged_df
@@ -68,11 +69,25 @@ demerged_dfs['UBS'] = ubs_df
 #compute raw hedge metrics
 print('compute hedge metrics')
 def_dict = {}
-for key in qis_uni:
-      print(key)
-      hm = summary.get_hedge_metrics(demerged_dfs[key], freq='1W', full_list=False, for_qis=True)
-      hm.drop(hm.columns[0], axis = 1,inplace=True)
-      def_dict[key]=hm.transpose()
+
+# =============================================================================
+# for key in demerged_dfs:
+#       print(key)
+#       hm = summary.get_hedge_metrics(demerged_dfs[key], freq='1W', full_list=False, for_qis=True)
+#       hm.drop(hm.columns[0], axis = 1,inplace=True)
+#       def_dict[key]=hm.transpose()
+# 
+# =============================================================================
+
+
+
+#=============================================================================
+hm = summary.get_hedge_metrics(demerged_dfs['UBS'], freq='1W', full_list=False, for_qis=True)
+hm.drop(hm.columns[0], axis = 1,inplace=True)
+def_dict['UBS']=hm.transpose()
+# =============================================================================
+
+
 
     
 #merge dicts

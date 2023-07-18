@@ -17,9 +17,12 @@ HEDGE_METRICS_INDEX = ['Benefit Count','Benefit Median','Benefit Mean','Benefit 
                        'Cost Count','Cost Median','Cost Mean','Cost Cum',
                        'Decay Days (50% retrace)','Decay Days (25% retrace)','Decay Days (10% retrace)']
 
-def get_hm_index_list(full_list=True):
+def get_hm_index_list(full_list=True,for_qis=False):
     if full_list:
         return HEDGE_METRICS_INDEX
+    if for_qis:
+        return ['Downside Reliability','Upside Reliability','Convexity','Cost', 'Decay',
+                'Tail Reliability', 'Non Tail Reliability']
     else:
         return ['Benefit','Downside Reliability','Upside Reliability','Convexity','Cost', 'Decay',
                 'Average Return', 'Tail Reliability', 'Non Tail Reliability']
@@ -281,10 +284,11 @@ def get_hedge_metrics(df_returns, freq="1M", full_list=True, for_qis=False):
                 convexity = get_convexity_stats(df_returns, col)
                 cost = get_cost_stats(df_returns, col)
                 decay = get_decay_days(df_returns, col, freq)
-                
+                print("computed col")
                 hedge_dict[col] = [reliability['down'],reliability['up'],
-                                  convexity['cumulative'], cost['cumulative'], decay['quarter'],
+                                  convexity['cumulative'], cost['cumulative'], decay,
                                   reliability['tail'],reliability['non_tail']]
+                
         else:
                     for col in df_returns.columns:
                         benefit = get_benefit_stats(df_returns, col)
@@ -301,6 +305,6 @@ def get_hedge_metrics(df_returns, freq="1M", full_list=True, for_qis=False):
                        
 
     #Converts hedge_dict to a data grame
-    df_hedge_metrics = util.convert_dict_to_df(hedge_dict, get_hm_index_list(full_list))
+    df_hedge_metrics = util.convert_dict_to_df(hedge_dict, get_hm_index_list(full_list,for_qis))
     return df_hedge_metrics
 
