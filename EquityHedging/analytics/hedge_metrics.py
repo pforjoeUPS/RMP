@@ -277,14 +277,15 @@ def get_hedge_metrics(df_returns, freq="1M", full_list=True, for_qis=False):
                                convexity['count'],convexity['median'],convexity['mean'],
                                convexity['cumulative'],cost['count'],cost['median'],cost['mean'], 
                                cost['cumulative'],decay['half'],decay['quarter'],decay['tenth']]
-    else:
+    else:  
+        
         if for_qis:
             for col in df_returns.columns:
                 reliability = get_reliability_stats(df_returns, col,True)
                 convexity = get_convexity_stats(df_returns, col)
                 cost = get_cost_stats(df_returns, col)
                 decay = get_decay_days(df_returns, col, freq)
-                print("computed col")
+                print(col)
                 hedge_dict[col] = [reliability['down'],reliability['up'],
                                   convexity['cumulative'], cost['cumulative'], decay,
                                   reliability['tail'],reliability['non_tail']]
