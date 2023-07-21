@@ -80,7 +80,7 @@ class setReport():
 
 class getReturnsReport(setReport):
     def __init__(self, report_name, data_dict, data_file=True):
-       """
+        """
         Generates excel file containing historical returns for different frequencies
 
         Parameters
@@ -104,7 +104,7 @@ class getReturnsReport(setReport):
         
     def generate_report(self):
         #loop through dictionary to create returns spreadsheets
-        for key in self.returns_dict:
+        for key in self.data_dict:
             print("Writing {} Historical Returns sheet...".format(key))
             if len(key) > 31:
                 diff = len(key) - 31
