@@ -221,10 +221,11 @@ def get_colors(df_normal, grey=False):
     return color_df
 
 
-def get_regression_plot(returns, frequency, strategy_y, strategy_x = 'SPTR'):
+def get_regression_plot(returns, notional_weights, frequency, strategy_y, strategy_x = 'SPTR'):
+    r = summary.get_weighted_data(returns['Daily'], notional_weights)
     comparison_strategy = strategy_y
-    strategy_x_returns = returns[frequency][strategy_x]
-    comparison_returns = returns[frequency][comparison_strategy]
+    strategy_x_returns = r[strategy_x]
+    comparison_returns = r[strategy_y]
     data = pd.concat([strategy_x_returns, comparison_returns], axis=1)
     data.columns = [strategy_x, comparison_strategy]
      #splits the data accordingly

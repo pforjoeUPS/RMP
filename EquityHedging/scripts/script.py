@@ -92,8 +92,7 @@ if monthly_ret_table:
     full_month_returns_table = dm.all_strat_month_ret_table(returns['Monthly'])
 
 #runs linear regression
-r = summary.get_weighted_data(returns, notional_weights)
-plt2.get_regression_plot(returns = r, 'Daily', 'Weighted Hedges') 
+plt2.get_regression_plot(returns, notional_weights, 'Daily', 'Down Var') 
 
 #run report
 equity_hedge_report = 'JPM Moments & CS Def Skew'
