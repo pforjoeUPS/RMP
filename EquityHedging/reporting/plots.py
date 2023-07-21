@@ -15,6 +15,7 @@ import pandas as pd
 from EquityHedging.datamanager import data_manager as dm
 from matplotlib.ticker import PercentFormatter
 from EquityHedging.analytics import util
+from EquityHedging.analytics import summary 
 
 sns.set(color_codes=True, font_scale=1.2)
 
@@ -220,8 +221,7 @@ def get_colors(df_normal, grey=False):
     return color_df
 
 
-def get_regression_plot(frequency, strategy_y, strategy_x = 'SPTR'):
-    returns = dm.get_equity_hedge_returns(strategy_x)
+def get_regression_plot(returns, frequency, strategy_y, strategy_x = 'SPTR'):
     comparison_strategy = strategy_y
     strategy_x_returns = returns[frequency][strategy_x]
     comparison_returns = returns[frequency][comparison_strategy]

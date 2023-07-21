@@ -1,10 +1,13 @@
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 import EquityHedging.analytics.util as ut
 import EquityHedging.analytics.hedge_metrics as hm
 from EquityHedging.datamanager import data_manager as dm
 from EquityHedging.analytics import summary 
-
+import openpyxl
+from openpyxl.drawing.image import Image
+import io
 
 #import returns data
 equity_bmk = 'SPTR'
@@ -66,3 +69,74 @@ for i in range(len(strategies)):
     
     # Show the plot
     plt.show()
+
+# Creates an excel file with the normalized_data Dataframe
+excel_file_path = r'C:\Users\mxm6sft\Documents\GitHub\RMP\EquityHedging\reports\Radar_Chart.xlsx'
+    
+writer = pd.ExcelWriter(excel_file_path, engine='xlsxwriter')
+
+normalized_data.to_excel(writer, sheet_name='Normalized_Data', startcol=1, index=False)
+
+workbook = writer.book
+worksheet = writer.sheets['Normalized_Data']
+
+cell_format = workbook.add_format({'bold': True, 'border': 1})
+worksheet.write('A1', 'Index')
+
+for i, column in enumerate(normalized_data.columns):
+    column_width = max(normalized_data[column].astype(str).map(len).max(), len(column)) + 2
+    worksheet.set_column(i + 1, i + 1, column_width)
+
+first_column_width = max(normalized_data.index.astype(str).map(len).max(), len('Strategy')) + 2
+worksheet.set_column(0, 0, first_column_width + 5)
+
+for i, strategy_name in enumerate(normalized_data.index):
+    worksheet.write(i + 1, 0, strategy_name)
+
+writer.save()
+
+# Creates graphs in the excel file
+wb = openpyxl.load_workbook(excel_file_path)
+sheet = wb['Normalized_Data']
+
+for i, strategy_name in enumerate(normalized_data.index):
+    # Get the values for the current strategy
+    strategy_values = sheet[f'B{i+2}:F{i+2}'][0]
+    strategy_values = [cell.value for cell in strategy_values]
+
+    # Create a new figure and polar axis for the radar chart
+    fig, ax = plt.subplots(figsize=(6, 6), subplot_kw={'projection': 'polar'})
+
+    # Set the angles and plot the strategy values
+    angles = np.linspace(0, 2 * np.pi, len(metrics.columns), endpoint=False).tolist()
+    ax.plot(angles, strategy_values)
+
+    # Set the labels for each angle
+    ax.set_xticks(angles)
+    ax.set_xticklabels(metrics.columns)
+
+    # Set the title as the strategy name
+    ax.set_title(strategy_name)
+
+    # Save the radar chart to a BytesIO buffer
+    buffer = io.BytesIO()
+    plt.savefig(buffer, format='png')
+    buffer.seek(0)
+
+    # Add some spacing between radar charts
+    x_offset = 15
+    y_offset = 10 + i * 120
+
+    # Convert the buffer image to an openpyxl Image
+    img = Image(buffer)
+    img.width = 400
+    img.height = 400
+
+    # Insert the Image to the worksheet
+    sheet.add_image(img, f'A{i+15}')
+
+    # Close the buffer
+    buffer.close()
+
+# Save the modified Excel file
+wb.save(excel_file_path)
