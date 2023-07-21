@@ -66,7 +66,7 @@ class setSheet():
         
         #digits format
         self.digits_fmt = formats.set_number_format(self.workbook,num_format='0.00')
-        
+        self.digits_fmt2 = formats.set_number_format(self.workbook, num_format='0.000000')
         #currency format
         self.ccy_fmt = formats.set_number_format(self.workbook,num_format='$#,##0.00')
         
@@ -198,7 +198,7 @@ class setMVSheet(setHistReturnSheet):
                                           self.col_dim,{'type':'no_blanks','format':self.ccy_fmt})
 
 #TODO: use setDataframeSheet instead of setSheet
-class SetVRRSheet(setSheet):
+class SetVRRSheet(setDataframeSheet):
     def __init__(self, writer, df, sheet_name):
         """
         Create Excel sheet for VRR returns
@@ -211,25 +211,13 @@ class SetVRRSheet(setSheet):
         sheet_name : str
             Excel sheet name.
         """
-        #TODO:I created setDataframeSheet to include data as variable when initializing, so include df
-        #TODO: use setDataframeSheet instead of setSheet
-        setSheet.__init__(self, writer, sheet_name)
-        #TODO: I created setDataframeSheet to include the next 4 lines so you can remove them
-        self.data = df
-        self.row_dim = self.row + self.data.shape[0]
-        self.col_dim = self.col + self.data.shape[1]
-        self.data.to_excel(self.writer, sheet_name=self.sheet_name, startrow=self.row, startcol=self.col)
-        #TODO: Move the digits_fmt to setSheet and rename as digits_fmt_2, 
-        self.digits_fmt = formats.set_number_format(self.workbook, num_format='0.000000')  # Override digits_fmt
-        #TODO: no need to call this again, inherited from setDataframeSheet
-        self.format_worksheet_data()
-
-    #TODO:Update the digits_format to digits_format_2 
+        setDataframeSheet.__init__(self, writer, df, sheet_name)        
+       
     def format_worksheet_data(self):
         #  formatting for columns 1-3 using digits format
         self.worksheet.conditional_format(
             self.row + 1, self.col + 1, self.row_dim, self.col + 3,
-            {'type': 'no_blanks', 'format': self.digits_fmt}
+            {'type': 'no_blanks', 'format': self.digits_fmt2}
         )
 
         # formatting for column 4 using int format
@@ -241,7 +229,7 @@ class SetVRRSheet(setSheet):
         # formatting for columns 5 and onwards using digits format
         self.worksheet.conditional_format(
             self.row + 1, self.col + 5, self.row_dim, self.col_dim,
-            {'type': 'no_blanks', 'format': self.digits_fmt}
+            {'type': 'no_blanks', 'format': self.digits_fmt2}
         )
 
         # formatting for the first column using date format
@@ -250,11 +238,9 @@ class SetVRRSheet(setSheet):
             {'type': 'no_blanks', 'format': self.date_fmt}
         )
 
-#TODO: I've updated sheets.set_grouped_data_sheet(), it now takes in a data_dict instead of quintile_df and decile_df
-#TODO: Take a look at it and edit this
-#TODO: Also use setDataDictSheet instead of setSheet
-class SetGroupedDataSheet(setSheet):
-    def __init__(self, writer, quintile_df, decile_df, sheet_name='Grouped Data', spaces=3):
+
+class SetGroupedDataSheet(SetDataDictSheet):
+    def __init__(self, writer, data_dict, sheet_name='Grouped Data', spaces=3):
         """
         Create Excel sheet for grouped data
 
@@ -271,17 +257,8 @@ class SetGroupedDataSheet(setSheet):
             Number of empty rows between data sections. Default is 3.
         """
         #TODO: use setDataDictSheet instead of setSheet
-        setSheet.__init__(writer, sheet_name,row = 2, col = 1, col_width=22)
-        #TODO: no need for the next 5 lines if inheriting setDataDictSheet
-        self.quintile_df = quintile_df
-        self.decile_df = decile_df
-        self.title_list = ['Quintile','Decile']
-        self.df_list = [self.quintile_df,self.decile_df]
-        self.spaces = spaces
-        #TODO: no need to call this again, inherited from setSheet
-        self.title_format = formats.set_title_format(self.workbook)
-        #TODO: no need to call this again, inherited from setSheet
-        self.pct_fmt = formats.set_number_format(self.workbook, num_format='0.00%')
+        SetDataDictSheet.__init__(self, writer, data_dict, sheet_name, spaces)
+
 
     def format_worksheet_data(self):
         for n in range(0,len(self.df_list)):
@@ -308,8 +285,8 @@ class SetGroupedDataSheet(setSheet):
 #TODO: I've updated sheets.set_corr_rank_sheet(), it now takes in a data_dict (corr_data_dict) instead of corr_pack
 #TODO: Take a look at it and edit this
 #TODO: Also use setDataDictSheet instead of setSheet
-class SetCorrRankSheet(setSheet):
-    def __init__(self, writer, corr_pack, dates, sheet_name='Correlations Ranks', spaces=3):
+class SetCorrRankSheet(SetDataDictSheet):
+    def __init__(self, writer, corr_data_dict, dates, sheet_name='Correlations Ranks', spaces=3):
         """
         Create Excel sheet for correlation ranks
 
@@ -326,45 +303,27 @@ class SetCorrRankSheet(setSheet):
             Number of empty rows between data sections. Default is 3.
         """
         #TODO: use setDataDictSheet instead of setSheet
-        setSheet.__init__(writer, sheet_name,row=3,col=1,col_width=19)
+        SetDataDictSheet.__init__(self, writer, corr_data_dict, sheet_name, spaces)
         self.dates = dates
         self.header = 'Data from {} to {}'.format(str(dates['start']).split()[0], str(dates['end']).split()[0])
-        #TODO: no need for the next 4 lines if inheriting setDataDictSheet
-        self.corr_pack = corr_pack
-        self.spaces = spaces
-        self.title_list = []
-        self.corr_list = []
+        self.row = 3
+        self.col = 1
+        self.col_width = 19
         
-        #TODO: NO need for the for loop to unpack corr_pack
-        # Unpack corr_pack
-        for i in corr_pack:
-            self.title_list.append(corr_pack[str(i)][1])
-            self.corr_list.append(corr_pack[str(i)][0])
-
-        #TODO no need to define self.title_format and self.digit, inherited from setSheet (it's the same)
-        self.title_format = formats.set_title_format(self.workbook)
-        self.digits_fmt = formats.set_number_format(self.workbook, num_format='0.00')
-
     def format_worksheet_data(self):
-        #TODO: Why are you defining worksheet, why not just use self.worksheet?
-        worksheet = self.worksheet
-        worksheet.write(0, 0, self.header, self.title_format)
-        #TODO no need to define row and col, use self.row and self.col inherited from setSheet (it's the same)
-        row = 3
-        col = 1
-
-        for n in range(len(self.corr_list)):
+        self.worksheet.write(0, 0, self.header, self.title_format)     
+        for n in range(len(self.df_list)):
             try:
-                #TODO: Use self.row and self.col, unless I'm missing something
-                row_dim = row + self.corr_list[n].shape[0]
-                col_dim = col + self.corr_list[n].shape[1]
-                worksheet.write(row-1, 1, self.title_list[n], self.title_format)
-                self.corr_list[n].to_excel(self.writer, sheet_name=self.sheet_name, startrow=row, startcol=1)
-                worksheet.conditional_format(
-                    row+1, col+1, row_dim, col_dim, {'type': 'duplicate', 'format': self.digits_fmt}
-                )
-                worksheet.conditional_format(row+1, col+1, row_dim, col_dim, {'type': '3_color_scale'})
-                row = row_dim + self.spaces + 1
+                
+                row_dim = self.row + self.corr_list[n].shape[0]
+                col_dim = self.col + self.corr_list[n].shape[1]
+                self.worksheet.write(self.row-1, 1, self.title_list[n], self.title_format)
+                self.df_list[n].to_excel(self.writer, sheet_name=self.sheet_name, startrow=self.row, startcol=1)
+                self.worksheet.conditional_format(
+                self.row + 1, self.col + 1, row_dim, col_dim, {'type': 'duplicate', 'format': self.digits_fmt}
+            )
+                self.worksheet.conditional_format(self.row+1, self.col+1, row_dim, col_dim, {'type': '3_color_scale'})
+                self.row = row_dim + self.spaces + 1
             except AttributeError:
                 pass
                     
