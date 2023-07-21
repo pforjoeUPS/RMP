@@ -105,7 +105,7 @@ class getReturnsReport(setReport):
         
     def generate_report(self):
         #loop through dictionary to create returns spreadsheets
-        for key in self.returns_dict:
+        for key in self.data_dict:
             print("Writing {} Historical Returns sheet...".format(key))
             if len(key) > 31:
                 diff = len(key) - 31
