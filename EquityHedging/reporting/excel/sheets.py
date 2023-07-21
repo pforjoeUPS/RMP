@@ -262,14 +262,16 @@ def set_normal_sheet(writer, data_dict, sheet_name='Hedgging Framework Metrics',
     
     return 0
 
-def set_grouped_data_sheet(writer, quintile_df, decile_df, sheet_name = 'Grouped Data', spaces = 3):
+def set_grouped_data_sheet(writer, data_dict, sheet_name = 'Grouped Data', spaces = 3):
     
     #create writer and workbook
     workbook = writer.book
     
     #pull out lists from data_dict
-    df_list = [quintile_df, decile_df]
-    title_list = ['Quintile', 'Decile']
+    df_list = data_dict['df_list']
+    title_list = data_dict['title_list']
+    # df_list = [quintile_df, decile_df]
+    # title_list = ['Quintile', 'Decile']
      
     #format background color of worksheet to white
     cell_format = formats.set_worksheet_format(workbook)
@@ -474,22 +476,14 @@ def set_hist_sheet(writer, df_hist):
                                   'format':pct_fmt2})
     return 0
 
-def set_corr_rank_sheet(writer,corr_pack,dates):
+def set_corr_rank_sheet(writer,corr_data_dict,dates, sheet_name = 'Correlations Ranks', spaces = 3):
     """
     """
     #create excel sheet
     data_range = str(dates['start']).split()[0] + ' to ' + str(dates['end']).split()[0]
     header = 'Data from ' + data_range
-    title_list = []
-    corr_list = []
-    
-    #unpack corr_rank_data
-    for i in corr_pack:
-        title_list.append(corr_pack[str(i)][1])
-        corr_list.append(corr_pack[str(i)][0])
-    
-    sheet_name = 'Correlations Ranks'
-    spaces = 3
+    title_list = corr_data_dict['title_list']
+    df_list = corr_data_dict['df_list']
     
     workbook = writer.book
     #format background color of worksheet to white
@@ -508,13 +502,13 @@ def set_corr_rank_sheet(writer,corr_pack,dates):
     digits_fmt = formats.set_number_format(workbook,num_format='0.00')
     
     worksheet.write(0, 0, header, title_format)
-    for n in range(0,len(corr_list)):
-        row_dim = row + corr_list[n].shape[0]
-        col_dim = col + corr_list[n].shape[1]
+    for n in range(0,len(df_list)):
+        row_dim = row + df_list[n].shape[0]
+        col_dim = col + df_list[n].shape[1]
         worksheet.write(row-1, 1, title_list[n], title_format)
         
         #write data into worksheet
-        corr_list[n].to_excel(writer, sheet_name=sheet_name, startrow=row , startcol=1)   
+        df_list[n].to_excel(writer, sheet_name=sheet_name, startrow=row , startcol=1)   
         
         #format for correlation matrices
         worksheet.conditional_format(row+1,col+1, row_dim, col_dim,{'type':'duplicate',
