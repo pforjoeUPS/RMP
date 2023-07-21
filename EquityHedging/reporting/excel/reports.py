@@ -131,10 +131,11 @@ def get_equity_hedge_report(report_name, returns_dict, notional_weights=[],
     #     #Create Sheet
     #     sheets.set_normal_sheet(writer, normal_data)
         
-    quintile_df = summary.get_grouped_data(returns_dict, notional_weights, weighted = True, group = 'Quintile')
-    decile_df = summary.get_grouped_data(returns_dict, notional_weights, weighted = True, group = 'Decile')
+    grouped_data_dict = summary.get_grouped_data(returns_dict, notional_weights, weighted = True)
+    # quintile_df = summary.get_grouped_data(returns_dict, notional_weights, weighted = True, group = 'Quintile')
+    # decile_df = summary.get_grouped_data(returns_dict, notional_weights, weighted = True, group = 'Decile')
     
-    sheets.set_grouped_data_sheet(writer, quintile_df, decile_df)
+    sheets.set_grouped_data_sheet(writer, grouped_data_dict)
     
     print_report_info(report_name, file_path)
     writer.save()
@@ -148,9 +149,16 @@ def get_corr_rank_report(report_name, df_returns, buckets, notional_weights=[],i
     
     corr_pack = get_corr_rank_data(df_returns, buckets, notional_weights,include_fi)
     dates = dm.get_min_max_dates(df_returns)
+    corr_data_dict = {'df_list':[], 'title_list':[]}
+    
+    #unpack corr_pack
+    for i in corr_pack:
+        corr_data_dict['df_list'].append(corr_pack[str(i)][0])
+        corr_data_dict['title_list'].append(corr_pack[str(i)][1])
+        
     
     #create excel report
-    sheets.set_corr_rank_sheet(writer,corr_pack,dates)
+    sheets.set_corr_rank_sheet(writer,corr_data_dict,dates)
     sheets.set_hist_return_sheet(writer,df_returns, 'Returns')
     
     print_report_info(report_name, file_path)
