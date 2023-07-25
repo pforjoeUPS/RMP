@@ -36,7 +36,6 @@ for key in qis_uni:
     sp_dict[key] = pd.DataFrame(weekly_ret['SPTR'])
     
 qis_returns = dm.merge_dicts(sp_dict,qis_uni)
-
 qis_returns['Weighted Hedges'] = df_weighted_hedges
 
 # Get the dataframe from the 'UBS' key in qis_returns
@@ -53,62 +52,69 @@ for key, df in qis_returns.items():
 # Rename the index column to 'Date'
 merged_df.index.name = 'Date'
 
-# Get the dates from the UBS dataframe
-ubs_dates = ubs_df.index
-
-# Demerge the dataframes using the UBS dates
-demerged_dfs = {}
-for key, df in qis_returns.items():
-    if key != 'UBS':
-        #demerged_df = df.reindex(ubs_dates)
-        demerged_df = pd.DataFrame(index=ubs_dates)
-        demerged_df = pd.merge(demerged_df, df, left_index=True, right_index=True, how='left')
-        demerged_dfs[key] = demerged_df
-
-demerged_dfs['UBS'] = ubs_df        
-#compute raw hedge metrics
-print('compute hedge metrics')
-#def_dict = {}
+sp_returns = merged_df.iloc[:,0]
+dates_index = merged_df.index
 def_df = pd.DataFrame()
-
-# =============================================================================
-# for key in demerged_dfs:
-#       print(key)
-#       hm = summary.get_hedge_metrics(demerged_dfs[key], freq='1W', full_list=False, for_qis=True)
-#       hm.drop(hm.columns[0], axis = 1,inplace=True)
-#       def_dict[key]=hm.transpose()
-# 
-# =============================================================================
-
-
-# hm = summary.get_hedge_metrics(demerged_dfs['BNP'], freq='1W', full_list=False, for_qis=True)
-# hm.drop(hm.columns[0], axis = 1,inplace=True)
-# hm_a = hm.transpose()
-#def_dict['UBS']=hm.transpose()
-
-# Get the SPTR returns column
-sptr_returns = demerged_dfs['CS']['SPTR']
-
 # Iterate over the columns from the second column onwards
-for column in demerged_dfs['CS'].columns[1:]:
+for column in merged_df.columns[1:]:
     # Create a temporary DataFrame with dates as the index and SPTR returns and current column returns
-    temp_df = pd.DataFrame(index=demerged_dfs['CS'].index)
-    temp_df['SPTR_returns'] = sptr_returns
-    temp_df[column] = demerged_dfs['CS'][column]
+  if column not in ['SPTR_y','SPTR_x']:  
+    temp_df = pd.DataFrame(index=dates_index)
+    temp_df['SPTR_returns'] = sp_returns
+    temp_df[column] = merged_df[column]
     hm = summary.get_hedge_metrics(temp_df, freq='1W', full_list=False, for_qis=True)
     hm.drop(hm.columns[0], axis = 1,inplace=True)
     hm = hm.transpose()
     hm.index = [column]  # Set the row name as the column name
     def_df = def_df.append(hm)
-    #def_df = def_df.append(hm.transpose(), ignore_index=True)
+    def_df = def_df.append(hm.transpose(), ignore_index=True)
     #def_dict[column]=hm.transpose()
 
+
+# To update individual bank QIS, uncomment the following lines and change the name of the bank respectively
+
+
+# # Get the dates from the UBS dataframe
+# ubs_dates = ubs_df.index
+
+# # Demerge the dataframes using the UBS dates
+# demerged_dfs = {}
+# for key, df in qis_returns.items():
+#     if key != 'UBS':
+#         #demerged_df = df.reindex(ubs_dates)
+#         demerged_df = pd.DataFrame(index=ubs_dates)
+#         demerged_df = pd.merge(demerged_df, df, left_index=True, right_index=True, how='left')
+#         demerged_dfs[key] = demerged_df
+
+# demerged_dfs['UBS'] = ubs_df        
+# #compute raw hedge metrics
+# print('compute hedge metrics')
+# #def_df = pd.DataFrame()
+
+# # Get the SPTR returns column
+# sptr_returns = demerged_dfs['UBS']['SPTR']
+
+# # Iterate over the columns from the second column onwards
+# for column in demerged_dfs['Macquarie'].columns[1:]:
+#     # Create a temporary DataFrame with dates as the index and SPTR returns and current column returns
+#     temp_df = pd.DataFrame(index=demerged_dfs['Macquarie'].index)
+#     temp_df['SPTR_returns'] = sptr_returns
+#     temp_df[column] = demerged_dfs['Macquarie'][column]
+#     hm = summary.get_hedge_metrics(temp_df, freq='1W', full_list=False, for_qis=True)
+#     hm.drop(hm.columns[0], axis = 1,inplace=True)
+#     hm = hm.transpose()
+#     hm.index = [column]  # Set the row name as the column name
+#     def_df = def_df.append(hm)
+#     def_df = def_df.append(hm.transpose(), ignore_index=True)
+
+
 # Save the DataFrame to an Excel file
-def_df.to_excel("CS_hm.xlsx", index=True)
+#def_df.to_excel("Macquarie_hm.xlsx", index=True)
     
 #merge dicts
 print('merge hedge metric data frames')
-hm_df = util.append_dict_dfs(def_dict)
+#hm_df = util.append_dict_dfs(def_dict)
+hm_df = pd.read_excel('HM_Universe.xlsx',  index_col=0,header = 0)
 normalized_hm = util.get_normalized_data(hm_df)
 
 #store in excel
