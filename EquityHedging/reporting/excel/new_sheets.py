@@ -228,7 +228,7 @@ class SetVRRSheet(setDataframeSheet):
 
         # formatting for columns 5 and onwards using digits format
         self.worksheet.conditional_format(
-            self.row + 1, self.col + 5, self.row_dim, self.col_dim,
+            self.row + 1, self.col + 5, self.row_dim, self.self.col_dim,
             {'type': 'no_blanks', 'format': self.digits_fmt2}
         )
 
@@ -263,8 +263,8 @@ class SetGroupedDataSheet(SetDataDictSheet):
     def format_worksheet_data(self):
         for n in range(0,len(self.df_list)):
             try:
-                row_dim = self.row + self.df_list.shape[0]
-                col_dim = self.col + self.df_list.shape[1]
+                self.row_dim = self.row + self.df_list.shape[0]
+                self.col_dim = self.col + self.df_list.shape[1]
                 self.worksheet.write(self.row - 1, 1, self.title_list[n], self.title_format)
                 #write data into worksheet
                 self.df_list[n].to_excel(self.writer, sheet_name=self.sheet_name, startrow=self.row, startcol=1)
@@ -274,13 +274,13 @@ class SetGroupedDataSheet(SetDataDictSheet):
             
             if n == 1:
                    self.worksheet.conditional_format(
-            self.row + 1, self.col + 1, row_dim, col_dim, {'type': 'no_blanks', 'format': self.pct_fmt}
+            self.row + 1, self.col + 1, self.row_dim, self.col_dim, {'type': 'no_blanks', 'format': self.pct_fmt}
         )
             else:
                     self.worksheet.conditional_format(
-            self.row + 1, self.col + 1, row_dim, col_dim, {'type': 'no_blanks', 'format': self.pct_fmt}
+            self.row + 1, self.col + 1, self.row_dim, self.col_dim, {'type': 'no_blanks', 'format': self.pct_fmt}
         )
-                    self.row = row_dim + self.spaces + 1
+                    self.row = self.row_dim + self.spaces + 1
 
 #TODO: I've updated sheets.set_corr_rank_sheet(), it now takes in a data_dict (corr_data_dict) instead of corr_pack
 #TODO: Take a look at it and edit this
@@ -315,15 +315,188 @@ class SetCorrRankSheet(SetDataDictSheet):
         for n in range(len(self.df_list)):
             try:
                 
-                row_dim = self.row + self.corr_list[n].shape[0]
-                col_dim = self.col + self.corr_list[n].shape[1]
+                self.row_dim = self.row + self.df_list[n].shape[0]
+                self.col_dim = self.col + self.df_list[n].shape[1]
                 self.worksheet.write(self.row-1, 1, self.title_list[n], self.title_format)
                 self.df_list[n].to_excel(self.writer, sheet_name=self.sheet_name, startrow=self.row, startcol=1)
                 self.worksheet.conditional_format(
-                self.row + 1, self.col + 1, row_dim, col_dim, {'type': 'duplicate', 'format': self.digits_fmt}
+                self.row + 1, self.col + 1, self.row_dim, self.col_dim, {'type': 'duplicate', 'format': self.digits_fmt}
             )
-                self.worksheet.conditional_format(self.row+1, self.col+1, row_dim, col_dim, {'type': '3_color_scale'})
-                self.row = row_dim + self.spaces + 1
+                self.worksheet.conditional_format(self.row+1, self.col+1, self.row_dim, self.col_dim, {'type': '3_color_scale'})
+                self.row = self.row_dim + self.spaces + 1
             except AttributeError:
                 pass
                     
+class setHistSheet(setDataframeSheet):
+    def __init__(self, writer, df_hist, sheet_name='Historical Sell-offs', spaces=3):
+        """
+        Create Excel sheet for historical selloffs
+
+        Parameters:
+        writer : ExcelWriter
+            Excel writer object.
+        df_hist : DataFrame
+            DataFrame containing historical data.
+        sheet_name : str, optional
+            Excel sheet name. Default is 'Historical Sell-offs'.
+        spaces : int, optional
+            Number of empty rows between data sections. Default is 3.
+        """
+        setDataframeSheet.__init__(writer, df_hist, sheet_name)
+        self.spaces = spaces
+        self.row = 2
+        self.col =1
+        self.col_width = 30
+        self.worksheet.write(self.row - 1, 1, self.sheet_name, self.title_format)
+        
+    def format_worksheet_data(self):
+        # Formatting for dates
+      self.worksheet.conditional_format(self.row + 1, self.col + 1, self.row_dim, self.col + 2, {'type': 'no_blanks', 'format': self.date_fmt})
+      # Formatting equity returns
+      self.worksheet.conditional_format(self.row + 1, self.col + 3, self.row_dim, self.col + 3, {'type': 'no_blanks', 'format': self.pct_fmt})
+      # Formatting strat returns
+      self.worksheet.conditional_format(self.row + 1, self.col + 4, self.row_dim, self.col_dim, {'type': 'cell', 'criteria': '<', 'value': 0, 'format': self.pct_fmt_neg})
+      self.worksheet.conditional_format(self.row + 1, self.col + 4, self.row_dim, self.col_dim, {'type': 'cell', 'criteria': '>', 'value': 0, 'format': self.pct_fmt_pos})
+
+class AnalysisSheet(setSheet):
+    def __init__(self, writer, data_dict, sheet_name, spaces=3):
+        """
+        Create an excel sheet with:
+        - Correlation Matrices
+        - Portfolio Weightings
+        - Return Statistics
+        - Hedge Metrics
+
+        Parameters:
+        writer : ExcelWriter
+            Excel writer object.
+        data_dict : dict
+            Dictionary containing lists of DataFrames and title strings.
+        sheet_name : str
+            Excel sheet name.
+        spaces : int, optional
+            Number of empty rows between data sections. Default is 3.
+        """
+        setSheet.__init__(writer, sheet_name, row=2, col=1, col_width=22)
+
+        self.data_dict = data_dict
+        self.spaces = spaces
+        
+
+    def format_worksheet_data(self):
+        self.df_list = self.data_dict['df_list']
+        self.title_list = self.data_dict['title_list']
+        
+        for n in range(0, len(self.df_list)):
+          try:  
+            self.row_dim = self.row + self.df_list[n].shape[0]
+            self.col_dim = self.col + self.df_list[n].shape[1]
+            self.worksheet.write(self.row-1, 1, self.title_list[n], self.title_format)
+            self.df_list[n].to_excel(self.writer, sheet_name=self.sheet_name, startrow=self.row , startcol=1)
+          except AttributeError:
+             pass
+         
+             if n < 3:
+                    self.worksheet.conditional_format(self.row+1, self.col+1, self.row_dim, self.col_dim, {'type': 'duplicate',
+                                                                                               'format': self.digits_fmt})
+                    self.worksheet.conditional_format(self.row+1, self.col+1, self.row_dim, self.col_dim, {'type': '3_color_scale'})
+
+             elif n == 3 and len(self.df_list[n]) != 0:
+                    self.worksheet.conditional_format(self.row+1, self.col+1, self.row+1, self.col_dim,
+                                                      {'type': 'no_blanks', 'format': self.ccy_fmt})
+                    self.worksheet.conditional_format(self.row +2, self.col+1,self.row_dim, self.col_dim,
+                                                      {'type': 'no_blanks', 'format': self.pct_fmt})
+
+             elif n == 4:
+                   #format ann. ret and ann. vol to percent
+                   self.worksheet.conditional_format(self.row+1, self.col + 1,self.row + 1, self.col_dim,
+                                                     {'type': 'no_blanks', 'format': self.pct_fmt})
+                   #format ret/vol to digits
+                   self.worksheet.conditional_format(self.row +3, self.col + 1, self.row + 3, self.col_dim,
+                                                     {'type': 'no_blanks', 'format': self.digits_fmt})
+                   #format max_dd to percent
+                   self.worksheet.conditional_format(self.row + 4, self.col + 1, self.row + 4, self.col_dim,
+                                                     {'type': 'no_blanks', 'format': self.pct_fmt})
+                   #format ret/dd to digits
+                   self.worksheet.conditional_format(self.row + 5, self.col + 1, self.row + 5, self.col_dim,
+                                                     {'type': 'no_blanks', 'format': self.digits_fmt})
+                   #format max_1m_dd to percent
+                   self.worksheet.conditional_format(self.row + 6, self.col + 1, self.row + 6, self.col_dim,
+                                                     {'type': 'no_blanks', 'format': self.pct_fmt})
+                   #format max_1m_dd date to date
+                   #TODO: figure out a way to format date to short date
+                   self.worksheet.conditional_format(self.row + 7, self.col + 1, self.row + 7, self.col_dim,
+                                                     {'type': 'no_blanks', 'format': self.date_fmt_2})
+                   #format ret_max1m_dd to digits
+                   self.worksheet.conditional_format(self.row + 8, self.col + 1, self.row + 8, self.col_dim,
+                                                     {'type': 'no_blanks', 'format': self.digits_fmt})
+
+                   #format max_3m_dd to percent
+                   self.worksheet.conditional_format(self.row + 9, self.col + 1, self.row + 9, self.col_dim,
+                                                     {'type': 'no_blanks', 'format': self.pct_fmt})
+                   #format max_3m_dd date to date
+                   #TODO: figure out a way to format date to short date
+                   self.worksheet.conditional_format(self.row + 10, self.col + 1, self.row + 10, self.col_dim,
+                                                     {'type': 'no_blanks', 'format': self.date_fmt_2})
+
+                   #format ret_max1q_dd to digit
+                   self.worksheet.conditional_format(self.row + 11, self.col + 1, self.row + 11, self.col_dim,
+                                                     {'type': 'no_blanks', 'format': self.digits_fmt})
+
+                   #format skew to digits and avg_pos_ret/avg_neg_ret to digits
+                   self.worksheet.conditional_format(self.row + 12, self.col + 1, self.row + 13, self.col_dim,
+                                                     {'type': 'no_blanks', 'format': self.digits_fmt})
+                    #format downside dev to percent
+                   self.worksheet.conditional_format(self.row+14,self.col+1, self.row+14, self.col_dim,{'type':'no_blanks',
+                                              'format':self.pct_fmt})
+                    #format sortino to digits
+                   self.worksheet.conditional_format(self.row+15,self.col+1, self.row+15, self.col_dim,{'type':'no_blanks',
+                                              'format':self.digits_fmt})
+             else:                     # format benefit count to int
+                    self.worksheet.conditional_format(self.row+1, self.col + 1, self.row+1, self.col_dim,
+                                                      {'type': 'no_blanks', 'format': self.int_fmt})
+                    # format benefit mean and median to percent
+                    self.worksheet.conditional_format(self.row + 2, self.col + 1, self.row + 3, self.col_dim,
+                                                      {'type': 'no_blanks', 'format': self.pct_fmt})
+
+                    # format benefit cumulative to percent
+                    self.worksheet.conditional_format(self.row + 4, self.col + 1, self.row + 4, self.col_dim,
+                                                      {'type': 'no_blanks', 'format': self.pct_fmt})
+
+                    # format reliability up and down to digits
+                    self.worksheet.conditional_format(self.row + 5, self.col + 1, self.row + 6, self.col_dim,
+                                                      {'type': 'no_blanks', 'format': self.digits_fmt})
+
+                    # format convexity count to int
+                    self.worksheet.conditional_format(self.row + 7, self.col + 1, self.row + 7, self.col_dim,
+                                                      {'type': 'no_blanks', 'format': self.int_fmt})
+
+                    # format convexity mean and median to percent
+                    self.worksheet.conditional_format(self.row + 8, self.col + 1, self.row + 9, self.col_dim,
+                                                      {'type': 'no_blanks', 'format': self.pct_fmt})
+
+                    # format convexity cumulative to percent
+                    self.worksheet.conditional_format(self.row + 10, self.col + 1, self.row + 10, self.col_dim,
+                                                      {'type': 'no_blanks', 'format': self.pct_fmt})
+
+                    # format cost count to int
+                    self.worksheet.conditional_format(self.row + 11, self.col + 1, self.row + 11, self.col_dim,
+                                                      {'type': 'no_blanks', 'format': self.int_fmt})
+
+                    # format cost mean and median to percent
+                    self.worksheet.conditional_format(self.row + 12, self.col + 1, self.row + 13, self.col_dim,
+                                                      {'type': 'no_blanks', 'format': self.pct_fmt})
+
+                    # format cost cumulative to percent
+                    self.worksheet.conditional_format(self.row + 14, self.col + 1, self.row + 14, self.col_dim,
+                                                      {'type': 'no_blanks', 'format': self.pct_fmt})
+
+                    # format decay days to int
+                    self.worksheet.conditional_format(self.row + 15, self.col + 1, self.row + 17, self.col_dim,
+                                                      {'type': 'no_blanks', 'format': self.int_fmt})
+  
+                 
+             self.row = self.row_dim + self.spaces + 1
+
+
+    
