@@ -17,13 +17,16 @@ from math import prod
 CWD = os.getcwd()
 DATA_FP = CWD +'\\EquityHedging\\data\\'
 RETURNS_DATA_FP = CWD +'\\EquityHedging\\data\\returns_data\\'
-EQUITY_HEDGING_RETURNS_DATA = DATA_FP + 'ups_equity_hedge\\returns_data.xlsx'
+# EQUITY_HEDGING_RETURNS_DATA = DATA_FP + 'ups_equity_hedge\\returns_data.xlsx'
+EQUITY_HEDGING_RETURNS_DATA = RETURNS_DATA_FP + 'eq_hedge_returns.xlsx'
+
 NEW_DATA = DATA_FP + 'new_strats\\'
 UPDATE_DATA = DATA_FP + 'update_strats\\'
 EQUITY_HEDGE_DATA = DATA_FP + 'ups_equity_hedge\\'
-NEW_DATA_COL_LIST = ['SPTR', 'SX5T','M1WD', 'Long Corp', 'STRIPS', 'Down Var',
-                    'Vortex', 'VOLA I', 'VOLA II','Dynamic VOLA','Dynamic Put Spread',
-                    'GW Dispersion', 'Corr Hedge','Def Var (Mon)', 'Def Var (Fri)', 'Def Var (Wed)']
+NEW_DATA_COL_LIST = ['SPTR', 'SX5T','M1WD','VIX','UX3', 'Long Corp', 'STRIPS', 'Down Var',
+                     'Vortex', 'VOLA I', 'VOLA II','Dynamic VOLA','Dynamic Put Spread',
+                    'GW Dispersion', 'Corr Hedge','Def Var (Mon)', 'Def Var (Fri)', 'Def Var (Wed)', 
+                    'Commodity Basket']
 
 LIQ_ALTS_MGR_DICT = {'Global Macro': ['1907 Penso Class A','Bridgewater Alpha', 'DE Shaw Oculus Fund',
                                       'Element Capital'],
@@ -33,7 +36,7 @@ LIQ_ALTS_MGR_DICT = {'Global Macro': ['1907 Penso Class A','Bridgewater Alpha', 
                                         'ABC Reversion','Acadian Commodity AR',
                                         'Blueshift', 'Duality', 'Elliott'],
                      }
-def merge_dicts(main_dict, new_dict, drop_na=False, fill_zeros=False):
+def merge_dicts(main_dict, new_dict, drop_na=False, fillzeros=False):
     """
     Merge new_dict to main_dict
     
@@ -52,14 +55,14 @@ def merge_dicts(main_dict, new_dict, drop_na=False, fill_zeros=False):
             df_main = main_dict[key]
             df_new = new_dict[key]
             if key == 'Daily':
-                merged_dict[key] = merge_data_frames(df_main, df_new, fill_zeros=True)
+                merged_dict[key] = merge_data_frames(df_main, df_new,drop_na,fillzeros)
             else:
                 merged_dict[key] = merge_data_frames(df_main, df_new, drop_na)
         except KeyError:
             pass
     return merged_dict
 
-def merge_data_frames(df_main, df_new,drop_na=True,fill_zeros=False):
+def merge_data_frames(df_main, df_new,drop_na=True,fillzeros=False):
     """
     Merge df_new to df_main and drop na values
     
@@ -72,14 +75,20 @@ def merge_data_frames(df_main, df_new,drop_na=True,fill_zeros=False):
     """
     
     df = pd.merge(df_main, df_new, left_index=True, right_index=True, how='outer')
+    if fillzeros:
+        df = df.fillna(0)
     if drop_na:
-        if fill_zeros:
-            df = df.fillna(0)
-        else:
-            df.dropna(inplace=True)
+        df.dropna(inplace=True)
     return df
 
-def format_data(df_index, freq="1M", dropna=True):
+def resample_data(df, freq="1M"):
+    data = df.copy()
+    data.index = pd.to_datetime(data.index)
+    if not(freq == '1D'):
+       data = data.resample(freq).ffill()
+    return data
+
+def format_data(df_index, freq="1M", dropna=True, drop_zero=False):
     """
     Format dataframe, by freq, to return dataframe
     
@@ -90,14 +99,14 @@ def format_data(df_index, freq="1M", dropna=True):
     Returns:
     dataframe
     """
-    data = df_index.copy()
-    data.index = pd.to_datetime(data.index)
-    if not(freq == '1D'):
-       data = data.resample(freq).ffill()
+    data = resample_data(df_index, freq)
     data = data.pct_change(1)
+    data = data.iloc[1:,]
     if dropna:
         data.dropna(inplace=True)
-    data = data.loc[(data!=0).any(1)]
+        
+    if drop_zero:
+        data = data.loc[(data!=0).any(1)]
     return data
 
 def get_min_max_dates(df_returns):
@@ -331,7 +340,7 @@ def get_equity_hedge_returns(equity='SPTR', include_fi=False, strat_drop_list=[]
     
     return returns_dict
 
-def get_data_dict(data, data_type='index', dropna=False):
+def get_data_dict(data, data_type='index', dropna=True):
     """
     Converts daily data into a dictionary of dataframes containing returns 
     data of different frequencies
@@ -366,15 +375,27 @@ def get_prices_df(df_returns):
     index price level - dataframe
     """
     
-    df_prices = df_returns.copy()
+    df_index = 100*(1 + df_returns).cumprod()
     
-    for col in df_returns.columns:
-        df_prices[col] = get_price_series(df_returns[col])
-        # df_prices[col][0] = df_returns[col][0] + 1
+    return update_df_index(df_index)
+
+def update_df_index(df_index):
     
-    # for i in range(1, len(df_returns)):
-    #     for col in df_returns.columns:
-    #         df_prices[col][i] = (df_returns[col][i] + 1) * df_prices[col][i-1]
+    #insert extra row at top for first month of 100
+    data = []
+    data.insert(0,{})
+    df_prices = pd.concat([pd.DataFrame(data), df_index])
+    
+    #fill columns with 100 for row 1
+    for col in df_prices.columns:
+        df_prices[col][0] = 100
+
+    #update index to prior month    
+    df_prices.index.names = ['Dates']
+    df_prices.reset_index(inplace=True)
+    df_prices['Dates'][0] = df_index.index[0] - pd.DateOffset(months=1)
+    df_prices.set_index('Dates', inplace=True)
+    
     return df_prices
 
 def get_price_series(return_series):
@@ -486,7 +507,7 @@ def add_bps(vrr_dict, add_back=.0025):
         temp_dict[key] = temp_df
     return temp_dict
 
-def merge_dicts_list(dict_list):
+def merge_dicts_list(dict_list, drop_na = False):
     '''
     merge main dictionary with a dictionary list
 
@@ -506,7 +527,7 @@ def merge_dicts_list(dict_list):
     for dicts in dict_list:
         
         #merge each dictionary in the list of dictionaries to the main
-        main_dict = merge_dicts(main_dict,dicts)
+        main_dict = merge_dicts(main_dict,dicts,drop_na)
     return main_dict
 
 def match_dict_columns(main_dict, new_dict):
@@ -601,10 +622,10 @@ def compound_ret_from_monthly(strat_monthly_returns, strategy):
         comp_ret = prod(1 + monthly_ret_by_yr) - 1
         yr_ret.append(comp_ret)
         
-    yr_ret = pd.DataFrame( yr_ret, columns = ["Year"], index = list(years)) 
+    yr_ret = pd.DataFrame( yr_ret, columns = ["YTD"], index = list(years)) 
     return yr_ret
     
-
+#TODO: Add ITD
 def month_ret_table(returns_df, strategy):
     '''
 
@@ -710,6 +731,30 @@ def update_eq_hedge_returns():
     new_data_dict = create_update_dict()
     
     return update_returns_data(returns_dict, new_data_dict)
+
+
+def drop_nas(data):
+    if type(data) == dict:
+        for key in data:
+            data[key].drop.dropna(inplace=True)
+    else:
+        data.dropna(inplace=True)
+    return data
+
+def check_col_len(df, col_list):
+    if len(col_list) != len(df.columns):
+        return list(df.columns)
+    else:
+        return col_list
+
+def rename_columns(data, col_list):
+    if type(data) == dict:
+        for key in data:
+            data[key].columns = check_col_len(data[key], col_list)
+    else:
+        data.columns = check_col_len(data, col_list)
+    return data
+
 
 def transform_nexen_data(filename = 'liq_alts\\Historical Asset Class Returns.xls', return_data = True, fillna = False):
     nexen_df = pd.read_excel(DATA_FP + filename)
@@ -835,6 +880,14 @@ def get_new_strat_data(filename, sheet_name='data', freq='1M', index_data = Fals
         new_strat = format_data(new_strat,freq)
     return new_strat
 
-def get_monthly_dict(df_returns):
+def get_period_dict(df_returns, freq='1M'):
     obs = len(df_returns)
-    return {'full': df_returns, '5y':df_returns.iloc[obs-60:,], '3y':df_returns.iloc[obs-36:,]}
+    m = switch_freq_int(freq)
+    if obs <= 3*m:
+        return {'Full': df_returns}
+    elif obs <= 5*m:
+        return {'Full': df_returns, '3 Year':df_returns.iloc[obs-3*m:,]}
+    elif obs <= 10*m:
+        return {'Full': df_returns, '5 Year':df_returns.iloc[obs-5*m:,], '3 Year':df_returns.iloc[obs-3*m:,]}
+    else:
+        return {'Full': df_returns, '10 Year':df_returns.iloc[obs-10*m:,], '5 Year':df_returns.iloc[obs-5*m:,], '3 Year':df_returns.iloc[obs-3*m:,]}
