@@ -347,7 +347,7 @@ def print_report_info(report_name, file_path):
     folder_location = file_path.replace(report_name+'.xlsx', '')
     print('"{}.xlsx" report generated in "{}" folder'.format(report_name,folder_location))
     
-def get_return_mv_report(report_name, return_dict, data_file = True):
+def get_ret_mv_report(report_name, return_dict, data_file = True):
     """
     Generates an excel file containing monthly returns and market values
 
@@ -369,7 +369,7 @@ def get_return_mv_report(report_name, return_dict, data_file = True):
     print("Writing Monthly Returns sheet...")
     sheets.set_hist_return_sheet(writer, return_dict['returns'], 'returns')
     print("Writing Monthly Market Values sheet...")
-    sheets.set_mv_sheet(writer, return_dict['mv'], 'market_values')
+    sheets.set_mv_sheet(writer, return_dict['market_values'], 'market_values')
 
     #save file
     print_report_info(report_name, file_path)
