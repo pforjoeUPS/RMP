@@ -6,6 +6,7 @@ Created on Thu Jan 12 00:00:57 2023
 """
 
 from EquityHedging.datamanager import data_updater as du
+# from EquityHedging.datamanager import data_updater_new as du
 
 du.update_nexen_liq_alts_data()
 du.update_liq_alts_bmk_data()
