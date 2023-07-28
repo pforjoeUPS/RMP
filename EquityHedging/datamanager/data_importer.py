@@ -8,6 +8,30 @@ Created on Fri Jul 14 2023
 import pandas as pd
 from .import data_manager as dm
 
+def read_data(filepath, sheet_name=0, index_col = 0, skip_rows = []):
+    """
+    Reads an excel file into a dataframe or dictionary 
+
+    Parameters
+    ----------
+    filepath : string
+        Valid string path.
+    sheet_name : int, string, list of strings, ints, optional
+        name(s) of excel sheet(s) or positions. The default is 0.
+    index_col : int, optional
+        The default is 0.
+    skip_rows : list, optional
+        list of rows to skip when importing. The default is [].
+    
+    Returns
+    -------
+    dataframe/dictionary of dataframes
+
+    """
+    return pd.read_excel(filepath, sheet_name, index_col = index_col, 
+                             skiprows=skip_rows)
+
+
 class dataImporter():
     def __init__(self, filepath, sheet_name=0, index_col = 0, skip_rows = [], 
                  data_source='custom', drop_na = True, index_data = False):
@@ -54,7 +78,7 @@ class dataImporter():
         dataframe or Dictionary of dataframes
         
         """
-        data = pd.read_excel(self.filepath, self.sheet_name, index_col = self.index_col, 
+        data = read_data(self.filepath, self.sheet_name, index_col = self.index_col, 
                              skiprows=self.skip_rows)
         #drop nas
         if self.drop_na:
