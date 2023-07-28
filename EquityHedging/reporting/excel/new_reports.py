@@ -96,7 +96,7 @@ class getReturnsReport(setReport):
         -------
         None. An excel report called [report_name].xlsx is created
         """
-        setReport(self,report_name, data_file)
+        # setReport(self,report_name, data_file)
         setReport.__init__(self, report_name, data_file)
         self.data_dict = data_dict
         self.generate_report()
