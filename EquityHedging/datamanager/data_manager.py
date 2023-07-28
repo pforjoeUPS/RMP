@@ -33,7 +33,7 @@ NEW_DATA_COL_LIST = ['SPTR', 'SX5T','M1WD', 'Long Corp', 'STRIPS', 'Down Var',
                     'GW Dispersion', 'Corr Hedge','Def Var (Mon)', 'Def Var (Fri)', 'Def Var (Wed)', 
                     'Commodity Basket']
 
-def merge_dicts(main_dict, new_dict, fillzeros = False):
+def merge_dicts(main_dict, new_dict, fillzeros=False, drop_na=True):
 
     """
     Merge new_dict to main_dict
@@ -41,38 +41,45 @@ def merge_dicts(main_dict, new_dict, fillzeros = False):
     Parameters:
     main_dict -- dictionary
     new_dict -- dictionary
+    drop_na -- bool
+    fillzeros -- bool
 
     Returns:
     dictionary
     """
     
-    # freq_list = ['Daily', 'Weekly', 'Monthly', 'Quarterly', 'Yearly']
     merged_dict = {}
     for key in main_dict:
-        df_main = main_dict[key]
-        df_new = new_dict[key]
-        if key == 'Daily':
-            merged_dict[key] = merge_data_frames(df_main, df_new, True)
-        else:
-            merged_dict[key] = merge_data_frames(df_main, df_new)
+        try:
+            df_main = main_dict[key]
+            df_new = new_dict[key]
+            if key == 'Daily':
+                merged_dict[key] = merge_data_frames(df_main, df_new, True, drop_na)
+            else:
+                merged_dict[key] = merge_data_frames(df_main, df_new, fillzeros, drop_na)
+        except KeyError:
+            pass
     return merged_dict
 
-def merge_data_frames(df_main, df_new,fillzeros=False):
+#TODO: Discuss with Maddie why she changed how to 'left' again
+def merge_data_frames(df_main, df_new,fillzeros=False, drop_na=True):
     """
     Merge df_new to df_main and drop na values
     
     Parameters:
     df_main -- dataframe
     df_new -- dataframe
+    drop_na -- bool
+    fillzeros -- bool
 
     Returns:
     dataframe
     """
     
-    df = pd.merge(df_main, df_new, left_index=True, right_index=True, how='left')
+    df = pd.merge(df_main, df_new, left_index=True, right_index=True, how='outer')
     if fillzeros:
         df = df.fillna(0)
-    else:
+    if drop_na:
         df.dropna(inplace=True)
     return df
 
@@ -268,7 +275,27 @@ def create_vrr_portfolio(returns, weights):
         returns_dict[freq].drop(['VRR 2'],inplace=True,axis=1)
     return returns_dict
 
+def drop_nas(data):
+    if type(data) == dict:
+        for key in data:
+            data[key].drop.dropna(inplace=True)
+    else:
+        data.dropna(inplace=True)
+    return data
 
+def check_col_len(df, col_list):
+    if len(col_list) != len(df.columns):
+        return list(df.columns)
+    else:
+        return col_list
+
+def rename_columns(data, col_list):
+    if type(data) == dict:
+        for key in data:
+            data[key].columns = check_col_len(data[key], col_list)
+    else:
+        data.columns = check_col_len(data, col_list)
+    return data
         
 def get_notional_weights(df_returns):
     """
@@ -309,7 +336,6 @@ def create_copy_with_fi(df_returns, equity = 'SPTR', freq='1M', include_fi=False
         if include_fi:
             strategy_returns['FI Benchmark'] = (strategy_returns['Long Corp'] + strategy_returns['STRIPS'])/2
             strategy_returns = strategy_returns[[equity, 'FI Benchmark', '99%/90% Put Spread', 
-
                                                  'Down Var', 'Vortex', 'VOLA 3','Dynamic Put Spread',
                                                   'VRR 2', 'VRR Trend', 'GW Dispersion', 'Corr Hedge','Def Var','Commodity Basket']]
         else:
@@ -777,3 +803,11 @@ def check_notional(df_returns, notional_weights=[]):
         notional_weights = get_notional_weights(df_returns)
     
     return notional_weights
+
+def get_agg_data(df_returns, df_mv, agg_col):
+    agg_ret = df_returns.copy()
+    agg_mv = df_mv.copy()
+    wgts = agg_mv.divide(agg_mv.sum(axis=1), axis='rows')
+    agg_ret[agg_col] = (agg_ret*wgts).sum(axis=1)
+    agg_mv[agg_col] = agg_mv.sum(axis=1)
+    return {'returns':agg_ret[[agg_col]], 'mv':agg_mv[[agg_col]]}
