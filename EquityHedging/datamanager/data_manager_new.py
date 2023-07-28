@@ -14,7 +14,7 @@ from math import prod
 # from EquityHedging.analytics import util
 from openpyxl import load_workbook
 from .import data_xformer_new as dxf
-
+from .import data_updater_new as du
 
 CWD = os.getcwd()
 DATA_FP = CWD +'\\EquityHedging\\data\\'
@@ -34,7 +34,7 @@ NEW_DATA_COL_LIST = ['SPTR', 'SX5T','M1WD', 'Long Corp', 'STRIPS', 'Down Var',
                     'GW Dispersion', 'Corr Hedge','Def Var (Mon)', 'Def Var (Fri)', 'Def Var (Wed)', 
                     'Commodity Basket']
 
-def merge_dicts(main_dict, new_dict, fillzeros = False):
+def merge_dicts(main_dict, new_dict, fillzeros=False, drop_na=True):
 
     """
     Merge new_dict to main_dict
@@ -42,29 +42,35 @@ def merge_dicts(main_dict, new_dict, fillzeros = False):
     Parameters:
     main_dict -- dictionary
     new_dict -- dictionary
+    drop_na -- bool
+    fillzeros -- bool
 
     Returns:
     dictionary
     """
     
-    # freq_list = ['Daily', 'Weekly', 'Monthly', 'Quarterly', 'Yearly']
     merged_dict = {}
     for key in main_dict:
-        df_main = main_dict[key]
-        df_new = new_dict[key]
-        if key == 'Daily':
-            merged_dict[key] = merge_data_frames(df_main, df_new, True)
-        else:
-            merged_dict[key] = merge_data_frames(df_main, df_new)
+        try:
+            df_main = main_dict[key]
+            df_new = new_dict[key]
+            if key == 'Daily':
+                merged_dict[key] = merge_data_frames(df_main, df_new, True, drop_na)
+            else:
+                merged_dict[key] = merge_data_frames(df_main, df_new, fillzeros, drop_na)
+        except KeyError:
+            pass
     return merged_dict
 
-def merge_data_frames(df_main, df_new,fillzeros=False):
+def merge_data_frames(df_main, df_new,fillzeros=False, drop_na=True):
     """
     Merge df_new to df_main and drop na values
     
     Parameters:
     df_main -- dataframe
     df_new -- dataframe
+    drop_na -- bool
+    fillzeros -- bool
 
     Returns:
     dataframe
@@ -73,7 +79,7 @@ def merge_data_frames(df_main, df_new,fillzeros=False):
     df = pd.merge(df_main, df_new, left_index=True, right_index=True, how='left')
     if fillzeros:
         df = df.fillna(0)
-    else:
+    if drop_na:
         df.dropna(inplace=True)
     return df
 
@@ -346,7 +352,7 @@ def get_equity_hedge_returns(equity='SPTR', include_fi=False, strat_drop_list=[]
         temp_ret = pd.read_excel(EQUITY_HEDGING_RETURNS_DATA,
                                  sheet_name=freq_string,
                                  index_col=0)
-        temp_ret = get_real_cols(temp_ret)
+        temp_ret = du.get_real_cols(temp_ret)
         if all_data:
             returns_dict[freq_string] = temp_ret.copy()
         else:
@@ -372,7 +378,7 @@ def get_new_strategy_returns_data(report_name, sheet_name, strategy_list=[]):
     dataframe
     """
     df_strategy = pd.read_excel(NEW_DATA+report_name, sheet_name=sheet_name, index_col=0)
-    df_strategy = get_real_cols(df_strategy)
+    df_strategy = du.get_real_cols(df_strategy)
     if strategy_list:
         df_strategy.columns = strategy_list
     try:
@@ -502,3 +508,11 @@ def check_notional(df_returns, notional_weights=[]):
         notional_weights = get_notional_weights(df_returns)
     
     return notional_weights
+
+def get_agg_data(df_returns, df_mv, agg_col):
+    agg_ret = df_returns.copy()
+    agg_mv = df_mv.copy()
+    wgts = agg_mv.divide(agg_mv.sum(axis=1), axis='rows')
+    agg_ret[agg_col] = (agg_ret*wgts).sum(axis=1)
+    agg_mv[agg_col] = agg_mv.sum(axis=1)
+    return {'returns':agg_ret[[agg_col]], 'mv':agg_mv[[agg_col]]}
