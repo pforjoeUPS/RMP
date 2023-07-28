@@ -138,4 +138,4 @@ class getRetMVReport(getReturnsReport):
         print("Writing Monthly Returns sheet...")
         new_sheets.setHistReturnSheet(self.writer, self.data_dict['returns'], 'returns')
         print("Writing Monthly Market Values sheet...")
-        new_sheets.setMVSheet(self.writer, self.data_dict['market_values'])        
+        new_sheets.setMVSheet(self.writer, self.data_dict['market_values'], 'market_values')        
