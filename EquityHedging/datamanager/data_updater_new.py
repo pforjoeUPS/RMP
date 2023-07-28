@@ -6,7 +6,7 @@ Created on Sun Aug 14 20:13:09 2022
 """
 import os
 from .import data_manager as dm
-from .import data_xformer_new as dtx
+from .import data_xformer_new as dxf
 import pandas as pd
 from ..reporting.excel import new_reports as rp
 
@@ -22,15 +22,19 @@ HF_COL_LIST = ['HFRX Macro/CTA', 'SG Trend','HFRX Absolute Return','DM Equity',
                'HFRX Eq Hedge','HFRX Event driven','HFRX Convert Arb','HFRX EM',
                'HFRX Commodities','HFRX RV']
 FREQ_LIST = ['Daily', 'Weekly', 'Monthly', 'Quarterly', 'Yearly']
+EQ_HEGDE_COL_LIST = ['SPTR', 'SX5T','M1WD', 'Long Corp', 'STRIPS', 'Down Var',
+                     'Vortex', 'VOLA I', 'VOLA II','Dynamic VOLA','Dynamic Put Spread',
+                     'GW Dispersion', 'Corr Hedge','Def Var (Mon)', 'Def Var (Fri)',
+                     'Def Var (Wed)', 'Commodity Basket']
 
 #TODO: Refactor 
 
 def update_nexen_liq_alts_data(filename='Monthly Returns Liquid Alts.xls'):
-    returns_dict = dtx.nexenDataXformer(UPDATE_DATA_FP+filename).data_xform
+    returns_dict = dxf.nexenDataXformer(UPDATE_DATA_FP+filename).data_xform
     rp.getRetMVReport('nexen_liq_alts_data-new', returns_dict, True)
 
 def update_innocap_liq_alts_data(filename='1907_hf_data.xlsx'):
-    innocap_dict = dtx.innocapDataXformer(UPDATE_DATA_FP+filename).data_xform
+    innocap_dict = dxf.innocapDataXformer(UPDATE_DATA_FP+filename).data_xform
     old_col_list = ['1907 Campbell Trend Following LLC', '1907 III Class A','1907 Penso Class A',
                     '1907 Systematica Trend Following', 'UPS 1907 ARP Trend Following LLC',
                     '1907 ARP Trend Following LLC_Class EM', '1907 III Fund Ltd _ Class CV', '1907 Kepos']
@@ -43,24 +47,24 @@ def update_innocap_liq_alts_data(filename='1907_hf_data.xlsx'):
     rp.getRetMVReport('innocap_liq_alts_data-new', returns_dict, True)
     
 def update_liq_alts_bmk_data(filename='liq_alts_bmk_data.xlsx'):
-    returns_dict = dtx.bbgDataXformer(UPDATE_DATA_FP+filename,sheet_name='bbg_d',freq='1D', col_list=HF_COL_LIST).data_xform
+    returns_dict = dxf.bbgDataXformer(UPDATE_DATA_FP+filename,sheet_name='bbg_d',freq='1D', col_list=HF_COL_LIST).data_xform
     for key in returns_dict:
         returns_dict[key] = returns_dict[key][['HFRX Macro/CTA', 'HFRX Absolute Return', 'SG Trend']]
     rp.getReturnsReport('liq_alts_bmks-new', check_returns(returns_dict), True)
     
 def update_hf_bmk_data(filename='liq_alts_bmk_data.xlsx'):
-    returns_dict = dtx.bbgDataXformer(UPDATE_DATA_FP+filename,sheet_name='bbg_d',freq='1D', col_list=HF_COL_LIST).data_xform
+    returns_dict = dxf.bbgDataXformer(UPDATE_DATA_FP+filename,sheet_name='bbg_d',freq='1D', col_list=HF_COL_LIST).data_xform
     rp.getReturnsReport('hf_bmks-new', check_returns(returns_dict), True)
 
 def update_bmk_data(filename='bmk_data.xlsx'):
-    bbg_dict = dtx.bbgDataXformer(UPDATE_DATA_FP+filename,freq='1D', col_list=BMK_COL_LIST).data_xform
+    bbg_dict = dxf.bbgDataXformer(UPDATE_DATA_FP+filename,freq='1D', col_list=BMK_COL_LIST).data_xform
     returns_dict = get_return_data('bmk_returns.xlsx', FREQ_LIST, True)
-    bbg_dict = dm.match_dict_columns(returns_dict, bbg_dict)
+    bbg_dict = match_dict_columns(returns_dict, bbg_dict)
     returns_dict = update_data(returns_dict, bbg_dict)
     rp.getReturnsReport('bmk_returns-new', returns_dict, True)
 
 def update_asset_class_data(filename='Historical Asset Class Returns.xls'):
-    returns_dict = dtx.nexenDataXformer(UPDATE_DATA_FP+filename).data_xform
+    returns_dict = dxf.nexenDataXformer(UPDATE_DATA_FP+filename).data_xform
     old_col_list = ['Total EQ w/o Derivatives','Total Fixed Income',
                     'Total Liquid Alts','Total Real Estate','Total Private Equity',
                     'Total Credit','LDI ONLY-TotUSPenMinus401H']
@@ -84,12 +88,12 @@ def get_return_data(filename, sheet_list=[], freq_data=False):
         return_dict = {}
         for sheet in sheet_list:
             temp_ret = pd.read_excel(RETURNS_DATA_FP+filename,sheet_name=sheet,index_col=0)
-            temp_ret = dm.get_real_cols(temp_ret)  
+            temp_ret = get_real_cols(temp_ret)  
             return_dict[sheet] = temp_ret.copy()
         return return_dict
     else:
         return_df = pd.read_excel(RETURNS_DATA_FP+filename,sheet_name=sheet,index_col=0)
-        return_df = dm.get_real_cols(temp_ret)  
+        return_df = get_real_cols(temp_ret)  
         return return_df
 
 def update_columns(df, old_col_list, new_col_list):
@@ -136,9 +140,9 @@ def get_data_to_update(col_list, filename, sheet_name = 'data', put_spread=False
         data = data[['99%/90% Put Spread']]
     
         #add price into dataframe
-        data = dm.get_prices_df(data)
+        data = dxf.get_prices_df(data)
     
-    data_dict = dm.get_data_dict(data)
+    data_dict = dxf.get_data_dict(data)
     return data_dict
 
 def add_bps(vrr_dict, strat_name, add_back=.0025):
@@ -231,7 +235,7 @@ def create_update_dict():
 
     '''
     #Import data from bloomberg into dataframe and create dictionary with different frequencies
-    new_data_dict = get_data_to_update(dm.NEW_DATA_COL_LIST, 'ups_data.xlsx')
+    new_ups_data_dict = get_data_to_update(EQ_HEGDE_COL_LIST, 'ups_data.xlsx')
     
     #get vrr data
     vrr_dict = get_data_to_update(['VRR'], 'vrr_tracks_data.xlsx', sheet_name='VRR')
@@ -247,7 +251,7 @@ def create_update_dict():
     put_spread_dict = get_data_to_update(['99 Rep', 'Short Put', '99%/90% Put Spread'], 'put_spread_data.xlsx', 'Daily', put_spread = True)
     
     #merge vrr and put spread dicts to the new_data dict
-    new_data_dict = dm.merge_dicts_list([new_data_dict,put_spread_dict, vrr_dict, vrr2_dict, vrr_trend_dict], True)
+    new_data_dict = dm.merge_dicts_list([new_ups_data_dict,put_spread_dict, vrr_dict, vrr2_dict, vrr_trend_dict], True)
     
     #get data from returns_data.xlsx into dictionary
     returns_dict = dm.get_equity_hedge_returns(all_data=True)
@@ -312,4 +316,17 @@ def update_data(main_dict, new_dict, freq_data = True):
         updated_dict = check_returns(updated_dict)
     return updated_dict
 
+def get_real_cols(df):
+    """
+    Removes empty columns labeled 'Unnamed: ' after importing data
+    
+    Parameters:
+    df -- dataframe
+    
+    Returns:
+    dataframe
+    """
+    real_cols = [x for x in df.columns if not x.startswith("Unnamed: ")]
+    df = df[real_cols]
+    return df
 
