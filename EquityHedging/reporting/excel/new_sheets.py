@@ -123,7 +123,7 @@ class SetDataDictSheet(setSheet):
         spaces : int, optional
             Number of empty rows between data sections. Default is 3.
         """
-        setSheet.__init__(writer, sheet_name,row = 2, col = 1, col_width=22)
+        setSheet.__init__(self, writer, sheet_name,row = 2, col = 1, col_width=22)
         self.title_list = data_dict['title_list']
         self.df_list = data_dict['df_list']
         self.spaces = spaces
@@ -239,7 +239,7 @@ class SetVRRSheet(setDataframeSheet):
         )
 
 
-class SetGroupedDataSheet(SetDataDictSheet):
+class setGroupedDataSheet(SetDataDictSheet):
     def __init__(self, writer, data_dict, sheet_name='Grouped Data', spaces=3):
         """
         Create Excel sheet for grouped data
@@ -256,15 +256,17 @@ class SetGroupedDataSheet(SetDataDictSheet):
         spaces : int, optional
             Number of empty rows between data sections. Default is 3.
         """
-        #TODO: use setDataDictSheet instead of setSheet
-        SetDataDictSheet.__init__(self, writer, data_dict, sheet_name, spaces)
-
+        
+        SetDataDictSheet.__init__(self, writer, data_dict, sheet_name)
+        self.data_dict = data_dict
+        self.spaces = spaces
+       
 
     def format_worksheet_data(self):
         for n in range(0,len(self.df_list)):
             try:
-                self.row_dim = self.row + self.df_list.shape[0]
-                self.col_dim = self.col + self.df_list.shape[1]
+                self.row_dim = self.row + self.df_list[n].shape[0]
+                self.col_dim = self.col + self.df_list[n].shape[1]
                 self.worksheet.write(self.row - 1, 1, self.title_list[n], self.title_format)
                 #write data into worksheet
                 self.df_list[n].to_excel(self.writer, sheet_name=self.sheet_name, startrow=self.row, startcol=1)
@@ -282,9 +284,7 @@ class SetGroupedDataSheet(SetDataDictSheet):
         )
                     self.row = self.row_dim + self.spaces + 1
 
-#TODO: I've updated sheets.set_corr_rank_sheet(), it now takes in a data_dict (corr_data_dict) instead of corr_pack
-#TODO: Take a look at it and edit this
-#TODO: Also use setDataDictSheet instead of setSheet
+
 class SetCorrRankSheet(SetDataDictSheet):
     def __init__(self, writer, corr_data_dict, dates, sheet_name='Correlations Ranks', spaces=3):
         """
@@ -342,12 +342,12 @@ class setHistSheet(setDataframeSheet):
         spaces : int, optional
             Number of empty rows between data sections. Default is 3.
         """
-        setDataframeSheet.__init__(writer, df_hist, sheet_name)
+        setDataframeSheet.__init__(self, writer, df_hist, sheet_name)
         self.spaces = spaces
         self.row = 2
         self.col =1
         self.col_width = 30
-        self.worksheet.write(self.row - 1, 1, self.sheet_name, self.title_format)
+        #self.worksheet.write(self.row - 1, 1, self.sheet_name, self.title_format)
         
     def format_worksheet_data(self):
         # Formatting for dates
@@ -358,8 +358,8 @@ class setHistSheet(setDataframeSheet):
       self.worksheet.conditional_format(self.row + 1, self.col + 4, self.row_dim, self.col_dim, {'type': 'cell', 'criteria': '<', 'value': 0, 'format': self.pct_fmt_neg})
       self.worksheet.conditional_format(self.row + 1, self.col + 4, self.row_dim, self.col_dim, {'type': 'cell', 'criteria': '>', 'value': 0, 'format': self.pct_fmt_pos})
 
-class AnalysisSheet(setSheet):
-    def __init__(self, writer, data_dict, sheet_name, spaces=3):
+class AnalysisSheet(SetDataDictSheet):
+    def __init__(self, writer, data_dict, sheet_name = 'Monthly Analysis', spaces=3):
         """
         Create an excel sheet with:
         - Correlation Matrices
@@ -377,15 +377,15 @@ class AnalysisSheet(setSheet):
         spaces : int, optional
             Number of empty rows between data sections. Default is 3.
         """
-        setSheet.__init__(writer, sheet_name, row=2, col=1, col_width=22)
-
+        #setSheet.__init__(writer, sheet_name, row=2, col=1, col_width=22)
+        SetDataDictSheet.__init__(self, writer, data_dict, sheet_name)
         self.data_dict = data_dict
         self.spaces = spaces
         
+        
 
     def format_worksheet_data(self):
-        self.df_list = self.data_dict['df_list']
-        self.title_list = self.data_dict['title_list']
+  
         
         for n in range(0, len(self.df_list)):
           try:  
@@ -396,18 +396,18 @@ class AnalysisSheet(setSheet):
           except AttributeError:
              pass
          
-             if n < 3:
+          if n < 3:
                     self.worksheet.conditional_format(self.row+1, self.col+1, self.row_dim, self.col_dim, {'type': 'duplicate',
                                                                                                'format': self.digits_fmt})
                     self.worksheet.conditional_format(self.row+1, self.col+1, self.row_dim, self.col_dim, {'type': '3_color_scale'})
 
-             elif n == 3 and len(self.df_list[n]) != 0:
+          elif n == 3 and len(self.df_list[n]) != 0:
                     self.worksheet.conditional_format(self.row+1, self.col+1, self.row+1, self.col_dim,
                                                       {'type': 'no_blanks', 'format': self.ccy_fmt})
                     self.worksheet.conditional_format(self.row +2, self.col+1,self.row_dim, self.col_dim,
                                                       {'type': 'no_blanks', 'format': self.pct_fmt})
 
-             elif n == 4:
+          elif n == 4:
                    #format ann. ret and ann. vol to percent
                    self.worksheet.conditional_format(self.row+1, self.col + 1,self.row + 1, self.col_dim,
                                                      {'type': 'no_blanks', 'format': self.pct_fmt})
@@ -452,7 +452,8 @@ class AnalysisSheet(setSheet):
                     #format sortino to digits
                    self.worksheet.conditional_format(self.row+15,self.col+1, self.row+15, self.col_dim,{'type':'no_blanks',
                                               'format':self.digits_fmt})
-             else:                     # format benefit count to int
+             #format hedge metrics      
+          else:                     # format benefit count to int
                     self.worksheet.conditional_format(self.row+1, self.col + 1, self.row+1, self.col_dim,
                                                       {'type': 'no_blanks', 'format': self.int_fmt})
                     # format benefit mean and median to percent
@@ -496,7 +497,8 @@ class AnalysisSheet(setSheet):
                                                       {'type': 'no_blanks', 'format': self.int_fmt})
   
                  
-             self.row = self.row_dim + self.spaces + 1
+          self.row = self.row_dim + self.spaces + 1
+         
 
 
     
