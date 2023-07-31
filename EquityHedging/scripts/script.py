@@ -12,7 +12,8 @@ os.chdir('..\..')
 from EquityHedging.datamanager import data_manager as dm
 from EquityHedging.analytics.util import get_df_weights
 from EquityHedging.analytics import summary
-from EquityHedging.reporting.excel import reports as rp
+#from EquityHedging.reporting.excel import reports as rp
+from EquityHedging.reporting.excel import new_reports as rp
 from EquityHedging.reporting import formatter as plots
 
 #import returns data
@@ -85,10 +86,11 @@ if check_ann:
     annual_dollar_returns = summary.get_annual_dollar_returns(returns, notional_weights)
 
 #run report
-equity_hedge_report = 'equity_hedge_analysis_test'
+equity_hedge_report = 'equity_hedge_analysis_testNew'
 selloffs = True
 # start = time.time()
-rp.get_equity_hedge_report(equity_hedge_report, returns,notional_weights, include_fi, new_strat, weighted[0], selloffs)
+rp.generateEquityHedgeReport(equity_hedge_report, returns, notional_weights, include_fi, new_strat, weighted[0], selloffs)
+#rp.get_equity_hedge_report(equity_hedge_report, returns,notional_weights, include_fi, new_strat, weighted[0], selloffs)
 # end = time.time()
 # print(end - start)
 
