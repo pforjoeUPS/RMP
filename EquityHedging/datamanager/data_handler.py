@@ -112,21 +112,21 @@ class liqAltsPortHandler(liqAltsBmkHandler):
             temp_mv = liq_alts_mv[LIQ_ALTS_MGR_DICT[key]].copy()
             temp_dict = dm.get_agg_data(temp_ret, temp_mv, key)
             if key == 'Trend Following':
-                temp_dict = {'returns': liq_alts_ret[[key]], 'mv':liq_alts_mv[[key]]}
-            temp_ret =  dm.merge_data_frames(temp_ret, temp_dict['returns'], drop_na=False)
-            temp_mv = dm.merge_data_frames(temp_mv, temp_dict['mv'], drop_na=False)
-            liq_alts_dict[key] = {'returns': temp_ret, 'mv': temp_mv}
-            total_ret = dm.merge_data_frames(total_ret, temp_dict['returns'], drop_na=False)
-            total_mv = dm.merge_data_frames(total_mv, temp_dict['mv'], drop_na=False)
+                temp_dict = {'returns': liq_alts_ret[[key]], 'market_values':liq_alts_mv[[key]]}
+            temp_ret =  temp_ret.join( temp_dict['returns'])
+            temp_mv = temp_mv.join(temp_dict['market_values'])
+            liq_alts_dict[key] = {'returns': temp_ret, 'market_values': temp_mv}
+            total_ret = total_ret.join(temp_dict['returns'])
+            total_mv = total_mv.join(temp_dict['market_values'])
         total_dict = dm.get_agg_data(total_ret, total_mv, 'Total Liquid Alts')
-        total_ret = dm.merge_data_frames(total_ret, total_dict['returns'], drop_na=False)
-        total_mv = dm.merge_data_frames(total_mv, total_dict['mv'], drop_na=False)
-        liq_alts_dict['Total Liquid Alts'] = {'returns': total_ret, 'mv':total_mv}
+        total_ret = total_ret.join(total_dict['returns'])
+        total_mv = total_mv.join(total_dict['market_values'])
+        liq_alts_dict['Total Liquid Alts'] = {'returns': total_ret, 'market_values':total_mv}
         
         return liq_alts_dict
     
     def get_full_port_data(self, return_data = True):
-        data = 'returns' if return_data else 'mv'
+        data = 'returns' if return_data else 'market_values'
         liq_alts_port = pd.DataFrame()
         for key in LIQ_ALTS_MGR_DICT:
             liq_alts_port = dm.merge_data_frames(liq_alts_port, self.sub_ports[key][data], drop_na=False)
@@ -135,11 +135,11 @@ class liqAltsPortHandler(liqAltsBmkHandler):
     def add_new_mgr(self, df_mgr_ret, sub_port_key, mv_amt):
         self.sub_ports[sub_port_key]['returns'] = dm.merge_data_frames(self.sub_ports[sub_port_key]['returns'], df_mgr_ret,drop_na=False)
         col_list = list(self.sub_ports[sub_port_key]['returns'].columns)
-        self.sub_ports[sub_port_key]['mv'][col_list[len(col_list)-1]] = mv_amt
+        self.sub_ports[sub_port_key]['market_values'][col_list[len(col_list)-1]] = mv_amt
 
         js_dict = dm.get_agg_data(self.sub_ports[sub_port_key]['returns'],self.sub_ports[sub_port_key]['mv'], sub_port_key)
         self.sub_ports['Total Liquid Alts']['returns'][sub_port_key] = js_dict['returns'][sub_port_key]
-        self.sub_ports['Total Liquid Alts']['mv'][sub_port_key] = js_dict['mv'][sub_port_key]
+        self.sub_ports['Total Liquid Alts']['market_values'][sub_port_key] = js_dict['market_values'][sub_port_key]
 
         self.returns = self.get_full_port_data()
         self.mvs = self.get_full_port_data(False)
