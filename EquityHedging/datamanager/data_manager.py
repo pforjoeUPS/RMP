@@ -61,7 +61,6 @@ def merge_dicts(main_dict, new_dict, fillzeros=False, drop_na=True):
             pass
     return merged_dict
 
-#TODO: Discuss with Maddie why she changed how to 'left' again
 def merge_data_frames(df_main, df_new,fillzeros=False, drop_na=True):
     """
     Merge df_new to df_main and drop na values
@@ -76,7 +75,7 @@ def merge_data_frames(df_main, df_new,fillzeros=False, drop_na=True):
     dataframe
     """
     
-    df = pd.merge(df_main, df_new, left_index=True, right_index=True, how='outer')
+    df = pd.merge(df_main, df_new, left_index=True, right_index=True, how='left')
     if fillzeros:
         df = df.fillna(0)
     if drop_na:
@@ -810,4 +809,4 @@ def get_agg_data(df_returns, df_mv, agg_col):
     wgts = agg_mv.divide(agg_mv.sum(axis=1), axis='rows')
     agg_ret[agg_col] = (agg_ret*wgts).sum(axis=1)
     agg_mv[agg_col] = agg_mv.sum(axis=1)
-    return {'returns':agg_ret[[agg_col]], 'mv':agg_mv[[agg_col]]}
+    return {'returns':agg_ret[[agg_col]], 'market_values':agg_mv[[agg_col]]}
