@@ -318,4 +318,11 @@ class innocapExpDataXformer(innocapDataXformer):
             exposure_dict[name] = name_df.pivot_table(values='10 Yr Equiv Net % Notional', index='Dates', columns='Asset Class')
             exposure_dict[name] = resample_data(exposure_dict[name], self.freq)
         return exposure_dict
-               
+
+#TODO: create vrrDataXformer
+class vrrDataXformer():
+    pass
+
+#TODO: create putSpreadDataXformer
+class putSpreadDataXformer():
+    pass                 

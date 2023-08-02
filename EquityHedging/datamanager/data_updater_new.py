@@ -74,16 +74,17 @@ def update_asset_class_data(filename='Historical Asset Class Returns.xls'):
    
     rp.getRetMVReport('upsgt_returns-new', returns_dict, True)
 
+#TODO: refactor this to maatch update_bmk_data
 def update_eq_hedge_returns():
     #get data from returns_data.xlsx into dictionary
-    returns_dict = dm.get_equity_hedge_returns(all_data=True)
+    returns_dict = get_return_data('eq_hedge_returns.xlsx', sheet_list=FREQ_LIST)
 
     #create dictionary that contains updated returns
     new_data_dict = create_update_dict()
     returns_dict = update_data(returns_dict, new_data_dict)
     rp.getReturnsReport('eq_hedge_returns-new', returns_dict, True)
     
-def get_return_data(filename, sheet_list=[], freq_data=False):
+def get_return_data(filename, sheet_list=[]):
     if sheet_list:
         return_dict = {}
         for sheet in sheet_list:
@@ -224,6 +225,7 @@ def append_dict(main_dict, new_dict):
         main_dict[key] = main_dict[key].append(new_dict[key])
     return main_dict
 
+#TODO: refactor function and rename to make it eq_hedge specific
 def create_update_dict():
     '''
     Create a dictionary that updates returns data

@@ -79,7 +79,7 @@ class dataImporter():
         
         """
         data = read_data(self.filepath, self.sheet_name, index_col = self.index_col, 
-                             skiprows=self.skip_rows)
+                             skip_rows=self.skip_rows)
         #drop nas
         if self.drop_na:
             data = dm.drop_nas(data)
@@ -164,6 +164,7 @@ class bbgDataImporter(innocapDataImporter):
         else:
             self.data.index.names = ['Dates']
 
+#TODO: clean this to only have dates , account name, market value and return
 class nexenDataImporter(dataImporter):
     def __init__(self, filepath ,sheet_name = 0, index_col=None, skip_rows=[],
                  data_source='nexen', drop_na=False, index_data = False):
@@ -198,4 +199,8 @@ class nexenDataImporter(dataImporter):
         self.data = self.data[['Account Name\n', 'Account Id\n', 'Return Type\n',
                                'As Of Date\n','Market Value\n', 'Account Monthly Return\n']]
         self.data.columns = ['Name', 'Account Id', 'Return Type', 'Dates', 'Market Value', 'Return']
-         
+
+#TODO: create vrrDataImporter
+class vrrDataImporter():
+    pass  
+     
