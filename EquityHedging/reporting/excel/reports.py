@@ -16,7 +16,7 @@ from .import new_sheets
 import os
 
 
-def get_report_path(report_name):
+def get_filepath(report_name, data_file=False):
     """
     Gets the file path where the report will be stored
 
@@ -33,10 +33,10 @@ def get_report_path(report_name):
     """
     
     cwd = os.getcwd()
-    reports_fp = '\\EquityHedging\\reports\\'
+    fp = '\\EquityHedging\\data\\returns_data\\' if data_file else '\\EquityHedging\\reports\\'
     file_name = report_name +'.xlsx'
-    return cwd + reports_fp + file_name
-
+    return cwd + fp + file_name
+    
 def get_equity_hedge_report(report_name, returns_dict, notional_weights=[],
                             include_fi=False, new_strat=False, weighted=False, selloffs=False):
     """
@@ -66,7 +66,7 @@ def get_equity_hedge_report(report_name, returns_dict, notional_weights=[],
     """
     
     #get file path and create excel writer
-    file_path = get_report_path(report_name)
+    file_path = get_filepath(report_name)
     writer = pd.ExcelWriter(file_path,engine='xlsxwriter')
     
     #create list of frequencies we want to create the report for
@@ -140,7 +140,7 @@ def get_equity_hedge_report(report_name, returns_dict, notional_weights=[],
     grouped_data_dict = summary.get_grouped_data(returns_dict, notional_weights, weighted = True)
     # quintile_df = summary.get_grouped_data(returns_dict, notional_weights, weighted = True, group = 'Quintile')
     # decile_df = summary.get_grouped_data(returns_dict, notional_weights, weighted = True, group = 'Decile')
-    
+
     sheets.set_grouped_data_sheet(writer, grouped_data_dict)
     #new_sheets.setGroupedDataSheet(writer, grouped_data_dict)
     print_report_info(report_name, file_path)
@@ -152,7 +152,7 @@ def get_corr_rank_report(report_name, df_returns, buckets, notional_weights=[],i
     """
     """
     
-    file_path = get_report_path(report_name)
+    file_path = get_filepath(report_name)
     writer = pd.ExcelWriter(file_path,engine='xlsxwriter')
     
     corr_pack = get_corr_rank_data(df_returns, buckets, notional_weights,include_fi)
@@ -176,7 +176,7 @@ def get_rolling_cum_ret_report(report_name, df_returns, freq, notional_weights):
     """
     """
     
-    file_path = get_report_path(report_name)
+    file_path = get_filepath(report_name)
     writer = pd.ExcelWriter(file_path, engine='xlsxwriter')
     
     rolling_cum_dict = summary.get_rolling_cum_data(df_returns, freq,notional_weights)
@@ -208,7 +208,7 @@ def generate_strat_report(report_name, returns_dict, selloffs=False):
     """
     
     #get file path and create excel writer
-    file_path = get_report_path(report_name)
+    file_path = get_filepath(report_name)
     writer = pd.ExcelWriter(file_path,engine='xlsxwriter')
     
     #create list of frequencies we want to create the report for
@@ -285,7 +285,7 @@ def generate_hs_report(report_name, returns_dict, notional_weights=[], weighted=
     """
     
     #get file path and create excel writer
-    file_path = get_report_path(report_name)
+    file_path = get_filepath(report_name)
     writer = pd.ExcelWriter(file_path, engine='xlsxwriter')
 
     print("Computing Historical SellOffs...")
@@ -306,24 +306,25 @@ def generate_hs_report(report_name, returns_dict, notional_weights=[], weighted=
         print('Skipping Historical SellOffs, no daily data in returns dictionary')
         pass
 
-def get_returns_report(report_name, returns_dict):
+def get_returns_report(report_name, returns_dict, data_file = True):
     """
-    Generates historical returns spreadsheet containing returns for different frequencies
+    Generates excel file containing historical returns for different frequencies
 
     Parameters
     ----------
     report_name : string
         Name of report.
-    returns_dict : dict
-        dictionary of returns containing different frequencies.
-    
+    data_dict : dict
+        Dictionary containing returns of different frequencies.
+    data_file : boolean, optional
+        Boolean to determine if excel file belongs in data folder or reports folder. The default is True.
+
     Returns
     -------
-    None. An excel report called [report_name].xlsx is created 
-
+    None. An excel report called [report_name].xlsx is created
     """
     #get file path and create excel writer
-    file_path = get_report_path(report_name)
+    file_path = get_filepath(report_name, data_file)
     writer = pd.ExcelWriter(file_path, engine='xlsxwriter')
     
     #loop through dictionary to create returns spreadsheet
@@ -353,3 +354,31 @@ def print_report_info(report_name, file_path):
     """
     folder_location = file_path.replace(report_name+'.xlsx', '')
     print('"{}.xlsx" report generated in "{}" folder'.format(report_name,folder_location))
+    
+def get_ret_mv_report(report_name, return_dict, data_file = True):
+    """
+    Generates an excel file containing monthly returns and market values
+
+    Parameters
+    ----------
+    report_name : string
+        Name of report.
+    data_dict : dict
+        Dictionary containing returns and market_values.
+    data_file : boolean, optional
+        Boolean to determine if excel file belongs in data folder or reports folder. The default is True.
+
+    Returns
+    -------
+    None. An excel report called [report_name].xlsx is created
+    """
+    file_path = get_filepath(report_name, data_file)
+    writer = pd.ExcelWriter(file_path, engine='xlsxwriter')
+    print("Writing Monthly Returns sheet...")
+    sheets.set_hist_return_sheet(writer, return_dict['returns'], 'returns')
+    print("Writing Monthly Market Values sheet...")
+    sheets.set_mv_sheet(writer, return_dict['market_values'], 'market_values')
+
+    #save file
+    print_report_info(report_name, file_path)
+    writer.save()
