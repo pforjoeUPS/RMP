@@ -158,7 +158,7 @@ class dataXformer():
     def import_data(self):
         #pull data from dataImporter object
         return di.dataImporter(self.filepath, self.sheet_name, data_source=self.data_source, drop_na=self.drop_na,
-                                           index_data=self.index_data).data
+                                           index_data=self.index_data).data_import
     #return dataframe or dictionary of dataframes
     def xform_data(self):
         if self.format_data:
@@ -194,7 +194,7 @@ class nexenDataXformer(dataXformer):
         
     def import_data(self):
         #pull data from nexenDataImporter object
-        return di.nexenDataImporter(self.filepath).data
+        return di.nexenDataImporter(self.filepath).data_import
     
     #return dictionary of dataframes (returns and market values)
     def xform_data(self):
@@ -238,7 +238,7 @@ class bbgDataXformer(dataXformer):
      
     def import_data(self):
         #pull data from bbgDataImporter object
-        return di.bbgDataImporter(self.filepath,self.sheet_name, col_list=self.col_list).data
+        return di.bbgDataImporter(self.filepath,self.sheet_name, col_list=self.col_list).data_import
    
 class innocapDataXformer(dataXformer):
     def __init__(self, filepath,sheet_name=0, data_source='innocap', freq='1M',
@@ -269,7 +269,7 @@ class innocapDataXformer(dataXformer):
         
     def import_data(self):
         #pull data from innocapDataImporter object
-        return di.innocapDataImporter(self.filepath, col_list=self.col_list).data
+        return di.innocapDataImporter(self.filepath, col_list=self.col_list).data_import
     
     #return dictionary of dataframes (returns and market values)
     def xform_data(self):
