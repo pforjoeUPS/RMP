@@ -50,7 +50,7 @@ notional_weights[4:6] = [notional_weights[4] + notional_weights[5]]
 df_weights = get_df_weights(notional_weights, list(returns['Monthly'].columns), include_fi)
 
 
-#returns = eq_hedge_dh.add_new_strat()
+#returns = eq_hedge_dh.returns
 
 #compute correlations
 check_corr = False
