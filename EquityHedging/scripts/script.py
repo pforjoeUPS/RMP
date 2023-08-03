@@ -10,6 +10,7 @@ os.chdir('..\..')
 
 #import libraries
 from EquityHedging.datamanager import data_manager as dm
+from EquityHedging.datamanager import data_handler as dh
 from EquityHedging.analytics.util import get_df_weights
 from EquityHedging.analytics import summary
 from EquityHedging.reporting.excel import reports as rp
@@ -23,6 +24,8 @@ strat_drop_list = ['99%/90% Put Spread', 'Vortex']
 new_strat = False
 returns= dm.get_equity_hedge_returns(equity_bmk, include_fi, strat_drop_list)
 
+# eq_hedge_dh = dh.eqHedgeHandler(equity_bmk='SPTR', include_fi=True, strat_drop_list=['99%/90% Put Spread', 'Vortex'])
+
 #Add new strat
 new_strat = True
 if new_strat:
@@ -33,20 +36,21 @@ if new_strat:
     new_strategy_dict = dm.get_data_dict(new_strategy, data_type='index')
     returns = dm.merge_dicts(returns, new_strategy_dict)
 
+# eq_hedge_dh.add_new_strat()
 
 
 
 
 #get notional weights
-
-
 notional_weights = dm.get_notional_weights(returns['Monthly'])
-returns = dm.create_vrr_portfolio(returns,notional_weights)
+returns_vrr = dm.create_vrr_portfolio(returns,notional_weights)
 notional_weights[4:6] = [notional_weights[4] + notional_weights[5]]
 
 
 df_weights = get_df_weights(notional_weights, list(returns['Monthly'].columns), include_fi)
 
+
+#returns = eq_hedge_dh.add_new_strat()
 
 #compute correlations
 check_corr = False

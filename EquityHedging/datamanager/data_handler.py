@@ -150,8 +150,8 @@ class liqAltsPortHandler(liqAltsBmkHandler):
         mgr_list.append(sub_port)
         return mgr_list
 
-#TODO: add weighted strats logic
-#TODO: fix
+#TODO: add notional weights
+#TODO: #Add new strat
 class eqHedgeHandler(mktHandler):
     def __init__(self, equity_bmk = 'SPTR',include_fi = False, all_data=False, strat_drop_list=['99%/90% Put Spread', 'Vortex']):
         mktHandler.__init__(self, equity_bmk, include_fi, all_data)

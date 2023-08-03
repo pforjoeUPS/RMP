@@ -58,7 +58,7 @@ def update_hf_bmk_data(filename='liq_alts_bmk_data.xlsx'):
 
 def update_bmk_data(filename='bmk_data.xlsx'):
     bbg_dict = dxf.bbgDataXformer(UPDATE_DATA_FP+filename,freq='1D', col_list=BMK_COL_LIST).data_xform
-    returns_dict = get_return_data('bmk_returns.xlsx', FREQ_LIST, True)
+    returns_dict = get_return_data('bmk_returns.xlsx', FREQ_LIST)
     bbg_dict = match_dict_columns(returns_dict, bbg_dict)
     returns_dict = update_data(returns_dict, bbg_dict)
     rp.getReturnsReport('bmk_returns-new', returns_dict, True)

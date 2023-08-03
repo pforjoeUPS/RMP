@@ -67,7 +67,7 @@ class dataImporter():
         self.data_source = data_source
         self.drop_na = drop_na
         self.index_data = index_data
-        self.data = self.import_data()
+        self.data_import = self.import_data()
                 
     def import_data(self):
         """
@@ -122,7 +122,7 @@ class innocapDataImporter(dataImporter):
         
         #rename columns
         if self.col_list:
-            self.data = dm.rename_columns(self.data, self.col_list)
+            self.data_import = dm.rename_columns(self.data_import, self.col_list)
     
 class bbgDataImporter(innocapDataImporter):
     def __init__(self, filepath ,sheet_name = 0, index_col=0,skip_rows=[0,1,2,4,5,6],
@@ -158,11 +158,11 @@ class bbgDataImporter(innocapDataImporter):
                                      data_source,col_list, drop_na, index_data)
         
         #rename index col
-        if type(self.data) == dict:
-            for keys in self.data:
-                self.data[keys].index.names = ['Dates']
+        if type(self.data_import) == dict:
+            for keys in self.data_import:
+                self.data_import[keys].index.names = ['Dates']
         else:
-            self.data.index.names = ['Dates']
+            self.data_import.index.names = ['Dates']
 
 #TODO: clean this to only have dates , account name, market value and return
 class nexenDataImporter(dataImporter):
@@ -196,9 +196,9 @@ class nexenDataImporter(dataImporter):
         dataImporter.__init__(self,filepath, sheet_name, index_col, skip_rows,
                               data_source,drop_na, index_data)
         
-        self.data = self.data[['Account Name\n', 'Account Id\n', 'Return Type\n',
+        self.data_import = self.data_import[['Account Name\n', 'Account Id\n', 'Return Type\n',
                                'As Of Date\n','Market Value\n', 'Account Monthly Return\n']]
-        self.data.columns = ['Name', 'Account Id', 'Return Type', 'Dates', 'Market Value', 'Return']
+        self.data_import.columns = ['Name', 'Account Id', 'Return Type', 'Dates', 'Market Value', 'Return']
 
 #TODO: create vrrDataImporter
 class vrrDataImporter():
