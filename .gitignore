@@ -7,6 +7,7 @@ EquityHedging/data/liq_alts/*.xlsx
 EquityHedging/data/liq_alts/*.xls
 #EquityHedging/data/update_strats/*.xlsx
 desktop.ini
+idea/.gitignore
 
 # DO-NOT ignore specific files
 EquityHedging/data/new_strats/vrr_data.xlsx
@@ -103,3 +104,9 @@ GPUCache/index
 GPUCache/data_2
 GPUCache/data_1
 Cluster Analysis/data/Normalized_Hedge_Metrics.xlsx
+.idea/vcs.xml
+.idea/RMP.iml
+.idea/modules.xml
+.idea/misc.xml
+.idea/inspectionProfiles/profiles_settings.xml
+.idea/workspace.xml
