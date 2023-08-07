@@ -75,7 +75,7 @@ class setSheet():
         
 
 class setDataframeSheet(setSheet):
-    def __init__(self, writer, data, sheet_name):
+    def __init__(self, writer, data, sheet_name, **kwargs):
         """
         Create excel sheet for historical returns
 
@@ -95,7 +95,7 @@ class setDataframeSheet(setSheet):
         -------
         Historical returns excel sheet.
         """
-        setSheet.__init__(self, writer, sheet_name)
+        setSheet.__init__(self, writer, sheet_name, **kwargs)
         
         self.data = data
         self.row_dim = self.row + self.data.shape[0]
@@ -107,7 +107,7 @@ class setDataframeSheet(setSheet):
         pass
 
 class SetDataDictSheet(setSheet):
-    def __init__(self, writer, data_dict, sheet_name, spaces=3):
+    def __init__(self, writer, data_dict, sheet_name, spaces=3, **kwargs):
         """
         Create Excel sheet for grouped data
 
@@ -123,7 +123,7 @@ class SetDataDictSheet(setSheet):
         spaces : int, optional
             Number of empty rows between data sections. Default is 3.
         """
-        setSheet.__init__(self, writer, sheet_name,row = 2, col = 1, col_width=22)
+        setSheet.__init__(self, writer, sheet_name, **kwargs)
         self.title_list = data_dict['title_list']
         self.df_list = data_dict['df_list']
         self.spaces = spaces
@@ -257,7 +257,7 @@ class setGroupedDataSheet(SetDataDictSheet):
             Number of empty rows between data sections. Default is 3.
         """
         
-        SetDataDictSheet.__init__(self, writer, data_dict, sheet_name)
+        SetDataDictSheet.__init__(self, writer, data_dict, sheet_name, row =2, col =1, col_width = 22)
         self.data_dict = data_dict
         self.spaces = spaces
        
@@ -303,12 +303,10 @@ class SetCorrRankSheet(SetDataDictSheet):
             Number of empty rows between data sections. Default is 3.
         """
         #TODO: use setDataDictSheet instead of setSheet
-        SetDataDictSheet.__init__(self, writer, corr_data_dict, sheet_name, spaces)
         self.dates = dates
         self.header = 'Data from {} to {}'.format(str(dates['start']).split()[0], str(dates['end']).split()[0])
-        self.row = 3
-        self.col = 1
-        self.col_width = 19
+        SetDataDictSheet.__init__(self, writer, corr_data_dict, sheet_name, spaces, row = 3, col = 1, col_width = 19)
+        
         
     def format_worksheet_data(self):
         self.worksheet.write(0, 0, self.header, self.title_format)     
@@ -342,14 +340,14 @@ class setHistSheet(setDataframeSheet):
         spaces : int, optional
             Number of empty rows between data sections. Default is 3.
         """
-        setDataframeSheet.__init__(self, writer, df_hist, sheet_name)
         self.spaces = spaces
-        self.row = 2
-        self.col =1
-        self.col_width = 30
-        #self.worksheet.write(self.row - 1, 1, self.sheet_name, self.title_format)
+        
+        setDataframeSheet.__init__(self, writer, df_hist, sheet_name, row =2, col = 1, col_width = 30)
+       
+        
         
     def format_worksheet_data(self):
+      self.worksheet.write(self.row - 1, 1, self.sheet_name, self.title_format)
         # Formatting for dates
       self.worksheet.conditional_format(self.row + 1, self.col + 1, self.row_dim, self.col + 2, {'type': 'no_blanks', 'format': self.date_fmt})
       # Formatting equity returns
@@ -378,9 +376,10 @@ class AnalysisSheet(SetDataDictSheet):
             Number of empty rows between data sections. Default is 3.
         """
         #setSheet.__init__(writer, sheet_name, row=2, col=1, col_width=22)
-        SetDataDictSheet.__init__(self, writer, data_dict, sheet_name)
         self.data_dict = data_dict
         self.spaces = spaces
+        SetDataDictSheet.__init__(self, writer, data_dict, sheet_name, row=2, col=1, col_width=22)
+        
         
         
 
@@ -500,5 +499,7 @@ class AnalysisSheet(SetDataDictSheet):
           self.row = self.row_dim + self.spaces + 1
          
 
+
+    
 
     

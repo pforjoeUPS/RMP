@@ -94,3 +94,5 @@ rp.generateEquityHedgeReport(equity_hedge_report, returns, notional_weights, inc
 # end = time.time()
 # print(end - start)
 
+hs_report = 'historical_selloff_test_new'
+rp.generateHSReport(hs_report, returns)
