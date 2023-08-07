@@ -384,119 +384,119 @@ class AnalysisSheet(SetDataDictSheet):
         
 
     def format_worksheet_data(self):
-  
-        
         for n in range(0, len(self.df_list)):
-          try:  
-            self.row_dim = self.row + self.df_list[n].shape[0]
-            self.col_dim = self.col + self.df_list[n].shape[1]
-            self.worksheet.write(self.row-1, 1, self.title_list[n], self.title_format)
-            self.df_list[n].to_excel(self.writer, sheet_name=self.sheet_name, startrow=self.row , startcol=1)
-          except AttributeError:
-             pass
+            try:  
+                self.row_dim = self.row + self.df_list[n].shape[0]
+                self.col_dim = self.col + self.df_list[n].shape[1]
+                self.worksheet.write(self.row-1, 1, self.title_list[n], self.title_format)
+                self.df_list[n].to_excel(self.writer, sheet_name=self.sheet_name, startrow=self.row , startcol=1)
+            except AttributeError:
+                pass
          
-          if n < 3:
-                    self.worksheet.conditional_format(self.row+1, self.col+1, self.row_dim, self.col_dim, {'type': 'duplicate',
+            if n < 3:
+              self.worksheet.conditional_format(self.row+1, self.col+1, self.row_dim, self.col_dim, {'type': 'duplicate',
                                                                                                'format': self.digits_fmt})
-                    self.worksheet.conditional_format(self.row+1, self.col+1, self.row_dim, self.col_dim, {'type': '3_color_scale'})
+              self.worksheet.conditional_format(self.row+1, self.col+1, self.row_dim, self.col_dim, {'type': '3_color_scale'})
 
-          elif n == 3 and len(self.df_list[n]) != 0:
-                    self.worksheet.conditional_format(self.row+1, self.col+1, self.row+1, self.col_dim,
+            elif n == 3:
+                if len(self.df_list[n]) != 0:
+                  self.worksheet.conditional_format(self.row+1, self.col+1, self.row+1, self.col_dim,
                                                       {'type': 'no_blanks', 'format': self.ccy_fmt})
-                    self.worksheet.conditional_format(self.row +2, self.col+1,self.row_dim, self.col_dim,
+                  self.worksheet.conditional_format(self.row +2, self.col+1,self.row_dim, self.col_dim,
                                                       {'type': 'no_blanks', 'format': self.pct_fmt})
 
-          elif n == 4:
-                   #format ann. ret and ann. vol to percent
-                   self.worksheet.conditional_format(self.row+1, self.col + 1,self.row + 1, self.col_dim,
-                                                     {'type': 'no_blanks', 'format': self.pct_fmt})
-                   #format ret/vol to digits
-                   self.worksheet.conditional_format(self.row +3, self.col + 1, self.row + 3, self.col_dim,
-                                                     {'type': 'no_blanks', 'format': self.digits_fmt})
-                   #format max_dd to percent
-                   self.worksheet.conditional_format(self.row + 4, self.col + 1, self.row + 4, self.col_dim,
-                                                     {'type': 'no_blanks', 'format': self.pct_fmt})
-                   #format ret/dd to digits
-                   self.worksheet.conditional_format(self.row + 5, self.col + 1, self.row + 5, self.col_dim,
-                                                     {'type': 'no_blanks', 'format': self.digits_fmt})
-                   #format max_1m_dd to percent
-                   self.worksheet.conditional_format(self.row + 6, self.col + 1, self.row + 6, self.col_dim,
-                                                     {'type': 'no_blanks', 'format': self.pct_fmt})
-                   #format max_1m_dd date to date
-                   #TODO: figure out a way to format date to short date
-                   self.worksheet.conditional_format(self.row + 7, self.col + 1, self.row + 7, self.col_dim,
-                                                     {'type': 'no_blanks', 'format': self.date_fmt_2})
-                   #format ret_max1m_dd to digits
-                   self.worksheet.conditional_format(self.row + 8, self.col + 1, self.row + 8, self.col_dim,
-                                                     {'type': 'no_blanks', 'format': self.digits_fmt})
-
-                   #format max_3m_dd to percent
-                   self.worksheet.conditional_format(self.row + 9, self.col + 1, self.row + 9, self.col_dim,
-                                                     {'type': 'no_blanks', 'format': self.pct_fmt})
-                   #format max_3m_dd date to date
-                   #TODO: figure out a way to format date to short date
-                   self.worksheet.conditional_format(self.row + 10, self.col + 1, self.row + 10, self.col_dim,
-                                                     {'type': 'no_blanks', 'format': self.date_fmt_2})
-
-                   #format ret_max1q_dd to digit
-                   self.worksheet.conditional_format(self.row + 11, self.col + 1, self.row + 11, self.col_dim,
-                                                     {'type': 'no_blanks', 'format': self.digits_fmt})
-
-                   #format skew to digits and avg_pos_ret/avg_neg_ret to digits
-                   self.worksheet.conditional_format(self.row + 12, self.col + 1, self.row + 13, self.col_dim,
-                                                     {'type': 'no_blanks', 'format': self.digits_fmt})
-                    #format downside dev to percent
-                   self.worksheet.conditional_format(self.row+14,self.col+1, self.row+14, self.col_dim,{'type':'no_blanks',
-                                              'format':self.pct_fmt})
-                    #format sortino to digits
-                   self.worksheet.conditional_format(self.row+15,self.col+1, self.row+15, self.col_dim,{'type':'no_blanks',
-                                              'format':self.digits_fmt})
-             #format hedge metrics      
-          else:                     # format benefit count to int
-                    self.worksheet.conditional_format(self.row+1, self.col + 1, self.row+1, self.col_dim,
-                                                      {'type': 'no_blanks', 'format': self.int_fmt})
-                    # format benefit mean and median to percent
-                    self.worksheet.conditional_format(self.row + 2, self.col + 1, self.row + 3, self.col_dim,
-                                                      {'type': 'no_blanks', 'format': self.pct_fmt})
-
-                    # format benefit cumulative to percent
-                    self.worksheet.conditional_format(self.row + 4, self.col + 1, self.row + 4, self.col_dim,
-                                                      {'type': 'no_blanks', 'format': self.pct_fmt})
-
-                    # format reliability up and down to digits
-                    self.worksheet.conditional_format(self.row + 5, self.col + 1, self.row + 6, self.col_dim,
-                                                      {'type': 'no_blanks', 'format': self.digits_fmt})
-
-                    # format convexity count to int
-                    self.worksheet.conditional_format(self.row + 7, self.col + 1, self.row + 7, self.col_dim,
-                                                      {'type': 'no_blanks', 'format': self.int_fmt})
-
-                    # format convexity mean and median to percent
-                    self.worksheet.conditional_format(self.row + 8, self.col + 1, self.row + 9, self.col_dim,
-                                                      {'type': 'no_blanks', 'format': self.pct_fmt})
-
-                    # format convexity cumulative to percent
-                    self.worksheet.conditional_format(self.row + 10, self.col + 1, self.row + 10, self.col_dim,
-                                                      {'type': 'no_blanks', 'format': self.pct_fmt})
-
-                    # format cost count to int
-                    self.worksheet.conditional_format(self.row + 11, self.col + 1, self.row + 11, self.col_dim,
-                                                      {'type': 'no_blanks', 'format': self.int_fmt})
-
-                    # format cost mean and median to percent
-                    self.worksheet.conditional_format(self.row + 12, self.col + 1, self.row + 13, self.col_dim,
-                                                      {'type': 'no_blanks', 'format': self.pct_fmt})
-
-                    # format cost cumulative to percent
-                    self.worksheet.conditional_format(self.row + 14, self.col + 1, self.row + 14, self.col_dim,
-                                                      {'type': 'no_blanks', 'format': self.pct_fmt})
-
-                    # format decay days to int
-                    self.worksheet.conditional_format(self.row + 15, self.col + 1, self.row + 17, self.col_dim,
-                                                      {'type': 'no_blanks', 'format': self.int_fmt})
+            elif n == 4:
+                #format ann. ret and ann. vol to percent
+                self.worksheet.conditional_format(self.row+1, self.col + 1,self.row + 2, self.col_dim,
+                                                  {'type': 'no_blanks', 'format': self.pct_fmt})
+                #format ret/vol to digits
+                self.worksheet.conditional_format(self.row +3, self.col + 1, self.row + 3, self.col_dim,
+                                                  {'type': 'no_blanks', 'format': self.digits_fmt})
+                #format max_dd to percent
+                self.worksheet.conditional_format(self.row + 4, self.col + 1, self.row + 4, self.col_dim,
+                                                  {'type': 'no_blanks', 'format': self.pct_fmt})
+                #format ret/dd to digits
+                self.worksheet.conditional_format(self.row + 5, self.col + 1, self.row + 5, self.col_dim,
+                                                  {'type': 'no_blanks', 'format': self.digits_fmt})
+                #format max_1m_dd to percent
+                self.worksheet.conditional_format(self.row + 6, self.col + 1, self.row + 6, self.col_dim,
+                                                  {'type': 'no_blanks', 'format': self.pct_fmt})
+                #format max_1m_dd date to date
+                #TODO: figure out a way to format date to short date
+                self.worksheet.conditional_format(self.row + 7, self.col + 1, self.row + 7, self.col_dim,
+                                                  {'type': 'no_blanks', 'format': self.date_fmt_2})
+                #format ret_max1m_dd to digits
+                self.worksheet.conditional_format(self.row + 8, self.col + 1, self.row + 8, self.col_dim,
+                                                  {'type': 'no_blanks', 'format': self.digits_fmt})
+                
+                #format max_3m_dd to percent
+                self.worksheet.conditional_format(self.row + 9, self.col + 1, self.row + 9, self.col_dim,
+                                                  {'type': 'no_blanks', 'format': self.pct_fmt})
+                #format max_3m_dd date to date
+                #TODO: figure out a way to format date to short date
+                self.worksheet.conditional_format(self.row + 10, self.col + 1, self.row + 10, self.col_dim,
+                                                  {'type': 'no_blanks', 'format': self.date_fmt_2})
+                
+                #format ret_max1q_dd to digit
+                self.worksheet.conditional_format(self.row + 11, self.col + 1, self.row + 11, self.col_dim,
+                                                  {'type': 'no_blanks', 'format': self.digits_fmt})
+                
+                #format skew to digits and avg_pos_ret/avg_neg_ret to digits
+                self.worksheet.conditional_format(self.row + 12, self.col + 1, self.row + 13, self.col_dim,
+                                                  {'type': 'no_blanks', 'format': self.digits_fmt})
+                 #format downside dev to percent
+                self.worksheet.conditional_format(self.row+14,self.col+1, self.row+14, self.col_dim,{'type':'no_blanks',
+                                           'format':self.pct_fmt})
+                 #format sortino to digits
+                self.worksheet.conditional_format(self.row+15,self.col+1, self.row+15, self.col_dim,{'type':'no_blanks',
+                                           'format':self.digits_fmt})
+            #format hedge metrics      
+            else:
+                # format benefit count to int
+                self.worksheet.conditional_format(self.row+1, self.col + 1, self.row+1, self.col_dim,
+                                  {'type': 'no_blanks', 'format': self.int_fmt})
+                # format benefit mean and median to percent
+                self.worksheet.conditional_format(self.row + 2, self.col + 1, self.row + 3, self.col_dim,
+                                  {'type': 'no_blanks', 'format': self.pct_fmt})
+                
+                # format benefit cumulative to percent
+                self.worksheet.conditional_format(self.row + 4, self.col + 1, self.row + 4, self.col_dim,
+                                  {'type': 'no_blanks', 'format': self.pct_fmt})
+                
+                # format reliability up and down to digits
+                self.worksheet.conditional_format(self.row + 5, self.col + 1, self.row + 6, self.col_dim,
+                                  {'type': 'no_blanks', 'format': self.digits_fmt})
+                
+                # format convexity count to int
+                self.worksheet.conditional_format(self.row + 7, self.col + 1, self.row + 7, self.col_dim,
+                                  {'type': 'no_blanks', 'format': self.int_fmt})
+                
+                # format convexity mean and median to percent
+                self.worksheet.conditional_format(self.row + 8, self.col + 1, self.row + 9, self.col_dim,
+                                  {'type': 'no_blanks', 'format': self.pct_fmt})
+                
+                # format convexity cumulative to percent
+                self.worksheet.conditional_format(self.row + 10, self.col + 1, self.row + 10, self.col_dim,
+                                  {'type': 'no_blanks', 'format': self.pct_fmt})
+                
+                # format cost count to int
+                self.worksheet.conditional_format(self.row + 11, self.col + 1, self.row + 11, self.col_dim,
+                                  {'type': 'no_blanks', 'format': self.int_fmt})
+                
+                # format cost mean and median to percent
+                self.worksheet.conditional_format(self.row + 12, self.col + 1, self.row + 13, self.col_dim,
+                                  {'type': 'no_blanks', 'format': self.pct_fmt})
+                
+                # format cost cumulative to percent
+                self.worksheet.conditional_format(self.row + 14, self.col + 1, self.row + 14, self.col_dim,
+                                  {'type': 'no_blanks', 'format': self.pct_fmt})
+                
+                # format decay days to int
+                self.worksheet.conditional_format(self.row + 15, self.col + 1, self.row + 17, self.col_dim,
+                                  {'type': 'no_blanks', 'format': self.int_fmt})
   
                  
-          self.row = self.row_dim + self.spaces + 1
+            self.row = self.row_dim + self.spaces + 1
          
 
 

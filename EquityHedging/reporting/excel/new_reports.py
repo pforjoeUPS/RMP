@@ -162,15 +162,18 @@ class generateHSReport(getReturnsReport):
         self.data_dict = returns_dict
         self.notional_weights = notional_weights
         self.weighted = weighted
+        #TODO: Add data_file = False variable
         getReturnsReport.__init__(self, report_name, returns_dict)
         
         
-
+        
     def generate_report(self):
+        #TODO: Make this a method self.generate_selloffs_sheets()
         print("Computing Historical SellOffs...")
 
         # Get daily returns
         try:
+            #TODO: I don't think it's necerrary to make this an instance attribute
             self.daily_returns = self.data_dict['Daily'].copy()
 
             # Compute historical selloffs
@@ -186,6 +189,7 @@ class generateHSReport(getReturnsReport):
             print('Skipping Historical SellOffs, no daily data in returns dictionary')
             pass
         
+#TODO: Should inherit generateHSReport
 class generateStratReport(getReturnsReport):
     def __init__(self, report_name, returns_dict, selloffs=False):
         """
@@ -204,13 +208,16 @@ class generateStratReport(getReturnsReport):
         -------
         None. An excel report called [report_name].xlsx is created
         """
+        #TODO: Add data_file = False variable
         self.selloffs = selloffs
-        getReturnsReport.__init__(self, report_name, returns_dict)
+        #TODO: Switch to generateHSReport
+        getReturnsReport.__init__(self, report_name, returns_dict, False)
         
         
 
     def generate_report(self):
     
+        #TODO: Duplicate, delete
         if self.selloffs:
             self.generate_selloffs_report()
 
@@ -219,6 +226,7 @@ class generateStratReport(getReturnsReport):
 
         # Loop through frequencies
         for freq in self.freq_list:
+            #TODO: Make this a method self.generate_analysis_sheets()
             print("Computing {} Analytics...".format(freq))
 
             # Get analytics
@@ -233,22 +241,24 @@ class generateStratReport(getReturnsReport):
             new_sheets.setHistReturnSheet(self.writer, self.data_dict[freq], self.return_sheet)
 
         if self.selloffs:
+           #TODO: call self.generate_selloffs_sheets()
            print("Computing Historical SellOffs...")
 
-        # Get daily returns
            try:
+              # Get daily returns
               self.daily_returns = self.data_dict['Daily'].copy()
 
-            # Compute historical selloffs
+              # Compute historical selloffs
               self.hist_df = summary.get_hist_sim_table(self.daily_returns)
 
-            # Create sheets
+              # Create sheets
               new_sheets.setHistSheet(self.writer, self.hist_df)
               new_sheets.setHistReturnSheet(self.writer, self.daily_returns, 'Daily')
            except KeyError:
               print('Skipping Historical SellOffs, no daily data in returns dictionary')
               pass
           
+#TODO: Should inherit generateStratReport
 class generateEquityHedgeReport(getReturnsReport):
     def __init__(self, report_name, returns_dict, notional_weights=[], include_fi=False,
                  new_strat=False, weighted=False, selloffs=False):
@@ -276,12 +286,14 @@ class generateEquityHedgeReport(getReturnsReport):
         -------
         None. An excel report called [report_name].xlsx is created
         """
+        #TODO: Add data_file = False variable
         self.data_dict = returns_dict
         self.notional_weights = notional_weights
         self.include_fi = include_fi
         self.new_strat = new_strat
         self.weighted = weighted
         self.selloffs = selloffs
+        #TODO: Switch to generateStratReport
         getReturnsReport.__init__(self, report_name, returns_dict)
 
 
@@ -289,6 +301,7 @@ class generateEquityHedgeReport(getReturnsReport):
     def generate_report(self):
        
 
+        #TODO: call self.generate_analysis_sheets()
         # Create list of frequencies we want to create the report for
         self.freq_list = ['Monthly', 'Weekly']
 
@@ -314,6 +327,7 @@ class generateEquityHedgeReport(getReturnsReport):
             new_sheets.setHistReturnSheet(self.writer, self.df_weighted_returns, self.return_sheet)
 
         if self.selloffs:
+            #TODO: call self.generate_selloffs_sheets()
             print("Computing Historical SellOffs...")
 
             # Get daily returns
@@ -364,6 +378,7 @@ class generateCorrRankReport(getReturnsReport):
         -------
         None. An excel report called [report_name].xlsx is created
         """
+        #TODO: Add data_file = False variable
         self.buckets = buckets
         self.notional_weights = notional_weights
         self.include_fi = include_fi
@@ -406,6 +421,7 @@ class generateRollingCumRetReport(getReturnsReport):
         -------
         None. An excel report called [report_name].xlsx is created
         """
+        #TODO: Add data_file = False variable
         self.freq = freq
         self.notional_weights = notional_weights
         self.generate_report()
