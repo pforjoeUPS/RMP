@@ -6,6 +6,8 @@ EquityHedging/data/new_strats/*.xlsx
 EquityHedging/data/liq_alts/*.xlsx
 EquityHedging/data/liq_alts/*.xls
 
+
+.idea/*
 #EquityHedging/data/update_strats/*.xlsx
 desktop.ini
 
