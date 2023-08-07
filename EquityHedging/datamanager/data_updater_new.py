@@ -27,18 +27,37 @@ EQ_HEGDE_COL_LIST = ['SPTR', 'SX5T','M1WD', 'Long Corp', 'STRIPS', 'Down Var',
                      'GW Dispersion', 'Corr Hedge','Def Var (Mon)', 'Def Var (Fri)',
                      'Def Var (Wed)', 'Commodity Basket']
 
-
-#TODO: Refactor 
-class nexenDataUpdater():
-    def __init__(self, filename='Monthly Returns Liquis Alts.xlsx', report_name = 'nexen_liq_alts_data-new'):
+class mainUpdater():
+    def __init__(self, filename, report_name):
         self.filename = filename
         self.report_name = report_name
+        self.returns_dict = {}
+        self.bbg_dict = {}
+        self.calc_returns_dict()
+        self.generate_report()
+        
+    def calc_returns_dict(self):
+        pass
+    
+    def generate_report(self):
+        pass
+    
+#TODO: Refactor 
+class nexenDataUpdater(mainUpdater):
+    def __init__(self, filename='Monthly Returns Liquis Alts.xlsx', report_name = 'nexen_liq_alts_data-new'):
+        super().__init__(filename, report_name)
+        
+    def calc_returns_dict(self):
         self.returns_dict = dxf.nexenDataXformer(UPDATE_DATA_FP+ self.filename).data_xform
+    
+    def generate_report(self):
         rp.getRetMVReport(self.report_name, self.returns_dict, True)
     
 class innocapDataUpdater():
-    def __init__(self, filename='1907_hf_data.xlsx'):
-        self.filename = filename
+    def __init__(self, filename='1907_hf_data.xlsx', report_name= 'innocap_liq_alts_data-new'):
+        super().__init__(filename, report_name)
+        
+    def calc_returns_dict(self):
         self.innocap_dict = dxf.innocapDataXformer(UPDATE_DATA_FP+self.filename).data_xform
         self.old_col_list = ['1907 Campbell Trend Following LLC', '1907 III Class A','1907 Penso Class A',
                         '1907 Systematica Trend Following', 'UPS 1907 ARP Trend Following LLC',
@@ -49,79 +68,70 @@ class innocapDataUpdater():
         self.innocap_dict = update_df_dict_columns(self.innocap_dict, self.old_col_list, self.new_col_list)
         self.returns_dict = get_return_data('innocap_liq_alts_data.xlsx', ['returns', 'market_values'])
         self.returns_dict = update_data(self.returns_dict, self.innocap_dict, False)    
-        
-        rp.getRetMVReport('innocap_liq_alts_data-new', self.returns_dict, True)
-        
-class bmkUpdater():
-    def __init__(self, filename, report_name):
-        self.report_name = report_name
-        self.filename = filename
-        self.returns_dict = {}
-        self.bbg_dict = {}
-        self.update_bmk_data()
-
-    def update_bmk_data(self):
-        pass
-    
-    def load_bbg_data(self, sheet_name='bbg_d', freq='1D', col_list=None):
-        # Implement the logic to load data from Bloomberg using dxf.bbgDataXformer
-        self.bbg_data = dxf.bbgDataXformer(UPDATE_DATA_FP + self.filename, sheet_name=sheet_name, freq=freq, col_list=col_list).data_xform
-        return self.bbg_data
-
-    def generate_report(self, report_name, returns_dict={}):
-        # Implement the logic to generate a report using rp.getReturnsReport
-        rp.getReturnsReport(report_name, returns_dict, True)
+    def generate_report(self):    
+        rp.getRetMVReport(self.report_name, self.returns_dict, True)
         
 
-class liqAltsBmkDataUpdater(bmkUpdater):
+
+class liqAltsBmkDataUpdater(mainUpdater):
     def __init__(self, filename='liq_alts_bmk_data.xlsx', report_name= 'liq_alts_bmks-new'):
-        super().__init__(filename)
-        self.update_liq_alts_bmk_data()
+        super().__init__(filename, report_name)
+        
 
-    def update_bmk_data(self):
-        self.bbg_data = self.load_bbg_data(sheet_name='bbg_d', freq='1D', col_list=HF_COL_LIST)
+    def calc_returns_dict(self):
+        self.bbg_data = dxf.transform_bbg_data(UPDATE_DATA_FP+self.filename, sheet_name='bbg_d', freq = '1D', col_list=HF_COL_LIST)
         self.bbg_data = self.bbg_data[['HFRX Macro/CTA', 'HFRX Absolute Return', 'SG Trend']]
         self.returns_dict = dxf.get_data_dict(self.bbg_data)
         for key in self.returns_dict:
             self.returns_dict[key] = self.returns_dict[key][['HFRX Macro/CTA', 'HFRX Absolute Return', 'SG Trend']]
-        self.generate_report(self.report_name, self.returns_dict)
+            
+    def generate_report(self):        
+        rp.getReturnsReport(self.report_name, self.returns_dict, True)
 
-class hfBmkDataUpdater(bmkUpdater):
+class hfBmkDataUpdater(mainUpdater):
     def __init__(self, filename='liq_alts_bmk_data.xlsx',report_name='hf_bmks-new'):
         super().__init__(filename, report_name)
         
 
-    def update_bmk_data(self):
-        self.bbg_data = self.load_bbg_data(sheet_name='bbg_d', freq='1D', col_list=HF_COL_LIST)
+    def calc_returns_dict(self):
+        self.bbg_data = dxf.transform_bbg_data(UPDATE_DATA_FP+self.filename,sheet_name='bbg_d',freq='1D', col_list=HF_COL_LIST)
         self.returns_dict = dxf.get_data_dict(self.bbg_data)
-        self.generate_report(self.report_name, self.returns_dict)
+    
+    def generate_report(self):        
+        rp.getReturnsReport(self.report_name, self.returns_dict, True)
 
-class bmkDataUpdater(bmkUpdater):
+class bmkDataUpdater(mainUpdater):
     def __init__(self, filename='bmk_data.xlsx', report_name = 'bmk_returns-new', bmk_returns_file='bmk_returns.xlsx', freq_list=None):
         self.bmk_returns_file = bmk_returns_file
         self.freq_list = freq_list
         super().__init__(filename, report_name)
 
 
-    def update_bmk_data(self):
-        self.bbg_data = self.load_bbg_data(freq='1D', col_list=BMK_COL_LIST)
+    def calc_returns_dict(self):
+        self.bbg_data = dxf.transform_bbg_data(UPDATE_DATA_FP+self.filename, freq = '1D', col_list=BMK_COL_LIST)
         self.bbg_dict = dxf.get_data_dict(self.bbg_data)
         self.returns_dict = get_return_data('bmk_returns.xlsx', FREQ_LIST, True)
         self.bbg_dict = match_dict_columns(self.returns_dict, self.bbg_dict)
         self.returns_dict = update_data(self.returns_dict, self.bbg_dict)
-        self.generate_report(self.report_name, self.returns_dict) 
+        
+    def generate_report(self):
+        rp.getReturnsReport(self.report_name, self.returns_dict, True) 
 
+class assetClassDataUpdater(mainUpdater):
+    def __init__(self,filename, report_name):
+        super().__init__(filename, report_name)
+        
+    def calc_returns_dict(self):
+        self.returns_dict = dxf.nexenDataXformer(UPDATE_DATA_FP+self.filename).data_xform
+        self.old_col_list = ['Total EQ w/o Derivatives','Total Fixed Income',
+                        'Total Liquid Alts','Total Real Estate','Total Private Equity',
+                        'Total Credit','LDI ONLY-TotUSPenMinus401H']
+        self.new_col_list = ['Public Equity', 'Fixed Income', 'Liquid Alts','Real Estate',
+                        'Private Equity', 'Credit', 'Total Group Trust']
+        self.returns_dict = update_df_dict_columns(self.returns_dict, self.old_col_list, self.new_col_list)
+    def generate_report(self):   
+        rp.getRetMVReport(self.report_name, self.returns_dict, True)
 
-def update_asset_class_data(filename='Historical Asset Class Returns.xls'):
-    returns_dict = dxf.nexenDataXformer(UPDATE_DATA_FP+filename).data_xform
-    old_col_list = ['Total EQ w/o Derivatives','Total Fixed Income',
-                    'Total Liquid Alts','Total Real Estate','Total Private Equity',
-                    'Total Credit','LDI ONLY-TotUSPenMinus401H']
-    new_col_list = ['Public Equity', 'Fixed Income', 'Liquid Alts','Real Estate',
-                    'Private Equity', 'Credit', 'Total Group Trust']
-    returns_dict = update_df_dict_columns(returns_dict, old_col_list, new_col_list)
-   
-    rp.getRetMVReport('upsgt_returns-new', returns_dict, True)
 
 #TODO: refactor this to maatch update_bmk_data
 def update_eq_hedge_returns():
