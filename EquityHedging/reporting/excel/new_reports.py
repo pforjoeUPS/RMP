@@ -181,9 +181,7 @@ class generateHSReport(getReturnsReport):
 
             # Create sheets
             new_sheets.setHistSheet(self.writer, self.hist_df)
-           #setHistSheet(self.writer, hist_df)  # Assuming the new_sheets module contains the setHistSheet() function
             new_sheets.setHistReturnSheet(self.writer, daily_returns, 'Daily')
-
             
         except KeyError:
             print('Skipping Historical SellOffs, no daily data in returns dictionary')
@@ -306,6 +304,7 @@ class generateEquityHedgeReport(getReturnsReport):
         # Loop through frequencies
         for freq in self.freq_list:
             #TODO: Make this a method self.generate_analysis_sheets()
+            #TODO: Add try block
             print("Computing {} Analytics...".format(freq))
 
             # Get analytics
