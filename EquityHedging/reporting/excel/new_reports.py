@@ -96,7 +96,7 @@ class getReturnsReport(setReport):
         -------
         None. An excel report called [report_name].xlsx is created
         """
-        setReport.__init__(self, report_name, data_file)
+        super().__init__(self, report_name, data_file)
         self.data_dict = data_dict
         self.generate_report()
         print_report_info(self.report_name, self.file_path)
@@ -131,7 +131,7 @@ class getRetMVReport(getReturnsReport):
         -------
         None. An excel report called [report_name].xlsx is created
         """
-        getReturnsReport.__init__(self, report_name, data_dict, data_file)
+        super().__init__(self, report_name, data_dict, data_file)
                 
     def generate_report(self):
         print("Writing Monthly Returns sheet...")
@@ -163,7 +163,7 @@ class generateHSReport(getReturnsReport):
         self.notional_weights = notional_weights
         self.weighted = weighted
         #TODO: Add data_file = False variable
-        getReturnsReport.__init__(self, report_name, returns_dict)
+        super().__init__(self, report_name, returns_dict)
         
         
         
@@ -189,7 +189,7 @@ class generateHSReport(getReturnsReport):
             print('Skipping Historical SellOffs, no daily data in returns dictionary')
             pass
         
-#TODO: Should inherit generateHSReport
+#TODO: Should inherit generateEquityHedgeReport
 class generateStratReport(getReturnsReport):
     def __init__(self, report_name, returns_dict, selloffs=False):
         """
@@ -208,9 +208,8 @@ class generateStratReport(getReturnsReport):
         -------
         None. An excel report called [report_name].xlsx is created
         """
-        #TODO: Add data_file = False variable
         self.selloffs = selloffs
-        #TODO: Switch to generateHSReport
+        #TODO: Switch to generateEquityHedgeReport
         getReturnsReport.__init__(self, report_name, returns_dict, False)
         
         
@@ -226,7 +225,7 @@ class generateStratReport(getReturnsReport):
 
         # Loop through frequencies
         for freq in self.freq_list:
-            #TODO: Make this a method self.generate_analysis_sheets()
+            #TODO: call self.generate_analysis_sheets()
             print("Computing {} Analytics...".format(freq))
 
             # Get analytics
@@ -258,7 +257,7 @@ class generateStratReport(getReturnsReport):
               print('Skipping Historical SellOffs, no daily data in returns dictionary')
               pass
           
-#TODO: Should inherit generateStratReport
+#TODO: Should inherit generateHSReport
 class generateEquityHedgeReport(getReturnsReport):
     def __init__(self, report_name, returns_dict, notional_weights=[], include_fi=False,
                  new_strat=False, weighted=False, selloffs=False):
@@ -286,21 +285,17 @@ class generateEquityHedgeReport(getReturnsReport):
         -------
         None. An excel report called [report_name].xlsx is created
         """
-        #TODO: Add data_file = False variable
         self.data_dict = returns_dict
         self.notional_weights = notional_weights
         self.include_fi = include_fi
         self.new_strat = new_strat
         self.weighted = weighted
         self.selloffs = selloffs
-        #TODO: Switch to generateStratReport
-        getReturnsReport.__init__(self, report_name, returns_dict)
+        super().__init__(self, report_name, returns_dict)
 
 
 
     def generate_report(self):
-       
-
         #TODO: call self.generate_analysis_sheets()
         # Create list of frequencies we want to create the report for
         self.freq_list = ['Monthly', 'Weekly']
@@ -310,6 +305,7 @@ class generateEquityHedgeReport(getReturnsReport):
 
         # Loop through frequencies
         for freq in self.freq_list:
+            #TODO: Make this a method self.generate_analysis_sheets()
             print("Computing {} Analytics...".format(freq))
 
             # Get analytics
@@ -378,11 +374,11 @@ class generateCorrRankReport(getReturnsReport):
         -------
         None. An excel report called [report_name].xlsx is created
         """
-        #TODO: Add data_file = False variable
         self.buckets = buckets
         self.notional_weights = notional_weights
         self.include_fi = include_fi
-        getReturnsReport.__init__(self, report_name, {'Returns': df_returns})
+        #TODO: Add data_file = False variable
+        super().__init__(self, report_name, {'Returns': df_returns})
         
 
     def generate_report(self):
@@ -421,11 +417,11 @@ class generateRollingCumRetReport(getReturnsReport):
         -------
         None. An excel report called [report_name].xlsx is created
         """
-        #TODO: Add data_file = False variable
         self.freq = freq
         self.notional_weights = notional_weights
         self.generate_report()
-        getReturnsReport.__init__(self, report_name, {'Returns': df_returns})
+        #TODO: Add data_file = False variable
+        super().__init__(self, report_name, {'Returns': df_returns})
         
 
     def generate_report(self):
