@@ -162,8 +162,8 @@ class generateHSReport(getReturnsReport):
         self.data_dict = returns_dict
         self.notional_weights = notional_weights
         self.weighted = weighted
-        data_file = False 
-        super().__init__(report_name, returns_dict, data_file)
+        self.data_file = False 
+        super().__init__(report_name, returns_dict, self.data_file)
         
         
         
