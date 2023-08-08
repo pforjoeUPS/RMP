@@ -15,3 +15,11 @@ du.update_hf_bmk_data()
 du.update_bmk_data()
 du.update_asset_class_data()
 du.update_eq_hedge_returns()
+
+from EquityHedging.datamanager import data_updater_new as dn
+
+a = dn.nexenDataUpdater()
+b = dn.innocapDataUpdater()
+c = dn.hfBmkDataUpdater()
+d = dn.bmkDataUpdater()
+e = dn.liqAltsBmkDataUpdater()

@@ -58,7 +58,6 @@ def update_innocap_liq_alts_data(filename='1907_hf_data.xlsx'):
     
 def update_liq_alts_bmk_data(filename='liq_alts_bmk_data.xlsx'):
     bbg_data = dxf.transform_bbg_data(UPDATE_DATA_FP+filename, sheet_name='bbg_d', freq = '1D', col_list=HF_COL_LIST)
-    print(type(bbg_data))
     bbg_data = bbg_data[['HFRX Macro/CTA', 'HFRX Absolute Return', 'SG Trend']]
     returns_dict = dxf.get_data_dict(bbg_data)
     rp.get_returns_report('liq_alts_bmks-old', returns_dict, True)
