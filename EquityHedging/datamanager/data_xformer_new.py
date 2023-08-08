@@ -240,6 +240,8 @@ class bbgDataXformer(dataXformer):
         #pull data from bbgDataImporter object
         return di.bbgDataImporter(self.filepath,self.sheet_name, col_list=self.col_list).data
    
+    # def xform_data(self):
+    #     return resample_data(self.data_import,self.freq)
 class innocapDataXformer(dataXformer):
     def __init__(self, filepath,sheet_name=0, data_source='innocap', freq='1M',
                  col_list=['Dates', 'Name', 'Market Value', 'Return']):
