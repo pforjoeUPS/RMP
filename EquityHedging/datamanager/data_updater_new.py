@@ -27,32 +27,40 @@ EQ_HEGDE_COL_LIST = ['SPTR', 'SX5T','M1WD', 'Long Corp', 'STRIPS', 'Down Var',
                      'GW Dispersion', 'Corr Hedge','Def Var (Mon)', 'Def Var (Fri)',
                      'Def Var (Wed)', 'Commodity Basket']
 
+#TODO: change self.returns_dict to self.data_dict
 class mainUpdater():
     def __init__(self, filename, report_name):
         self.filename = filename
         self.report_name = report_name
-        self.returns_dict = {}
-        self.bbg_dict = {}
+        self.data_xform = self.xform_data() 
+        self.data_dict = self.calc_returns_dict()
+        # self.bbg_dict = {}
+        #TODO: rename variables below
         self.calc_returns_dict()
         self.generate_report()
-        
+    
+    #TODO: fix xform_data
+    def xform_data(self):
+        return dxf.dataXformer()
+    
     def calc_returns_dict(self):
-        pass
+        return dxf.copy_data(self.data_xform)
     
     def generate_report(self):
         pass
     
 #TODO: Refactor 
 class nexenDataUpdater(mainUpdater):
-    def __init__(self, filename='Monthly Returns Liquis Alts.xlsx', report_name = 'nexen_liq_alts_data-new'):
+    def __init__(self, filename='Monthly Returns Liquid Alts.xls', report_name='nexen_liq_alts_data-new'):
         super().__init__(filename, report_name)
         
-    def calc_returns_dict(self):
-        self.returns_dict = dxf.nexenDataXformer(UPDATE_DATA_FP+ self.filename).data_xform
+    def xform_data(self):
+        return dxf.nexenDataXformer(UPDATE_DATA_FP+ self.filename).data_xform
     
     def generate_report(self):
-        rp.getRetMVReport(self.report_name, self.returns_dict, True)
+        rp.getRetMVReport(self.report_name, self.data_dict, True)
     
+#TODO: assign superclass
 class innocapDataUpdater():
     def __init__(self, filename='1907_hf_data.xlsx', report_name= 'innocap_liq_alts_data-new'):
         super().__init__(filename, report_name)
@@ -71,34 +79,53 @@ class innocapDataUpdater():
     def generate_report(self):    
         rp.getRetMVReport(self.report_name, self.returns_dict, True)
         
-
-
-class liqAltsBmkDataUpdater(mainUpdater):
-    def __init__(self, filename='liq_alts_bmk_data.xlsx', report_name= 'liq_alts_bmks-new'):
+#TODO: create bbgDataUpdater
+class bbgDataUpdater(mainUpdater):
+    def __init__(self, filename,report_name, col_list=[]):
         super().__init__(filename, report_name)
+        self.col_list = []
+    
+    def xform_data(self):
+        return dxf.bbgDataXformer(UPDATE_DATA_FP+self.filename).data_xform
+    
+    def calc_returns_dict(self):
+        if self.col_list:
+            for key in self.returns_dict:
+                self.returns_dict[key] = self.returns_dict[key][self.col_list]
+        
+    def generate_report(self):        
+        rp.getReturnsReport(self.report_name, self.returns_dict, True)
+
+class hfBmkDataUpdater(bbgDataUpdater):
+    def __init__(self, filename='liq_alts_bmk_data.xlsx',report_name='hf_bmks-new', col_list=[]):
+        super().__init__(filename, report_name)
+        
+    def xform_data(self):
+        return dxf.bbgDataXformer(UPDATE_DATA_FP+self.filename,sheet_name='bbg_d',freq='1D', col_list=HF_COL_LIST).data_xform
+    # def calc_returns_dict(self):
+        # self.bbg_data = dxf.transform_bbg_data(UPDATE_DATA_FP+self.filename,sheet_name='bbg_d',freq='1D', col_list=HF_COL_LIST)
+        # self.returns_dict = dxf.get_data_dict(self.bbg_data)
+    
+    def generate_report(self):        
+        rp.getReturnsReport(self.report_name, self.returns_dict, True)
+        
+#TODO: inherit hfBmkDataUpdater
+class liqAltsBmkDataUpdater(bbgDataUpdater):
+    def __init__(self, filename='liq_alts_bmk_data.xlsx', report_name= 'liq_alts_bmks-new', col_list = ['HFRX Macro/CTA', 'HFRX Absolute Return', 'SG Trend']):
+        super().__init__(filename, report_name, col_list)
         
 
     def calc_returns_dict(self):
-        self.bbg_data = dxf.transform_bbg_data(UPDATE_DATA_FP+self.filename, sheet_name='bbg_d', freq = '1D', col_list=HF_COL_LIST)
-        self.bbg_data = self.bbg_data[['HFRX Macro/CTA', 'HFRX Absolute Return', 'SG Trend']]
+        self.returns_dict = dxf.bbgDataXformer(UPDATE_DATA_FP+self.filename,sheet_name='bbg_d', freq = '1D', col_list=HF_COL_LIST).data_xform
+        if self.col_list:
+            for key in self.returns_dict:
+                self.returns_dict[key] = self.returns_dict[key][self.col_list]
         self.returns_dict = dxf.get_data_dict(self.bbg_data)
-        for key in self.returns_dict:
-            self.returns_dict[key] = self.returns_dict[key][['HFRX Macro/CTA', 'HFRX Absolute Return', 'SG Trend']]
             
     def generate_report(self):        
         rp.getReturnsReport(self.report_name, self.returns_dict, True)
 
-class hfBmkDataUpdater(mainUpdater):
-    def __init__(self, filename='liq_alts_bmk_data.xlsx',report_name='hf_bmks-new'):
-        super().__init__(filename, report_name)
-        
 
-    def calc_returns_dict(self):
-        self.bbg_data = dxf.transform_bbg_data(UPDATE_DATA_FP+self.filename,sheet_name='bbg_d',freq='1D', col_list=HF_COL_LIST)
-        self.returns_dict = dxf.get_data_dict(self.bbg_data)
-    
-    def generate_report(self):        
-        rp.getReturnsReport(self.report_name, self.returns_dict, True)
 
 class bmkDataUpdater(mainUpdater):
     def __init__(self, filename='bmk_data.xlsx', report_name = 'bmk_returns-new', bmk_returns_file='bmk_returns.xlsx', freq_list=None):
@@ -117,6 +144,7 @@ class bmkDataUpdater(mainUpdater):
     def generate_report(self):
         rp.getReturnsReport(self.report_name, self.returns_dict, True) 
 
+#TODO: inherit nexenDataUpdater
 class assetClassDataUpdater(mainUpdater):
     def __init__(self,filename, report_name):
         super().__init__(filename, report_name)
@@ -129,6 +157,7 @@ class assetClassDataUpdater(mainUpdater):
         self.new_col_list = ['Public Equity', 'Fixed Income', 'Liquid Alts','Real Estate',
                         'Private Equity', 'Credit', 'Total Group Trust']
         self.returns_dict = update_df_dict_columns(self.returns_dict, self.old_col_list, self.new_col_list)
+    #TODO: no need for this, inhgerited from nexenDataUpdater
     def generate_report(self):   
         rp.getRetMVReport(self.report_name, self.returns_dict, True)
 

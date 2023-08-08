@@ -60,8 +60,6 @@ def update_liq_alts_bmk_data(filename='liq_alts_bmk_data.xlsx'):
     bbg_data = dxf.transform_bbg_data(UPDATE_DATA_FP+filename, sheet_name='bbg_d', freq = '1D', col_list=HF_COL_LIST)
     bbg_data = bbg_data[['HFRX Macro/CTA', 'HFRX Absolute Return', 'SG Trend']]
     returns_dict = dxf.get_data_dict(bbg_data)
-    for key in returns_dict:
-        returns_dict[key] = returns_dict[key][['HFRX Macro/CTA', 'HFRX Absolute Return', 'SG Trend']]
     rp.get_returns_report('liq_alts_bmks-old', returns_dict, True)
     
 def update_hf_bmk_data(filename='liq_alts_bmk_data.xlsx'):

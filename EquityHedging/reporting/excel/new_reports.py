@@ -174,15 +174,15 @@ class generateHSReport(getReturnsReport):
         # Get daily returns
         try:
             #TODO: I don't think it's necerrary to make this an instance attribute
-            self.daily_returns = self.data_dict['Daily'].copy()
+            daily_returns = self.data_dict['Daily'].copy()
 
             # Compute historical selloffs
-            self.hist_df = get_hist_sim_table(self.daily_returns, self.notional_weights, self.weighted)
+            self.hist_df = get_hist_sim_table(daily_returns, self.notional_weights, self.weighted)
 
             # Create sheets
             new_sheets.setHistSheet(self.writer, self.hist_df)
            #setHistSheet(self.writer, hist_df)  # Assuming the new_sheets module contains the setHistSheet() function
-            new_sheets.setHistReturnSheet(self.writer, self.daily_returns, 'Daily')
+            new_sheets.setHistReturnSheet(self.writer, daily_returns, 'Daily')
 
             
         except KeyError:
@@ -329,17 +329,9 @@ class generateEquityHedgeReport(getReturnsReport):
             # Get daily returns
             try:
                 self.daily_returns = self.data_dict['Daily'].copy()
-                self.hs_notional_weights = self.notional_weights.copy()
-
-                if self.include_fi:
-                    col_list = list(self.daily_returns.columns)
-
-                    # Remove fi weight
-                    if len(col_list) != len(self.hs_notional_weights):
-                        self.hs_notional_weights.pop(1)
-
+                
                 # Compute historical selloffs
-                self.hist_df = summary.get_hist_sim_table(self.daily_returns, self.hs_notional_weights, self.weighted)
+                self.hist_df = summary.get_hist_sim_table(self.daily_returns, self.notional_weights, self.weighted)
 
                 # Create sheets
                 new_sheets.setHistSheet(self.writer, self.hist_df)
