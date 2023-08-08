@@ -131,7 +131,7 @@ class getRetMVReport(getReturnsReport):
         -------
         None. An excel report called [report_name].xlsx is created
         """
-        super().__init__(self, report_name, data_dict, data_file)
+        super().__init__(report_name, data_dict, data_file)
                 
     def generate_report(self):
         print("Writing Monthly Returns sheet...")
@@ -223,7 +223,7 @@ class generateEquityHedgeReport(generateHSReport):
         self.new_strat = new_strat
         self.weighted = weighted
         self.selloffs = selloffs
-        super().__init__(self, report_name, returns_dict)
+        super().__init__(report_name, returns_dict)
 
 
 
@@ -288,7 +288,7 @@ class generateStratReport(generateEquityHedgeReport):
         """
     
         
-        super().__init__(self, report_name, returns_dict,selloffs=selloffs)
+        super().__init__(report_name, returns_dict,selloffs=selloffs)
         
         
 
@@ -325,7 +325,7 @@ class generateCorrRankReport(getReturnsReport):
         self.notional_weights = notional_weights
         self.include_fi = include_fi
         self.data_file = False
-        super().__init__(self, report_name, {'Returns': df_returns}, self.data_file)
+        super().__init__(report_name, {'Returns': df_returns}, self.data_file)
         
 
     def generate_report(self):
@@ -368,7 +368,7 @@ class generateRollingCumRetReport(getReturnsReport):
         self.notional_weights = notional_weights
         self.generate_report()
         self.data_file = False
-        super().__init__(self, report_name, {'Returns': df_returns},self.data_file)
+        super().__init__(report_name, {'Returns': df_returns},self.data_file)
         
 
     def generate_report(self):

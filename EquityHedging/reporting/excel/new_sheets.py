@@ -95,7 +95,7 @@ class setDataframeSheet(setSheet):
         -------
         Historical returns excel sheet.
         """
-        super().__init__(self, writer, sheet_name, **kwargs)
+        super().__init__( writer, sheet_name, **kwargs)
         
         self.data = data
         self.row_dim = self.row + self.data.shape[0]
@@ -123,7 +123,7 @@ class SetDataDictSheet(setSheet):
         spaces : int, optional
             Number of empty rows between data sections. Default is 3.
         """
-        super().__init__(self, writer, sheet_name, **kwargs)
+        super().__init__(writer, sheet_name, **kwargs)
         self.title_list = data_dict['title_list']
         self.df_list = data_dict['df_list']
         self.spaces = spaces
@@ -153,7 +153,7 @@ class setHistReturnSheet(setDataframeSheet):
         -------
         Historical returns excel sheet.
         """
-        super().__init__(self, writer, data, sheet_name)
+        super().__init__(writer, data, sheet_name)
         #freeze panes
         self.worksheet.freeze_panes(self.row+1, self.col+1)
         
@@ -190,7 +190,7 @@ class setMVSheet(setHistReturnSheet):
         -------
         Market Values excel sheet.
         """
-        super().__init__(self, writer, data, sheet_name)
+        super().__init__(writer, data, sheet_name)
         
     def format_worksheet_data(self):
         #format market values with ccy_fmt
@@ -211,7 +211,7 @@ class SetVRRSheet(setDataframeSheet):
         sheet_name : str
             Excel sheet name.
         """
-        super().__init__(self, writer, df, sheet_name)        
+        super().__init__(writer, df, sheet_name)        
        
     def format_worksheet_data(self):
         #  formatting for columns 1-3 using digits format
@@ -257,7 +257,7 @@ class setGroupedDataSheet(SetDataDictSheet):
             Number of empty rows between data sections. Default is 3.
         """
         
-        super().__init__(self, writer, data_dict, sheet_name, row =2, col =1, col_width = 22)
+        super().__init__(writer, data_dict, sheet_name, row =2, col =1, col_width = 22)
         self.data_dict = data_dict
         self.spaces = spaces
        
@@ -305,7 +305,7 @@ class SetCorrRankSheet(SetDataDictSheet):
         #TODO: use setDataDictSheet instead of setSheet
         self.dates = dates
         self.header = 'Data from {} to {}'.format(str(dates['start']).split()[0], str(dates['end']).split()[0])
-        super().__init__(self, writer, corr_data_dict, sheet_name, spaces, row = 3, col = 1, col_width = 19)
+        super().__init__(writer, corr_data_dict, sheet_name, spaces, row = 3, col = 1, col_width = 19)
         
         
     def format_worksheet_data(self):
@@ -342,7 +342,7 @@ class setHistSheet(setDataframeSheet):
         """
         self.spaces = spaces
         
-        super().__init__(self, writer, df_hist, sheet_name, row =2, col = 1, col_width = 30)
+        super().__init__(writer, df_hist, sheet_name, row =2, col = 1, col_width = 30)
        
         
         
@@ -378,7 +378,7 @@ class AnalysisSheet(SetDataDictSheet):
         #setSheet.__init__(writer, sheet_name, row=2, col=1, col_width=22)
         self.data_dict = data_dict
         self.spaces = spaces
-        super().__init__(self, writer, data_dict, sheet_name, row=2, col=1, col_width=22)
+        super().__init__(writer, data_dict, sheet_name, row=2, col=1, col_width=22)
         
         
         
