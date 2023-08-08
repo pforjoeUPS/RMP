@@ -181,7 +181,7 @@ class generateHSReport(getReturnsReport):
 
             # Create sheets
             new_sheets.setHistSheet(self.writer, self.hist_df)
-           #setHistSheet(self.writer, hist_df)  # Assuming the new_sheets module contains the setHistSheet() function
+           #setHistSheet(self.writer, hist_df) 
             new_sheets.setHistReturnSheet(self.writer, self.daily_returns, 'Daily')
 
             
