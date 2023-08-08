@@ -190,7 +190,7 @@ class nexenDataXformer(dataXformer):
 
         """
         
-        super().__init__(self,filepath,data_source)
+        super().__init__(filepath,data_source)
         
     def import_data(self):
         #pull data from nexenDataImporter object
@@ -233,7 +233,7 @@ class bbgDataXformer(dataXformer):
         bbgDataXformer object
 
         """
-        super().__init__(self,filepath,sheet_name,data_source,freq, col_list
+        super().__init__(filepath,sheet_name,data_source,freq, col_list
                              ,index_data=index_data, format_data=format_data)
      
     def import_data(self):
@@ -265,7 +265,7 @@ class innocapDataXformer(dataXformer):
 
         """
         
-        super().__init__(self,filepath, sheet_name,data_source, freq,col_list)
+        super().__init__(filepath, sheet_name,data_source, freq,col_list)
         
     def import_data(self):
         #pull data from innocapDataImporter object
@@ -307,7 +307,7 @@ class innocapExpDataXformer(innocapDataXformer):
 
         """
         
-        super().__init__(self,filepath,sheet_name,data_source,freq, col_list)
+        super().__init__(filepath,sheet_name,data_source,freq, col_list)
         
     #return dictionary of dataframes (managers asset class exposures)
     def xform_data(self):

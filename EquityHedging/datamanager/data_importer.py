@@ -116,7 +116,7 @@ class innocapDataImporter(dataImporter):
         innocapDataImporter object
 
         """
-        super().__init__(self,filepath, sheet_name, index_col, skip_rows,
+        super().__init__(filepath, sheet_name, index_col, skip_rows,
                               data_source, drop_na, index_data)
         self.col_list = col_list
         
@@ -154,7 +154,7 @@ class bbgDataImporter(innocapDataImporter):
         bbgDataImporter object
 
         """
-        super().__init__(self,filepath, sheet_name, index_col, skip_rows,
+        super().__init__(filepath, sheet_name, index_col, skip_rows,
                                      data_source,col_list, drop_na, index_data)
         
         #rename index col
@@ -193,7 +193,7 @@ class nexenDataImporter(dataImporter):
         nexenDataImporter object
 
         """
-        super().__init__(self,filepath, sheet_name, index_col, skip_rows,
+        super().__init__(filepath, sheet_name, index_col, skip_rows,
                               data_source,drop_na, index_data)
         
         self.data_import = self.data_import[['Account Name\n', 'Account Id\n', 'Return Type\n',
