@@ -96,7 +96,7 @@ class getReturnsReport(setReport):
         -------
         None. An excel report called [report_name].xlsx is created
         """
-        super().__init__(self, report_name, data_file)
+        super().__init__(report_name, data_file)
         self.data_dict = data_dict
         self.generate_report()
         print_report_info(self.report_name, self.file_path)
@@ -162,18 +162,19 @@ class generateHSReport(getReturnsReport):
         self.data_dict = returns_dict
         self.notional_weights = notional_weights
         self.weighted = weighted
-        #TODO: Add data_file = False variable
-        super().__init__(self, report_name, returns_dict)
+        data_file = False 
+        super().__init__(report_name, returns_dict, data_file)
         
         
         
     def generate_report(self):
-        #TODO: Make this a method self.generate_selloffs_sheets()
+        self.generate_selloffs_sheets()
+        
+    def generate_selloffs_sheets(self):
         print("Computing Historical SellOffs...")
 
         # Get daily returns
         try:
-            #TODO: I don't think it's necerrary to make this an instance attribute
             daily_returns = self.data_dict['Daily'].copy()
 
             # Compute historical selloffs
@@ -187,76 +188,9 @@ class generateHSReport(getReturnsReport):
             print('Skipping Historical SellOffs, no daily data in returns dictionary')
             pass
         
-#TODO: Should inherit generateEquityHedgeReport
-class generateStratReport(getReturnsReport):
-    def __init__(self, report_name, returns_dict, selloffs=False):
-        """
-        Generate strat analysis report
 
-        Parameters
-        ----------
-        report_name : string
-            Name of report.
-        returns_dict : dict
-            Dictionary of returns containing different frequencies.
-        selloffs : boolean, optional
-            Include historical selloffs. The default is False.
-
-        Returns
-        -------
-        None. An excel report called [report_name].xlsx is created
-        """
-        self.selloffs = selloffs
-        #TODO: Switch to generateEquityHedgeReport
-        getReturnsReport.__init__(self, report_name, returns_dict, False)
-        
-        
-
-    def generate_report(self):
-    
-        #TODO: Duplicate, delete
-        if self.selloffs:
-            self.generate_selloffs_report()
-
-        # Create list of frequencies we want to create the report for
-        self.freq_list = ['Monthly', 'Weekly']
-
-        # Loop through frequencies
-        for freq in self.freq_list:
-            #TODO: call self.generate_analysis_sheets()
-            print("Computing {} Analytics...".format(freq))
-
-            # Get analytics
-            self.analysis_data = summary.get_analysis_sheet_data(self.data_dict[freq], freq=dm.switch_string_freq(freq))
-
-            self.corr_sheet = freq + ' Analysis'
-            self.return_sheet = freq + ' Historical Returns'
-            self.spaces = 3
-
-            # Create sheets
-            new_sheets.AnalysisSheet(self.writer, self.analysis_data, self.corr_sheet, self.spaces)
-            new_sheets.setHistReturnSheet(self.writer, self.data_dict[freq], self.return_sheet)
-
-        if self.selloffs:
-           #TODO: call self.generate_selloffs_sheets()
-           print("Computing Historical SellOffs...")
-
-           try:
-              # Get daily returns
-              self.daily_returns = self.data_dict['Daily'].copy()
-
-              # Compute historical selloffs
-              self.hist_df = summary.get_hist_sim_table(self.daily_returns)
-
-              # Create sheets
-              new_sheets.setHistSheet(self.writer, self.hist_df)
-              new_sheets.setHistReturnSheet(self.writer, self.daily_returns, 'Daily')
-           except KeyError:
-              print('Skipping Historical SellOffs, no daily data in returns dictionary')
-              pass
           
-#TODO: Should inherit generateHSReport
-class generateEquityHedgeReport(getReturnsReport):
+class generateEquityHedgeReport(generateHSReport):
     def __init__(self, report_name, returns_dict, notional_weights=[], include_fi=False,
                  new_strat=False, weighted=False, selloffs=False):
         """
@@ -294,7 +228,17 @@ class generateEquityHedgeReport(getReturnsReport):
 
 
     def generate_report(self):
-        #TODO: call self.generate_analysis_sheets()
+        self.generate_analysis_sheets()
+       
+
+        if self.selloffs:
+            self.generate_selloffs_sheets()
+            
+        # Generate Grouped Data Sheet
+        self.grouped_data_dict = summary.get_grouped_data(self.data_dict, self.notional_weights, weighted=True)
+        new_sheets.setGroupedDataSheet(self.writer, self.grouped_data_dict)
+        
+    def generate_analysis_sheets(self):
         # Create list of frequencies we want to create the report for
         self.freq_list = ['Monthly', 'Weekly']
 
@@ -303,46 +247,58 @@ class generateEquityHedgeReport(getReturnsReport):
 
         # Loop through frequencies
         for freq in self.freq_list:
-            #TODO: Make this a method self.generate_analysis_sheets()
-            #TODO: Add try block
-            print("Computing {} Analytics...".format(freq))
+            try:
+                print("Computing {} Analytics...".format(freq))
+    
+                # Get analytics
+                self.analysis_data = summary.get_analysis_sheet_data(self.data_dict[freq], self.notional_weights,
+                                                                self.include_fi, self.new_strat,
+                                                                dm.switch_string_freq(freq), self.weighted)
+                self.df_weighted_returns = summary.get_weighted_data(self.data_dict[freq], self.notional_weights,
+                                                                self.include_fi, self.new_strat)
+    
+                self.corr_sheet = freq + ' Analysis'
+                self.return_sheet = freq + ' Historical Returns'
+    
+                # Create sheets
+                new_sheets.AnalysisSheet(self.writer, self.analysis_data, self.corr_sheet)
+                new_sheets.setHistReturnSheet(self.writer, self.df_weighted_returns, self.return_sheet)
+            except KeyError:
+               print(f"Skipping {freq} , no {freq} data in returns dictionary")
+               pass
 
-            # Get analytics
-            self.analysis_data = summary.get_analysis_sheet_data(self.data_dict[freq], self.notional_weights,
-                                                            self.include_fi, self.new_strat,
-                                                            dm.switch_string_freq(freq), self.weighted)
-            self.df_weighted_returns = summary.get_weighted_data(self.data_dict[freq], self.notional_weights,
-                                                            self.include_fi, self.new_strat)
 
-            self.corr_sheet = freq + ' Analysis'
-            self.return_sheet = freq + ' Historical Returns'
+class generateStratReport(generateEquityHedgeReport):
+    def __init__(self, report_name, returns_dict, selloffs=False):
+        """
+        Generate strat analysis report
 
-            # Create sheets
-            new_sheets.AnalysisSheet(self.writer, self.analysis_data, self.corr_sheet)
-            new_sheets.setHistReturnSheet(self.writer, self.df_weighted_returns, self.return_sheet)
+        Parameters
+        ----------
+        report_name : string
+            Name of report.
+        returns_dict : dict
+            Dictionary of returns containing different frequencies.
+        selloffs : boolean, optional
+            Include historical selloffs. The default is False.
+
+        Returns
+        -------
+        None. An excel report called [report_name].xlsx is created
+        """
+    
+        
+        super().__init__(self, report_name, returns_dict,selloffs=selloffs)
+        
+        
+
+    def generate_report(self):
+        self.generate_analysis_sheets()
+            
 
         if self.selloffs:
-            #TODO: call self.generate_selloffs_sheets()
-            print("Computing Historical SellOffs...")
-
-            # Get daily returns
-            try:
-                self.daily_returns = self.data_dict['Daily'].copy()
-                
-                # Compute historical selloffs
-                self.hist_df = summary.get_hist_sim_table(self.daily_returns, self.notional_weights, self.weighted)
-
-                # Create sheets
-                new_sheets.setHistSheet(self.writer, self.hist_df)
-                new_sheets.setHistReturnSheet(self.writer, self.daily_returns, 'Daily')
-            except KeyError:
-                print('Skipping Historical SellOffs, no daily data in returns dictionary')
-                pass
-
-        # Generate Grouped Data Sheet
-        self.grouped_data_dict = summary.get_grouped_data(self.data_dict, self.notional_weights, weighted=True)
-        new_sheets.setGroupedDataSheet(self.writer, self.grouped_data_dict)
-
+           self.generate_selloffs_sheet()
+           
 class generateCorrRankReport(getReturnsReport):
     def __init__(self, report_name, df_returns, buckets, notional_weights=[], include_fi=False):
         """
@@ -368,8 +324,8 @@ class generateCorrRankReport(getReturnsReport):
         self.buckets = buckets
         self.notional_weights = notional_weights
         self.include_fi = include_fi
-        #TODO: Add data_file = False variable
-        super().__init__(self, report_name, {'Returns': df_returns})
+        self.data_file = False
+        super().__init__(self, report_name, {'Returns': df_returns}, self.data_file)
         
 
     def generate_report(self):
@@ -411,8 +367,8 @@ class generateRollingCumRetReport(getReturnsReport):
         self.freq = freq
         self.notional_weights = notional_weights
         self.generate_report()
-        #TODO: Add data_file = False variable
-        super().__init__(self, report_name, {'Returns': df_returns})
+        self.data_file = False
+        super().__init__(self, report_name, {'Returns': df_returns},self.data_file)
         
 
     def generate_report(self):
