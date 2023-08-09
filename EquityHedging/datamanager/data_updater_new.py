@@ -79,13 +79,12 @@ class innocapDataUpdater(nexenDataUpdater):
         self.data_dict = update_data(self.data_dict, self.data_xform, False)  
         return self.data_dict
     
-    # def update_report(self):    
-    #     rp.getRetMVReport(self.report_name, self.data_dict, True)
+   
         
 
 class bbgDataUpdater(mainUpdater):
     def __init__(self, filename,report_name, col_list=[]):
-        self.col_list = []
+        self.col_list = col_list
         super().__init__(filename, report_name)
         
     
@@ -103,7 +102,7 @@ class bbgDataUpdater(mainUpdater):
 
 class hfBmkDataUpdater(bbgDataUpdater):
     def __init__(self, filename='liq_alts_bmk_data.xlsx',report_name='hf_bmks-new', col_list=[]):
-        super().__init__(filename, report_name)
+        super().__init__(filename, report_name, col_list)
         
     def xform_data(self):
         return dxf.bbgDataXformer(UPDATE_DATA_FP+self.filename,sheet_name='bbg_d',freq='1D', col_list=HF_COL_LIST).data_xform
@@ -114,30 +113,23 @@ class liqAltsBmkDataUpdater(hfBmkDataUpdater):
         super().__init__(filename, report_name, col_list)
     
     def xform_data(self):
-        return dxf.bbgDataXformer(UPDATE_DATA_FP+self.filename,sheet_name='bbg_d', freq = '1D', col_list=BMK_COL_LIST).data_xform
-    
-    # def calc_data_dict(self):
-    #    self.bbg_dict = dxf.get_data_dict(self.data_xform)
-    #    self.data_dict = get_return_data('bmk_returns.xlsx', FREQ_LIST, True)
-    #    self.bbg_dict = match_dict_columns(self.data_dict, self.bbg_dict)
-    #    self.data_dict = update_data(self.data_dict, self.bbg_dict)
+        return dxf.bbgDataXformer(UPDATE_DATA_FP+self.filename,sheet_name='bbg_d', freq = '1D', col_list=HF_COL_LIST).data_xform
 
 
 class bmkDataUpdater(hfBmkDataUpdater):
     def __init__(self, filename='bmk_data.xlsx', report_name = 'bmk_returns-new'):
         super().__init__(filename, report_name)
 
-
+    def xform_data(self):
+        return dxf.bbgDataXformer(UPDATE_DATA_FP+self.filename,freq = '1D', col_list=BMK_COL_LIST).data_xform
+    
     def calc_data_dict(self):
-        self.bbg_data = dxf.transform_bbg_data(UPDATE_DATA_FP+self.filename, freq = '1D', col_list=BMK_COL_LIST)
-        self.bbg_dict = dxf.get_data_dict(self.bbg_data)
-        self.data_dict = get_return_data('bmk_returns.xlsx', FREQ_LIST, True)
-        self.bbg_dict = match_dict_columns(self.data_dict, self.bbg_dict)
-        self.data_dict = update_data(self.data_dict, self.bbg_dict)
+        self.data_xform = dxf.copy_data(self.data_xform)
+        self.returns_dict = get_return_data('bmk_returns.xlsx', FREQ_LIST)
+        self.data_xform = match_dict_columns(self.returns_dict, self.data_xform)
+        return update_data(self.returns_dict, self.data_xform)
         
-    # def update_report(self):
-    #     rp.getReturnsReport(self.report_name, self.data_dict, True) 
-
+   
 class assetClassDataUpdater(nexenDataUpdater):
     def __init__(self,filename = 'Historical Asset Class Returns.xls', report_name = 'upsgt_returns-new'):
         super().__init__(filename, report_name)
