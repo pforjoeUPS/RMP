@@ -143,16 +143,20 @@ class assetClassDataUpdater(nexenDataUpdater):
         self.data_dict = update_df_dict_columns(self.data_xform, self.old_col_list, self.new_col_list)
         return self.data_dict
 
+class equityHedgeReturnsUpdater(nexenDataUpdater):
+    def __init__(self, filename = 'eq_hedge_returns.xlsx', report_name='eq_hedge_returns-new'):
+        super().__init__(filename,report_name)
+        
+    def xform_data(self):
+        return get_return_data(self.filename,sheet_list=FREQ_LIST)
+    
+    def calc_data_dict(self):
+        new_data_dict = create_update_dict()
+        return update_data(self.data_xform, new_data_dict)
+    
+    def update_report(self):
+        rp.getReturnsReport(self.report_name, self.data_dict, True)
 
-#TODO: refactor this to maatch update_bmk_data
-def update_eq_hedge_returns():
-    #get data from returns_data.xlsx into dictionary
-    returns_dict = get_return_data('eq_hedge_returns.xlsx', sheet_list=FREQ_LIST)
-
-    #create dictionary that contains updated returns
-    new_data_dict = create_update_dict()
-    returns_dict = update_data(returns_dict, new_data_dict)
-    rp.getReturnsReport('eq_hedge_returns-new', returns_dict, True)
     
 def get_return_data(filename, sheet_list=[]):
     if sheet_list:
