@@ -34,11 +34,9 @@ class mainUpdater():
         self.report_name = report_name
         self.data_xform = self.xform_data() 
         self.data_dict = self.calc_data_dict()
-        # self.bbg_dict = {}
-        #self.calc_data_dict()
         self.update_report()
     
-    #TODO: fix xform_data
+  
     def xform_data(self):
         return self.xform_data
         #return dxf.dataXformer().data_xform
@@ -94,24 +92,82 @@ class mainUpdater():
 
      
 class nexenLiquidAltsDataUpdater(mainUpdater):
+    """
+    Class for updating Nexen Liquid Alternatives data.
+    
+    Args:
+        filename (str, optional): Name of the input Excel file containing data. 
+            Default is 'Monthly Returns Liquid Alts.xls'.
+        report_name (str, optional): Name of the report to generate. 
+            Default is 'nexen_liq_alts_data-new'.
+    """
     def __init__(self, filename='Monthly Returns Liquid Alts.xls', report_name='nexen_liq_alts_data-new'):
+        """
+       Initializes the nexenLiquidAltsDataUpdater instance.
+
+       Args:
+           filename (str, optional): Name of the input Excel file containing data. 
+               Default is 'Monthly Returns Liquid Alts.xls'.
+           report_name (str, optional): Name of the report to generate. 
+               Default is 'nexen_liq_alts_data-new'.
+       """
         super().__init__(filename, report_name)
         
     def xform_data(self):
+        """
+       Transform the Nexen Liquid Alternatives data.
+
+       Returns:
+           transformed_data (DataFrame or Dict): Transformed Nexen Liquid Alternatives data.
+       """
         return dxf.nexenDataXformer(UPDATE_DATA_FP+ self.filename).data_xform
     
     def update_report(self):
+        """
+        Update the report of Nexen Liquid Alternatives data.
+
+        """
         rp.getRetMVReport(self.report_name, self.data_dict, True)
     
 
 class innocapLiquidAltsDataUpdater(nexenLiquidAltsDataUpdater):
+    """
+    Class for updating Innocap Liquid Alternatives data.
+    
+    Args:
+        filename (str, optional): Name of the input Excel file containing data. 
+            Default is '1907_hf_data.xlsx'.
+        report_name (str, optional): Name of the report to generate. 
+            Default is 'innocap_liq_alts_data-new'.
+    """
     def __init__(self, filename='1907_hf_data.xlsx', report_name= 'innocap_liq_alts_data-new'):
+        """
+        Initializes the innocapLiquidAltsDataUpdater instance.
+
+        Args:
+            filename (str, optional): Name of the input Excel file containing data. 
+                Default is '1907_hf_data.xlsx'.
+            report_name (str, optional): Name of the report to generate. 
+                Default is 'innocap_liq_alts_data-new'.
+        """
         super().__init__(filename, report_name)
         
     def xform_data(self):
+        """
+        Transform the Innocap Liquid Alternatives data.
+
+        Returns:
+            transformed_data (DataFrame or Dict): Transformed Innocap Liquid Alternatives data.
+        """
         return dxf.innocapDataXformer(UPDATE_DATA_FP+self.filename).data_xform
         
     def calc_data_dict(self):
+        """
+       Calculate the data dictionary for Innocap Liquid Alternatives.
+
+       Returns:
+           data_dict (dict): Calculated data dictionary for Innocap Liquid Alternatives.
+       """
         #self.innocap_dict = dxf.innocapDataXformer(UPDATE_DATA_FP+self.filename).data_xform
         self.old_col_list = ['1907 Campbell Trend Following LLC', '1907 III Class A','1907 Penso Class A',
                         '1907 Systematica Trend Following',
@@ -128,47 +184,168 @@ class innocapLiquidAltsDataUpdater(nexenLiquidAltsDataUpdater):
         
 
 class bbgDataUpdater(mainUpdater):
+    """
+    Class for updating Bloomberg (BBG) data.
+    
+    This class inherits from mainUpdater and specializes in updating and transforming Bloomberg data.
+    
+    Args:
+        filename (str): Name of the input Excel file containing data.
+        report_name (str): Name of the report to generate.
+        col_list (list, optional): List of column names to include in the data. Default is an empty list.
+    """
     def __init__(self, filename,report_name, col_list=[]):
+        """
+      Initializes the bbgDataUpdater instance.
+
+      Args:
+          filename (str): Name of the input Excel file containing data.
+          report_name (str): Name of the report to generate.
+          col_list (list, optional): List of column names to include in the data. Default is an empty list.
+      """
         self.col_list = col_list
         super().__init__(filename, report_name)
         
     
     def xform_data(self):
+        """
+        Transform the Bloomberg (BBG) data.
+
+        Returns:
+            transformed_data (DataFrame or Dict): Transformed Bloomberg data.
+        """
         return dxf.bbgDataXformer(UPDATE_DATA_FP+self.filename).data_xform
     
     def calc_data_dict(self):
+        """
+       Calculate the data dictionary for Bloomberg (BBG) data.
+
+       Returns:
+           data_dict (dict): Calculated data dictionary for Bloomberg data.
+       """
         if self.col_list:
             for key in self.data_xform:
                 self.data_xform[key] = self.data_xform[key][self.col_list]
         # self.data_dict = dxf.get_data_dict(self.data_xform)
         return dxf.copy_data(self.data_xform)
-    def update_report(self):        
+
+    def update_report(self): 
+        """
+        Update the report of Bloomberg (BBG) data.
+
+        """
         rp.getReturnsReport(self.report_name, self.data_dict, True)
 
 class hfBmkDataUpdater(bbgDataUpdater):
+    """
+    Class for updating Hedge Fund Benchmark data.
+
+    Args:
+        filename (str, optional): Name of the input Excel file containing data.
+            Default is 'liq_alts_bmk_data.xlsx'.
+        report_name (str, optional): Name of the report to generate.
+            Default is 'hf_bmks-new'.
+        col_list (list, optional): List of column names to include in the data.
+            Default is an empty list.
+    """
     def __init__(self, filename='liq_alts_bmk_data.xlsx',report_name='hf_bmks-new', col_list=[]):
+        """
+    Initializes the hfBmkDataUpdater instance.
+    
+    Args:
+        filename (str, optional): Name of the input Excel file containing data.
+            Default is 'liq_alts_bmk_data.xlsx'.
+        report_name (str, optional): Name of the report to generate.
+            Default is 'hf_bmks-new'.
+        col_list (list, optional): List of column names to include in the data.
+            Default is an empty list.
+    """
         super().__init__(filename, report_name, col_list)
         
     def xform_data(self):
+        """
+        Transform the Hedge Fund Benchmark data.
+
+        Returns:
+            transformed_data (DataFrame or Dict): Transformed Hedge Fund Benchmark data.
+        """
         return dxf.bbgDataXformer(UPDATE_DATA_FP+self.filename,sheet_name='bbg_d',freq='1D', col_list=HF_COL_LIST).data_xform
    
 
 class liqAltsBmkDataUpdater(hfBmkDataUpdater):
+    """
+    Class for updating Liquid Alternatives Benchmark data.
+    
+    Args:
+        filename (str, optional): Name of the input Excel file containing data.
+            Default is 'liq_alts_bmk_data.xlsx'.
+        report_name (str, optional): Name of the report to generate.
+            Default is 'liq_alts_bmks-new'.
+        col_list (list, optional): List of column names to include in the data.
+            Default is ['HFRX Macro/CTA', 'HFRX Absolute Return', 'SG Trend'].
+    """
     def __init__(self, filename='liq_alts_bmk_data.xlsx', report_name= 'liq_alts_bmks-new', col_list = ['HFRX Macro/CTA', 'HFRX Absolute Return', 'SG Trend']):
+        """
+       Initializes the liqAltsBmkDataUpdater instance.
+
+       Args:
+           filename (str, optional): Name of the input Excel file containing data.
+               Default is 'liq_alts_bmk_data.xlsx'.
+           report_name (str, optional): Name of the report to generate.
+               Default is 'liq_alts_bmks-new'.
+           col_list (list, optional): List of column names to include in the data.
+               Default is ['HFRX Macro/CTA', 'HFRX Absolute Return', 'SG Trend'].
+       """
         super().__init__(filename, report_name, col_list)
     
     def xform_data(self):
+        """
+       Transform the Liquid Alternatives Benchmark data.
+
+       Returns:
+           transformed_data (DataFrame or Dict): Transformed Liquid Alternatives Benchmark data.
+       """
         return dxf.bbgDataXformer(UPDATE_DATA_FP+self.filename,sheet_name='bbg_d', freq = '1D', col_list=HF_COL_LIST).data_xform
 
 
 class bmkDataUpdater(hfBmkDataUpdater):
+    """
+    Class for updating Benchmark data.
+    
+    Args:
+        filename (str, optional): Name of the input Excel file containing data.
+            Default is 'bmk_data.xlsx'.
+        report_name (str, optional): Name of the report to generate.
+            Default is 'bmk_returns-new'.
+    """    
     def __init__(self, filename='bmk_data.xlsx', report_name = 'bmk_returns-new'):
+        """
+       Initializes the bmkDataUpdater instance.
+
+       Args:
+           filename (str, optional): Name of the input Excel file containing data.
+               Default is 'bmk_data.xlsx'.
+           report_name (str, optional): Name of the report to generate.
+               Default is 'bmk_returns-new'.
+       """
         super().__init__(filename, report_name)
 
     def xform_data(self):
+        """
+       Transform the Benchmark data.
+
+       Returns:
+           transformed_data (DataFrame or Dict): Transformed Benchmark data.
+       """
         return dxf.bbgDataXformer(UPDATE_DATA_FP+self.filename,freq = '1D', col_list=BMK_COL_LIST).data_xform
     
     def calc_data_dict(self):
+        """
+        Calculate the data dictionary for Benchmark data.
+
+        Returns:
+            data_dict (dict): Calculated data dictionary for Benchmark data.
+        """
         self.data_xform = dxf.copy_data(self.data_xform)
         self.returns_dict = self.get_return_data('bmk_returns.xlsx', FREQ_LIST)
         self.data_xform = match_dict_columns(self.returns_dict, self.data_xform)
@@ -176,10 +353,34 @@ class bmkDataUpdater(hfBmkDataUpdater):
         
    
 class assetClassDataUpdater(nexenLiquidAltsDataUpdater):
+    """
+   Class for updating Asset Class Returns data.
+
+   Args:
+       filename (str, optional): Name of the input Excel file containing data.
+           Default is 'Historical Asset Class Returns.xls'.
+       report_name (str, optional): Name of the report to generate.
+           Default is 'upsgt_returns-new'.
+   """
     def __init__(self,filename = 'Historical Asset Class Returns.xls', report_name = 'upsgt_returns-new'):
+        """
+       Initializes the assetClassDataUpdater instance.
+
+       Args:
+           filename (str, optional): Name of the input Excel file containing data.
+               Default is 'Historical Asset Class Returns.xls'.
+           report_name (str, optional): Name of the report to generate.
+               Default is 'upsgt_returns-new'.
+       """
         super().__init__(filename, report_name)
         
     def calc_data_dict(self):
+        """
+        Calculate the data dictionary for Asset Class Returns data.
+
+        Returns:
+            data_dict (dict): Calculated data dictionary for Asset Class Returns data.
+        """
         self.old_col_list = ['Total EQ w/o Derivatives','Total Fixed Income',
                         'Total Liquid Alts','Total Real Estate','Total Private Equity',
                         'Total Credit','LDI ONLY-TotUSPenMinus401H']
@@ -189,17 +390,51 @@ class assetClassDataUpdater(nexenLiquidAltsDataUpdater):
         return self.data_dict
 
 class equityHedgeReturnsUpdater(nexenLiquidAltsDataUpdater):
+    """
+    Class for updating Equity Hedge Returns data.
+        
+    Args:
+        filename (str, optional): Name of the input Excel file containing data.
+            Default is 'eq_hedge_returns.xlsx'.
+        report_name (str, optional): Name of the report to generate.
+            Default is 'eq_hedge_returns-new'.
+    """
     def __init__(self, filename = 'eq_hedge_returns.xlsx', report_name='eq_hedge_returns-new'):
+        """
+        Initializes the equityHedgeReturnsUpdater instance.
+
+        Args:
+            filename (str, optional): Name of the input Excel file containing data.
+                Default is 'eq_hedge_returns.xlsx'.
+            report_name (str, optional): Name of the report to generate.
+                Default is 'eq_hedge_returns-new'.
+        """
         super().__init__(filename,report_name)
         
     def xform_data(self):
+        """
+        Transform the Equity Hedge Returns data.
+
+        Returns:
+            transformed_data (dict): Transformed Equity Hedge Returns data.
+        """
         return self.get_return_data(self.filename,sheet_list=FREQ_LIST)
     
     def calc_data_dict(self):
+        """
+        Calculate the data dictionary for Equity Hedge Returns data.
+
+        Returns:
+            data_dict (dict): Calculated data dictionary for Equity Hedge Returns data.
+        """
         new_data_dict = create_update_dict()
         return self.update_data(self.data_xform, new_data_dict)
     
     def update_report(self):
+        """
+        Update the report with Equity Hedge Returns data.
+
+        """
         rp.getReturnsReport(self.report_name, self.data_dict, True)
 
     
