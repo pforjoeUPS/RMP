@@ -16,7 +16,7 @@ CWD = os.getcwd()
 
 # Replace with the path to your original Excel file
 existing_file = 'QIS Universe Time Series.xlsx'
-existing_sheet_name = 'Barclays'
+existing_sheet_name = 'BofA'
 
 # Replace  with the path to your new Excel file
 new_file = 'update_QIS_uni.xlsx'
