@@ -18,10 +18,12 @@ du.update_eq_hedge_returns()
 
 from EquityHedging.datamanager import data_updater_new as dn
 
-a = dn.nexenDataUpdater()
-b = dn.innocapDataUpdater()
+a = dn.nexenLiquidAltsDataUpdater()
+b = dn.innocapLiquidAltsDataUpdater()
 c = dn.hfBmkDataUpdater()
 d = dn.bmkDataUpdater()
 e = dn.liqAltsBmkDataUpdater()
 f = dn.assetClassDataUpdater()
 g = dn.equityHedgeReturnsUpdater()
+
+

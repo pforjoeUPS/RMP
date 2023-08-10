@@ -40,15 +40,60 @@ class mainUpdater():
     
     #TODO: fix xform_data
     def xform_data(self):
-        return dxf.dataXformer()
+        return self.xform_data
+        #return dxf.dataXformer().data_xform
     
     def calc_data_dict(self):
         return dxf.copy_data(self.data_xform)
     
     def update_report(self):
         pass
+    
+    def get_return_data(self, filename, sheet_list=[]):
+        if sheet_list:
+            return_dict = {}
+            for sheet in sheet_list:
+                temp_ret = pd.read_excel(RETURNS_DATA_FP+filename,sheet_name=sheet,index_col=0)
+                temp_ret = get_real_cols(temp_ret)  
+                return_dict[sheet] = temp_ret.copy()
+            return return_dict
+        else:
+            return_df = pd.read_excel(RETURNS_DATA_FP+filename,sheet_name=sheet,index_col=0)
+            return_df = get_real_cols(temp_ret)  
+            return return_df
+        
+    def update_columns(self, df, old_col_list, new_col_list):
+        df = df[old_col_list]
+        df.columns = new_col_list
+        return df
+
+    def update_df_dict_columns(self, df_dict, old_col_list, new_col_list):
+        for key in df_dict:
+            df_dict[key] = self.update_columns(df_dict[key], old_col_list, new_col_list)
+        return df_dict
      
-class nexenDataUpdater(mainUpdater):
+    def update_data(self, main_dict, new_dict, freq_data = True):
+        updated_dict = {}
+        for key in main_dict:
+            #create returns data frame
+            new_ret_df = new_dict[key].copy()
+            ret_df = main_dict[key].copy()
+            
+            #update current year returns 
+            if key == 'Yearly':
+                if ret_df.index[-1] == new_ret_df.index[-1]:
+                    ret_df = ret_df[:-1]
+            #get new returns df       
+            new_ret_df = get_new_returns_df(new_ret_df, ret_df)
+            updated_dict[key] = pd.concat([ret_df,new_ret_df])
+        
+        if freq_data:
+            updated_dict = check_returns(updated_dict)
+        return updated_dict
+    
+
+     
+class nexenLiquidAltsDataUpdater(mainUpdater):
     def __init__(self, filename='Monthly Returns Liquid Alts.xls', report_name='nexen_liq_alts_data-new'):
         super().__init__(filename, report_name)
         
@@ -59,7 +104,7 @@ class nexenDataUpdater(mainUpdater):
         rp.getRetMVReport(self.report_name, self.data_dict, True)
     
 
-class innocapDataUpdater(nexenDataUpdater):
+class innocapLiquidAltsDataUpdater(nexenLiquidAltsDataUpdater):
     def __init__(self, filename='1907_hf_data.xlsx', report_name= 'innocap_liq_alts_data-new'):
         super().__init__(filename, report_name)
         
@@ -69,14 +114,14 @@ class innocapDataUpdater(nexenDataUpdater):
     def calc_data_dict(self):
         #self.innocap_dict = dxf.innocapDataXformer(UPDATE_DATA_FP+self.filename).data_xform
         self.old_col_list = ['1907 Campbell Trend Following LLC', '1907 III Class A','1907 Penso Class A',
-                        '1907 Systematica Trend Following', 'UPS 1907 ARP Trend Following LLC',
+                        '1907 Systematica Trend Following',
                         '1907 ARP Trend Following LLC_Class EM', '1907 III Fund Ltd _ Class CV', '1907 Kepos']
-        self.new_col_list = ['1907 Campbell TF', '1907 III Class A', '1907 Penso Class A', '1907 Systematica TF',
-                        '1907 ARP TF', '1907 ARP EM', '1907 III CV','1907 Kepos RP']
+        self.new_col_list = ['1907 Campbell TF', '1907 III Class A', '1907 Penso Class A', '1907 Systematica TF'
+                             , '1907 ARP EM', '1907 III CV','1907 Kepos RP']
         
-        self.data_xform = update_df_dict_columns(self.data_xform, self.old_col_list, self.new_col_list)
-        self.data_dict = get_return_data('innocap_liq_alts_data.xlsx', ['returns', 'market_values'])
-        self.data_dict = update_data(self.data_dict, self.data_xform, False)  
+        self.data_xform = self.update_df_dict_columns(self.data_xform, self.old_col_list, self.new_col_list)
+        self.data_dict = self.get_return_data('innocap_liq_alts_data.xlsx', ['returns', 'market_values'])
+        self.data_dict = self.update_data(self.data_dict, self.data_xform, False)  
         return self.data_dict
     
    
@@ -125,12 +170,12 @@ class bmkDataUpdater(hfBmkDataUpdater):
     
     def calc_data_dict(self):
         self.data_xform = dxf.copy_data(self.data_xform)
-        self.returns_dict = get_return_data('bmk_returns.xlsx', FREQ_LIST)
+        self.returns_dict = self.get_return_data('bmk_returns.xlsx', FREQ_LIST)
         self.data_xform = match_dict_columns(self.returns_dict, self.data_xform)
-        return update_data(self.returns_dict, self.data_xform)
+        return self.update_data(self.returns_dict, self.data_xform)
         
    
-class assetClassDataUpdater(nexenDataUpdater):
+class assetClassDataUpdater(nexenLiquidAltsDataUpdater):
     def __init__(self,filename = 'Historical Asset Class Returns.xls', report_name = 'upsgt_returns-new'):
         super().__init__(filename, report_name)
         
@@ -140,46 +185,57 @@ class assetClassDataUpdater(nexenDataUpdater):
                         'Total Credit','LDI ONLY-TotUSPenMinus401H']
         self.new_col_list = ['Public Equity', 'Fixed Income', 'Liquid Alts','Real Estate',
                         'Private Equity', 'Credit', 'Total Group Trust']
-        self.data_dict = update_df_dict_columns(self.data_xform, self.old_col_list, self.new_col_list)
+        self.data_dict = self.update_df_dict_columns(self.data_xform, self.old_col_list, self.new_col_list)
         return self.data_dict
 
-class equityHedgeReturnsUpdater(nexenDataUpdater):
+class equityHedgeReturnsUpdater(nexenLiquidAltsDataUpdater):
     def __init__(self, filename = 'eq_hedge_returns.xlsx', report_name='eq_hedge_returns-new'):
         super().__init__(filename,report_name)
         
     def xform_data(self):
-        return get_return_data(self.filename,sheet_list=FREQ_LIST)
+        return self.get_return_data(self.filename,sheet_list=FREQ_LIST)
     
     def calc_data_dict(self):
         new_data_dict = create_update_dict()
-        return update_data(self.data_xform, new_data_dict)
+        return self.update_data(self.data_xform, new_data_dict)
     
     def update_report(self):
         rp.getReturnsReport(self.report_name, self.data_dict, True)
 
     
-def get_return_data(filename, sheet_list=[]):
-    if sheet_list:
-        return_dict = {}
-        for sheet in sheet_list:
-            temp_ret = pd.read_excel(RETURNS_DATA_FP+filename,sheet_name=sheet,index_col=0)
-            temp_ret = get_real_cols(temp_ret)  
-            return_dict[sheet] = temp_ret.copy()
-        return return_dict
-    else:
-        return_df = pd.read_excel(RETURNS_DATA_FP+filename,sheet_name=sheet,index_col=0)
-        return_df = get_real_cols(temp_ret)  
-        return return_df
+def merge_nexen_innocap():
+    nexen_data = pd.read_excel(RETURNS_DATA_FP+'nexen_liq_alts_data-new.xlsx', sheet_name=None)
+    innocap_data = pd.read_excel(RETURNS_DATA_FP+'innocap_liq_alts_data-new.xlsx', sheet_name=None)
 
-def update_columns(df, old_col_list, new_col_list):
-    df = df[old_col_list]
-    df.columns = new_col_list
-    return df
+    merged_data = {}
 
-def update_df_dict_columns(df_dict, old_col_list, new_col_list):
-    for key in df_dict:
-        df_dict[key] = update_columns(df_dict[key], old_col_list, new_col_list)
-    return df_dict
+    # Loop through sheets in nexen_data
+    for sheet_name, nexen_df in nexen_data.items():
+        # Check if the sheet exists in innocap_data
+        if sheet_name in innocap_data:
+            innocap_df = innocap_data[sheet_name]
+            
+            # Use combine_first to merge DataFrames and replace values from nexen with innocap where they exist
+            merged_df = nexen_df.set_index(nexen_df.columns[0]).combine_first(innocap_df.set_index(innocap_df.columns[0]))
+
+            # Reset the index to move the date column back to its original position
+            merged_df.reset_index(inplace=True)
+
+            # Format the first column (dates) as short date format (mm/dd/yyyy)
+            merged_df[merged_df.columns[0]] = merged_df[merged_df.columns[0]].dt.strftime('%m/%d/%Y')
+            # Add the merged DataFrame to the dictionary
+            merged_data[sheet_name] = merged_df
+        else:
+            # If sheet_name doesn't exist in innocap_data, add nexen_df as is
+            merged_data[sheet_name] = nexen_df
+
+   
+    output_path = RETURNS_DATA_FP+'all_liquid_alts_data.xlsx'
+    with pd.ExcelWriter(output_path) as writer:
+        for sheet_name, merged_df in merged_data.items():
+            merged_df.to_excel(writer, sheet_name=sheet_name, index=False)
+
+
     
 def get_data_to_update(col_list, filename, sheet_name = 'data', put_spread=False):
     '''
@@ -373,24 +429,6 @@ def check_returns(returns_dict):
         
     return returns_dict    
 
-def update_data(main_dict, new_dict, freq_data = True):
-    updated_dict = {}
-    for key in main_dict:
-        #create returns data frame
-        new_ret_df = new_dict[key].copy()
-        ret_df = main_dict[key].copy()
-        
-        #update current year returns 
-        if key == 'Yearly':
-            if ret_df.index[-1] == new_ret_df.index[-1]:
-                ret_df = ret_df[:-1]
-        #get new returns df       
-        new_ret_df = get_new_returns_df(new_ret_df, ret_df)
-        updated_dict[key] = pd.concat([ret_df,new_ret_df])
-    
-    if freq_data:
-        updated_dict = check_returns(updated_dict)
-    return updated_dict
 
 def get_real_cols(df):
     """
