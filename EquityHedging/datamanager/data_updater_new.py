@@ -34,12 +34,12 @@ class mainUpdater():
         self.report_name = report_name
         self.data_xform = self.xform_data() 
         self.data_dict = self.calc_data_dict()
-        #self.update_report()
+        self.update_report()
     
     def xform_data(self):
         #TODO: Are you sure this is right?
-        #return self.xform_data
-        return dxf.dataXformer().data_xform
+        return self.xform_data
+        #return dxf.dataXformer(self.filename)
     
     def calc_data_dict(self):
         return dxf.copy_data(self.data_xform)
@@ -437,44 +437,54 @@ class equityHedgeReturnsUpdater(nexenLiquidAltsDataUpdater):
         """
         rp.getReturnsReport(self.report_name, self.data_dict, True)
 
-def liquidAltsReturnsUpdater(mainUpdater):
-    pass   
+class liquidAltsReturnsUpdater(mainUpdater):
+    def __init__(self, filename="test", report_name="all_liquid_alts_data"):
+        super().__init__(filename,report_name)
+   
 
 #TODO: Make this a class liquidAltsReturnsUpdater as well 
-def merge_nexen_innocap():
-    #TODO: Make this self.calc_data_dict
-    #TODO: call the data_dicts in the respective dataupdater classes, nexenLiquidAltsDataUpdater and innocapLiquidAltsDataUpdater
-    nexen_data = pd.read_excel(RETURNS_DATA_FP+'nexen_liq_alts_data-new.xlsx', sheet_name=None)
-    innocap_data = pd.read_excel(RETURNS_DATA_FP+'innocap_liq_alts_data-new.xlsx', sheet_name=None)
-
-    merged_data = {}
-
-    # Loop through sheets in nexen_data
-    for sheet_name, nexen_df in nexen_data.items():
-        # Check if the sheet exists in innocap_data
-        if sheet_name in innocap_data:
-            innocap_df = innocap_data[sheet_name]
-            
-            # Use combine_first to merge DataFrames and replace values from nexen with innocap where they exist
-            merged_df = nexen_df.set_index(nexen_df.columns[0]).combine_first(innocap_df.set_index(innocap_df.columns[0]))
-
-            # Reset the index to move the date column back to its original position
-            merged_df.reset_index(inplace=True)
-
-            # Format the first column (dates) as short date format (mm/dd/yyyy)
-            merged_df[merged_df.columns[0]] = merged_df[merged_df.columns[0]].dt.strftime('%m/%d/%Y')
-            # Add the merged DataFrame to the dictionary
-            merged_data[sheet_name] = merged_df
-        else:
-            # If sheet_name doesn't exist in innocap_data, add nexen_df as is
-            merged_data[sheet_name] = nexen_df
+    def calc_data_dict(self):
+        #TODO: Make this self.calc_data_dict
+        #TODO: call the data_dicts in the respective dataupdater classes, nexenLiquidAltsDataUpdater and innocapLiquidAltsDataUpdater
+        nexen_data = pd.read_excel(RETURNS_DATA_FP+'nexen_liq_alts_data-new.xlsx', sheet_name=None)
+        innocap_data = pd.read_excel(RETURNS_DATA_FP+'innocap_liq_alts_data-new.xlsx', sheet_name=None)
     
-    #TODO: Make this self.update_report
-    #TODO: use rp.getRetMVReport here
-    output_path = RETURNS_DATA_FP+'all_liquid_alts_data.xlsx'
-    with pd.ExcelWriter(output_path) as writer:
-      for sheet_name, merged_df in merged_data.items():
-          merged_df.to_excel(writer, sheet_name=sheet_name, index=False)
+        merged_data = {}
+    
+        # Loop through sheets in nexen_data
+        for sheet_name, nexen_df in nexen_data.items():
+            # Check if the sheet exists in innocap_data
+            if sheet_name in innocap_data:
+                innocap_df = innocap_data[sheet_name]
+                
+                # Use combine_first to merge DataFrames and replace values from nexen with innocap where they exist
+                merged_df = nexen_df.set_index(nexen_df.columns[0]).combine_first(innocap_df.set_index(innocap_df.columns[0]))
+    
+                # Reset the index to move the date column back to its original position
+                merged_df.reset_index(inplace=True)
+    
+                # Format the first column (dates) as short date format (mm/dd/yyyy)
+                merged_df[merged_df.columns[0]] = merged_df[merged_df.columns[0]].dt.strftime('%m/%d/%Y')
+                # Add the merged DataFrame to the dictionary
+                merged_data[sheet_name] = merged_df
+            else:
+                # If sheet_name doesn't exist in innocap_data, add nexen_df as is
+                merged_data[sheet_name] = nexen_df
+        
+        return merged_data
+        #TODO: Make this self.update_report
+        #TODO: use rp.getRetMVReport here
+    def update_report(self):
+            """
+            Update the report of Nexen Liquid Alternatives data.
+
+            """
+            #rp.getRetMVReport(self.report_name, self.data_dict, True)
+        
+            output_path = RETURNS_DATA_FP+'all_liquid_alts_data.xlsx'
+            with pd.ExcelWriter(output_path) as writer:
+              for sheet_name, merged_df in self.data_dict.items():
+                  merged_df.to_excel(writer, sheet_name=sheet_name, index=False)
 
 
       
