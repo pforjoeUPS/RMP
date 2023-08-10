@@ -34,12 +34,12 @@ class mainUpdater():
         self.report_name = report_name
         self.data_xform = self.xform_data() 
         self.data_dict = self.calc_data_dict()
-        self.update_report()
+        #self.update_report()
     
-  
     def xform_data(self):
-        return self.xform_data
-        #return dxf.dataXformer().data_xform
+        #TODO: Are you sure this is right?
+        #return self.xform_data
+        return dxf.dataXformer().data_xform
     
     def calc_data_dict(self):
         return dxf.copy_data(self.data_xform)
@@ -437,8 +437,13 @@ class equityHedgeReturnsUpdater(nexenLiquidAltsDataUpdater):
         """
         rp.getReturnsReport(self.report_name, self.data_dict, True)
 
-    
+def liquidAltsReturnsUpdater(mainUpdater):
+    pass   
+
+#TODO: Make this a class liquidAltsReturnsUpdater as well 
 def merge_nexen_innocap():
+    #TODO: Make this self.calc_data_dict
+    #TODO: call the data_dicts in the respective dataupdater classes, nexenLiquidAltsDataUpdater and innocapLiquidAltsDataUpdater
     nexen_data = pd.read_excel(RETURNS_DATA_FP+'nexen_liq_alts_data-new.xlsx', sheet_name=None)
     innocap_data = pd.read_excel(RETURNS_DATA_FP+'innocap_liq_alts_data-new.xlsx', sheet_name=None)
 
@@ -463,12 +468,16 @@ def merge_nexen_innocap():
         else:
             # If sheet_name doesn't exist in innocap_data, add nexen_df as is
             merged_data[sheet_name] = nexen_df
-
-   
+    
+    #TODO: Make this self.update_report
+    #TODO: use rp.getRetMVReport here
     output_path = RETURNS_DATA_FP+'all_liquid_alts_data.xlsx'
     with pd.ExcelWriter(output_path) as writer:
-        for sheet_name, merged_df in merged_data.items():
-            merged_df.to_excel(writer, sheet_name=sheet_name, index=False)
+      for sheet_name, merged_df in merged_data.items():
+          merged_df.to_excel(writer, sheet_name=sheet_name, index=False)
+
+
+      
 
 
     
