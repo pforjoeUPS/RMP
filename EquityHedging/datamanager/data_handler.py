@@ -62,7 +62,7 @@ class mktHandler():
         
 class upsGTPortHandler(mktHandler):
     def __init__(self, equity_bmk = 'M1WD', include_fi=True):
-        super().__init__(self, equity_bmk, include_fi)
+        super().__init__(equity_bmk, include_fi)
         self.mkt_returns = self.mkt_returns['Monthly']
         self.returns = read_data(UPSGT_DATA_FP, 'returns')
         self.mvs = read_data(UPSGT_DATA_FP, 'market_values')
@@ -70,7 +70,7 @@ class upsGTPortHandler(mktHandler):
         
 class liqAltsBmkHandler(mktHandler):
     def __init__(self, equity_bmk = 'M1WD',include_fi = True):
-        super().__init__(self, equity_bmk, include_fi)
+        super().__init__(equity_bmk, include_fi)
         self.hf_returns = self.get_returns(False)
         self.bmk_returns = self.get_returns()
         
@@ -89,7 +89,7 @@ class liqAltsBmkHandler(mktHandler):
 
 class liqAltsPortHandler(liqAltsBmkHandler):
     def __init__(self, equity_bmk = 'M1WD',include_fi = True):
-        super().__init__(self, equity_bmk, include_fi)
+        super().__init__(equity_bmk, include_fi)
         self.sub_ports = self.get_sub_port_data()
         self.returns = self.get_full_port_data()
         self.mvs = self.get_full_port_data(False)
@@ -154,7 +154,7 @@ class liqAltsPortHandler(liqAltsBmkHandler):
 #TODO: #Add new strat
 class eqHedgeHandler(mktHandler):
     def __init__(self, equity_bmk = 'SPTR',include_fi = False, all_data=False, strat_drop_list=['99%/90% Put Spread', 'Vortex']):
-        super().__init__(self, equity_bmk, include_fi, all_data)
+        super().__init__(equity_bmk, include_fi, all_data)
         self.strat_drop_list = strat_drop_list
         self.returns = dm.merge_dicts(self.mkt_returns, self.get_returns())
         
