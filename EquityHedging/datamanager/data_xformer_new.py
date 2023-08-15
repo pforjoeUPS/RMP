@@ -158,7 +158,7 @@ class dataXformer():
     def import_data(self):
         #pull data from dataImporter object
         return di.dataImporter(self.filepath, self.sheet_name, data_source=self.data_source, drop_na=self.drop_na,
-                                           index_data=self.index_data).data
+                                           index_data=self.index_data).data_import
     #return dataframe or dictionary of dataframes
     def xform_data(self):
         if self.format_data:
@@ -190,11 +190,11 @@ class nexenDataXformer(dataXformer):
 
         """
         
-        dataXformer.__init__(self,filepath,data_source)
+        super().__init__(filepath,data_source)
         
     def import_data(self):
         #pull data from nexenDataImporter object
-        return di.nexenDataImporter(self.filepath).data
+        return di.nexenDataImporter(self.filepath).data_import
     
     #return dictionary of dataframes (returns and market values)
     def xform_data(self):
@@ -233,15 +233,13 @@ class bbgDataXformer(dataXformer):
         bbgDataXformer object
 
         """
-        dataXformer.__init__(self,filepath,sheet_name,data_source,freq, col_list
+        super().__init__(filepath,sheet_name,data_source,freq, col_list
                              ,index_data=index_data, format_data=format_data)
      
     def import_data(self):
         #pull data from bbgDataImporter object
-        return di.bbgDataImporter(self.filepath,self.sheet_name, col_list=self.col_list).data
+        return di.bbgDataImporter(self.filepath,self.sheet_name, col_list=self.col_list).data_import
    
-    # def xform_data(self):
-    #     return resample_data(self.data_import,self.freq)
 class innocapDataXformer(dataXformer):
     def __init__(self, filepath,sheet_name=0, data_source='innocap', freq='1M',
                  col_list=['Dates', 'Name', 'Market Value', 'Return']):
@@ -267,11 +265,11 @@ class innocapDataXformer(dataXformer):
 
         """
         
-        dataXformer.__init__(self,filepath, sheet_name,data_source, freq,col_list)
+        super().__init__(filepath, sheet_name,data_source, freq,col_list)
         
     def import_data(self):
         #pull data from innocapDataImporter object
-        return di.innocapDataImporter(self.filepath, col_list=self.col_list).data
+        return di.innocapDataImporter(self.filepath, col_list=self.col_list).data_import
     
     #return dictionary of dataframes (returns and market values)
     def xform_data(self):
@@ -309,7 +307,7 @@ class innocapExpDataXformer(innocapDataXformer):
 
         """
         
-        innocapDataXformer.__init__(self,filepath,sheet_name,data_source,freq, col_list)
+        super().__init__(filepath,sheet_name,data_source,freq, col_list)
         
     #return dictionary of dataframes (managers asset class exposures)
     def xform_data(self):
