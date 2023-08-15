@@ -13,7 +13,8 @@ from EquityHedging.datamanager import data_manager as dm
 from EquityHedging.datamanager import data_handler as dh
 from EquityHedging.analytics.util import get_df_weights
 from EquityHedging.analytics import summary
-from EquityHedging.reporting.excel import reports as rp
+#from EquityHedging.reporting.excel import reports as rp
+from EquityHedging.reporting.excel import new_reports as rp
 from EquityHedging.reporting import formatter as plots
 
 #import returns data
@@ -27,7 +28,7 @@ returns= dm.get_equity_hedge_returns(equity_bmk, include_fi, strat_drop_list)
 # eq_hedge_dh = dh.eqHedgeHandler(equity_bmk='SPTR', include_fi=True, strat_drop_list=['99%/90% Put Spread', 'Vortex'])
 
 #Add new strat
-new_strat = True
+new_strat = False
 if new_strat:
     strategy_list = ['JPM Skew','CITI Put Ratio']
     filename = 'JPM_Skew_and_CITI_Put.xlsx'
@@ -89,10 +90,13 @@ if check_ann:
     annual_dollar_returns = summary.get_annual_dollar_returns(returns, notional_weights)
 
 #run report
-equity_hedge_report = 'equity_hedge_analysis_test'
+equity_hedge_report = 'equity_hedge_analysis_testNew'
 selloffs = True
 # start = time.time()
-rp.get_equity_hedge_report(equity_hedge_report, returns,notional_weights, include_fi, new_strat, weighted[0], selloffs)
+rp.generateEquityHedgeReport(equity_hedge_report, returns, notional_weights, include_fi, new_strat, weighted[0], selloffs)
+#rp.get_equity_hedge_report(equity_hedge_report, returns,notional_weights, include_fi, new_strat, weighted[0], selloffs)
 # end = time.time()
 # print(end - start)
 
+hs_report = 'historical_selloff_test_new'
+rp.generateHSReport(hs_report, returns)

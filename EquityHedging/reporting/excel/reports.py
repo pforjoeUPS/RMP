@@ -12,6 +12,7 @@ from ...analytics.corr_stats import get_corr_rank_data
 from ...analytics.historical_selloffs import get_hist_sim_table
 from ...datamanager import data_manager as dm
 from .import sheets
+from .import new_sheets
 import os
 
 
@@ -89,9 +90,12 @@ def get_equity_hedge_report(report_name, returns_dict, notional_weights=[],
         return_sheet = freq + ' Historical Returns'
         
         #create sheets
+        
         sheets.set_analysis_sheet(writer,analysis_data, corr_sheet)
+        #new_sheets.AnalysisSheet(writer,analysis_data, corr_sheet)
         sheets.set_hist_return_sheet(writer,df_weighted_returns, return_sheet)
-    
+        #new_sheets.setHistReturnSheet(writer,df_weighted_returns, return_sheet)
+        
     #get historical selloffs data if selloffs == True
     if selloffs:
         print("Computing Historical SellOffs...")
@@ -114,7 +118,9 @@ def get_equity_hedge_report(report_name, returns_dict, notional_weights=[],
             #create sheets
             sheets.set_hist_sheet(writer, hist_df)
             sheets.set_hist_return_sheet(writer, daily_returns)
-        except KeyError():
+            #new_sheets.setHistSheet(writer,hist_df)
+            #new_sheets.setHistReturnSheet(writer, daily_returns)
+        except KeyError:
             print('Skipping Historical SellOffs, no daily data in returns dictionary')
             pass
     
@@ -134,11 +140,13 @@ def get_equity_hedge_report(report_name, returns_dict, notional_weights=[],
     grouped_data_dict = summary.get_grouped_data(returns_dict, notional_weights, weighted = True)
     # quintile_df = summary.get_grouped_data(returns_dict, notional_weights, weighted = True, group = 'Quintile')
     # decile_df = summary.get_grouped_data(returns_dict, notional_weights, weighted = True, group = 'Decile')
-    
+
     sheets.set_grouped_data_sheet(writer, grouped_data_dict)
-    
+    #new_sheets.setGroupedDataSheet(writer, grouped_data_dict)
     print_report_info(report_name, file_path)
     writer.save()
+
+
 
 def get_corr_rank_report(report_name, df_returns, buckets, notional_weights=[],include_fi=False):
     """
