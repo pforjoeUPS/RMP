@@ -37,33 +37,9 @@ def  invested_p(invested):
     invested["Total"] = 1
     return invested_p
 
-def dollar_invested(data, cf, category):
-    total = pd.DataFrame()
-    #get investment names in each category
-    funds = data.pivot(values = "Investment Name", columns = category)
-    category_table = pd.DataFrame()
-    #loop through each investment and find the total dollar invested 
-    for i in list(cf.columns):
-        #get total invested $ for each investment
-        total[i] = [-sum(cf[i][cf[i]<=0])]
-    #loop through each component of the category and remove investments that are not in the category
-    for i in list(funds.columns):
-        #find investments per each category
-        investments = funds[i].dropna().unique().tolist()
-        #loop through investments and drop funds that arent in the category
-        for x in investments:
-            if x not in list(total.columns):
-                investments.remove(x)
-        
-        #sum funds in each category
-        category_table[i] = total[investments].sum(axis = 1)
-    
-    return category_table
 
-
-def get_category_cf(data, cf, category, ranges = []):
+def get_investment_names(data, category, ranges = []):
     investments = {}
-    total = pd.DataFrame()
     #if set ranges
     if len(ranges) !=0:
         for i in list(range(0,len(ranges)-1)):
@@ -74,8 +50,16 @@ def get_category_cf(data, cf, category, ranges = []):
         for i in list(funds.columns):
             #find investments per each category
             investments[i] = funds[i].dropna().unique().tolist()
-    
+            
+    return investments
 
+
+def get_category_cf(data, cf, category, ranges = []):
+    
+    total = pd.DataFrame()
+
+    investments = get_investment_names(data,cf,category, ranges)
+    
     #loop through investments and drop funds that arent in the category
     for key in investments:
         for x in investments[key]:
@@ -85,6 +69,20 @@ def get_category_cf(data, cf, category, ranges = []):
         total[key] = cf[investments[key]].sum(axis = "columns")
     
     return total
+
+
+def dollar_invested(data, cf, category, ranges = []):
+    
+    #get joined cashflows for each sub category
+    category_cfs = get_category_cf(data, cf, category, ranges = ranges)
+    
+    dollar_invested = pd.DataFrame()
+    for i in list(category_cfs.columns):
+        dollar_invested[i] = [-sum(category_cfs[i][category_cfs[i]<=0])]
+        
+    return dollar_invested
+
+
 
 def unrealized(data, cf, category, ranges = []):
     #get joined cashflows for each sub category
@@ -106,19 +104,24 @@ def realized(data,unrealized, cf, category, ranges = []):
     
     return realized_cf
 
-def irr(data,cf, category, ranges = []):
-    #get joined cashflows for each sub category
-    category_cfs = get_category_cf(data, cf, category, ranges = ranges)
-    x = category_cfs['Encore'][(category_cfs['Encore'] != 0)]
-    np.irr(x.values)
+# def irr(data,cf, category, ranges = []):
+#     #get joined cashflows for each sub category
+#     category_cfs = get_category_cf(data, cf, category, ranges = ranges)
+#     x = category_cfs['Encore'][(category_cfs['Encore'] != 0)]
+#     np.irr(x.values)
     
-def MOIC(realized, unrealized, dollar_invested):
-    moic = (realized+unrealized)/dollar_invested
-    return moic
 
-def DPI(distributed, dollar_invested):
-    dpi =  distributed/dollar_invested
-    return dpi
+
+def get_entry_exit_values(data, category, value_type, ranges = []):
+    investments = get_investment_names(data, category, ranges)
+    ee_value = pd.DataFrame()
+    master = data[['Investment Name', value_type]].transpose()
+    master.columns = master.iloc[0]
+    
+    for key in investments:
+        ee_value[key] = [master[investments[key]].iloc[1].sum()]
+
+    return ee_value
 
 
 category = "Fund"
@@ -127,6 +130,19 @@ invested = dollar_invested(master,cf,category)
 invested_percent = invested_p(invested)
 unrealized_cf = unrealized(master, cf, category = category)
 realized_cf = realized(master,unrealized_cf, cf, category = category)
+moic = (realized_cf + unrealized_cf)/invested
+dpi = realized_cf/invested
+ee_value = get_entry_exit_values(master, category, value_type = "Entry Enterprise Value  ($M)")
+e_LTM_rev =  get_entry_exit_values(master, category, value_type = "Entry LTM Revenue ($M)")
+e_LTM_ebitda =  get_entry_exit_values(master, category, value_type = "Entry LTM EBITDA ($M)")
+e_net_debt = get_entry_exit_values(master, category, value_type = "Entry Net Debt ($M)")
+
+
+
+
+
+
+
 index = ["# of Investments","$ Invested","$ Invested","Realized","Unrealized"]
 df = pd.concat([no_investments, invested, invested_percent,  realized_cf, unrealized_cf,], ignore_index = True)
 df.set_axis(index, axis = 0, inplace = True)
