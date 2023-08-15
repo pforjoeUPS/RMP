@@ -2,7 +2,7 @@
 """
 Created on Fri July  7 2023
 
-@author: Powis Forjoe
+@author: Powis Forjoe, Maddie Choi, Devang Ajmera
 """
 
 import pandas as pd
@@ -165,8 +165,6 @@ class generateHSReport(getReturnsReport):
         self.data_file = False 
         super().__init__(report_name, returns_dict, self.data_file)
         
-        
-        
     def generate_report(self):
         self.generate_selloffs_sheets()
         
@@ -188,8 +186,6 @@ class generateHSReport(getReturnsReport):
             print('Skipping Historical SellOffs, no daily data in returns dictionary')
             pass
         
-
-          
 class generateEquityHedgeReport(generateHSReport):
     def __init__(self, report_name, returns_dict, notional_weights=[], include_fi=False,
                  new_strat=False, weighted=False, selloffs=False):
@@ -225,12 +221,9 @@ class generateEquityHedgeReport(generateHSReport):
         self.selloffs = selloffs
         super().__init__(report_name, returns_dict)
 
-
-
     def generate_report(self):
         self.generate_analysis_sheets()
        
-
         if self.selloffs:
             self.generate_selloffs_sheets()
             
@@ -267,7 +260,6 @@ class generateEquityHedgeReport(generateHSReport):
                print(f"Skipping {freq} , no {freq} data in returns dictionary")
                pass
 
-
 class generateStratReport(generateEquityHedgeReport):
     def __init__(self, report_name, returns_dict, selloffs=False):
         """
@@ -286,15 +278,11 @@ class generateStratReport(generateEquityHedgeReport):
         -------
         None. An excel report called [report_name].xlsx is created
         """
-    
         
         super().__init__(report_name, returns_dict,selloffs=selloffs)
-        
-        
 
     def generate_report(self):
         self.generate_analysis_sheets()
-            
 
         if self.selloffs:
            self.generate_selloffs_sheet()
@@ -327,7 +315,6 @@ class generateCorrRankReport(getReturnsReport):
         self.data_file = False
         super().__init__(report_name, {'Returns': df_returns}, self.data_file)
         
-
     def generate_report(self):
         
         # Get correlation rank data
@@ -369,11 +356,8 @@ class generateRollingCumRetReport(getReturnsReport):
         self.generate_report()
         self.data_file = False
         super().__init__(report_name, {'Returns': df_returns},self.data_file)
-        
 
     def generate_report(self):
-        
-
         # Get rolling cumulative return data
         self.rolling_cum_dict = summary.get_rolling_cum_data(self.data_dict['Returns'], self.freq, self.notional_weights)
 

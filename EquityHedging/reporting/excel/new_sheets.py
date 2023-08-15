@@ -2,7 +2,7 @@
 """
 Created on Fri July  7 2023
 
-@author: Powis Forjoe
+@author: Powis Forjoe, Maddie Choi, Devang Ajmera
 """
 
 import pandas as pd
@@ -73,7 +73,6 @@ class setSheet():
         #int format
         self.int_fmt = formats.set_number_format(self.workbook, num_format='0')
         
-
 class setDataframeSheet(setSheet):
     def __init__(self, writer, data, sheet_name, **kwargs):
         """
@@ -197,7 +196,6 @@ class setMVSheet(setHistReturnSheet):
         self.worksheet.conditional_format(self.row+1,self.col+1, self.row_dim, 
                                           self.col_dim,{'type':'no_blanks','format':self.ccy_fmt})
 
-#TODO: use setDataframeSheet instead of setSheet
 class SetVRRSheet(setDataframeSheet):
     def __init__(self, writer, df, sheet_name):
         """
@@ -215,29 +213,20 @@ class SetVRRSheet(setDataframeSheet):
        
     def format_worksheet_data(self):
         #  formatting for columns 1-3 using digits format
-        self.worksheet.conditional_format(
-            self.row + 1, self.col + 1, self.row_dim, self.col + 3,
-            {'type': 'no_blanks', 'format': self.digits_fmt2}
-        )
+        self.worksheet.conditional_format(self.row + 1, self.col + 1, self.row_dim, self.col + 3,
+                                          {'type': 'no_blanks', 'format': self.digits_fmt2})
 
         # formatting for column 4 using int format
-        self.worksheet.conditional_format(
-            self.row + 1, self.col + 4, self.row_dim, self.col + 4,
-            {'type': 'no_blanks', 'format': self.int_fmt}
-        )
+        self.worksheet.conditional_format(self.row + 1, self.col + 4, self.row_dim, self.col + 4,
+                                          {'type': 'no_blanks', 'format': self.int_fmt})
 
         # formatting for columns 5 and onwards using digits format
-        self.worksheet.conditional_format(
-            self.row + 1, self.col + 5, self.row_dim, self.self.col_dim,
-            {'type': 'no_blanks', 'format': self.digits_fmt2}
-        )
+        self.worksheet.conditional_format(self.row + 1, self.col + 5, self.row_dim, self.self.col_dim,
+                                          {'type': 'no_blanks', 'format': self.digits_fmt2})
 
         # formatting for the first column using date format
-        self.worksheet.conditional_format(
-            self.row, self.col, self.row_dim, self.col,
-            {'type': 'no_blanks', 'format': self.date_fmt}
-        )
-
+        self.worksheet.conditional_format(self.row, self.col, self.row_dim, self.col,
+                                          {'type': 'no_blanks', 'format': self.date_fmt})
 
 class setGroupedDataSheet(SetDataDictSheet):
     def __init__(self, writer, data_dict, sheet_name='Grouped Data', spaces=3):
@@ -261,7 +250,6 @@ class setGroupedDataSheet(SetDataDictSheet):
         self.data_dict = data_dict
         self.spaces = spaces
        
-
     def format_worksheet_data(self):
         for n in range(0,len(self.df_list)):
             try:
@@ -275,15 +263,12 @@ class setGroupedDataSheet(SetDataDictSheet):
                 pass
             
             if n == 1:
-                   self.worksheet.conditional_format(
-            self.row + 1, self.col + 1, self.row_dim, self.col_dim, {'type': 'no_blanks', 'format': self.pct_fmt}
-        )
+                   self.worksheet.conditional_format(self.row + 1, self.col + 1, self.row_dim, self.col_dim, 
+                                                     {'type': 'no_blanks', 'format': self.pct_fmt})
             else:
-                    self.worksheet.conditional_format(
-            self.row + 1, self.col + 1, self.row_dim, self.col_dim, {'type': 'no_blanks', 'format': self.pct_fmt}
-        )
+                    self.worksheet.conditional_format(self.row + 1, self.col + 1, self.row_dim, self.col_dim, 
+                                                      {'type': 'no_blanks', 'format': self.pct_fmt})
                     self.row = self.row_dim + self.spaces + 1
-
 
 class SetCorrRankSheet(SetDataDictSheet):
     def __init__(self, writer, corr_data_dict, dates, sheet_name='Correlations Ranks', spaces=3):
@@ -302,7 +287,6 @@ class SetCorrRankSheet(SetDataDictSheet):
         spaces : int, optional
             Number of empty rows between data sections. Default is 3.
         """
-        #TODO: use setDataDictSheet instead of setSheet
         self.dates = dates
         self.header = 'Data from {} to {}'.format(str(dates['start']).split()[0], str(dates['end']).split()[0])
         super().__init__(writer, corr_data_dict, sheet_name, spaces, row = 3, col = 1, col_width = 19)
@@ -341,11 +325,8 @@ class setHistSheet(setDataframeSheet):
             Number of empty rows between data sections. Default is 3.
         """
         self.spaces = spaces
-        
         super().__init__(writer, df_hist, sheet_name, row =2, col = 1, col_width = 30)
        
-        
-        
     def format_worksheet_data(self):
       self.worksheet.write(self.row - 1, 1, self.sheet_name, self.title_format)
         # Formatting for dates
@@ -375,14 +356,10 @@ class AnalysisSheet(SetDataDictSheet):
         spaces : int, optional
             Number of empty rows between data sections. Default is 3.
         """
-        #setSheet.__init__(writer, sheet_name, row=2, col=1, col_width=22)
         self.data_dict = data_dict
         self.spaces = spaces
         super().__init__(writer, data_dict, sheet_name, row=2, col=1, col_width=22)
         
-        
-        
-
     def format_worksheet_data(self):
         for n in range(0, len(self.df_list)):
             try:  
