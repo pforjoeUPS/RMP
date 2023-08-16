@@ -13,6 +13,7 @@ from EquityHedging.datamanager import data_manager as dm
 #vix futures calendar
 futures_calendar = pd.read_excel('C:\\Users\\PCR7FJW\\Desktop\\Construct Vix Strategies.xlsx', sheet_name='vix_futures_calendar',names=['Dates'])
 futures_calendar_dates = list(futures_calendar['Dates'])
+fc = pd.read_excel('C:\\Users\\PCR7FJW\\Desktop\\Construct Vix Strategies.xlsx', sheet_name='futures', index_col=(0))
 underlier_lambda = ma.exp(-2/27)
 z_score_lambda = ma.exp(-2/364)
 
@@ -60,7 +61,19 @@ def replicate_portfolio(data):
     Portfolio = pd.DataFrame(replicated_data, index=timestamps)
     return Portfolio
 
-
+def VIX_Futures_Calendar_Day_weights(data):
+    timestamps = []
+    fut_cal_weights = []
+    for _, row in data.iterrows():
+        timestamps.append(row['Date'])
+        x = futures_calendar_dates.index(row['Front Contract Exp']) - futures_calendar_dates.index(row['Date'])
+        y = futures_calendar_dates.index(row['Front Contract Exp']) - futures_calendar_dates.index(row['Prev Contract Exp'])
+        fut_cal_weights.append(x/y)  
+    weights = pd.DataFrame(fut_cal_weights, index=timestamps)
+        
+    return weights
+test = VIX_Futures_Calendar_Day_weights(dataF)
+x = replicate_portfolio(dataF)
 
 underlying_data_inv = pd.read_excel('C:\\Users\\PCR7FJW\\Desktop\\Construct Vix Strategies.xlsx', sheet_name='Inverted Curve z-score', usecols=['Date','VIX','Intraday VIX'])
 #calculating inverted z score (ratio z)
@@ -214,10 +227,120 @@ def calculating_combined_signals (inverted_z, diff_z):
         comb_z = 0.5*row['inverted_z_score'] + 0.5*row['diff_z_score']
         combined_signal.append(comb_z)
     comb['Signal'] = combined_signal
+    comb = comb.drop(columns = ['inverted_z_score', 'diff_z_score'])
     return comb
 
 #Nextsteps:
     #Make code more dynamic by beging able to do adjusted z-scores, change signal weights g_(num)
     #Calculate cost/returns and create index
+combined_signals = calculating_combined_signals(VIXtoVIXFutures_z, diff_z_score)
+
+
+
+
+
+
+
+from datetime import datetime
+a = datetime.strptime('2004-06-02 00:00:00', '%Y-%m-%d %H:%M:%S')
+b = datetime.strptime('2006-10-31 00:00:00', '%Y-%m-%d %H:%M:%S')
+#FIGURE OUT HOW TO REMOVE ROWS FROM BEGINNING TO 2006 OCTOBER (WHERE FUTURES CONTRACTS ARE CONSISTENT TO 4 MONTHS)
+combined_signals = combined_signals.drop(combined_signals.index[:b])
+
+
+
+
+
+
+#Calculates weights for dR/dT
+timestamps = []
+z_weights = []
+for _, row in dataF.iterrows():
+    timestamps.append(row['Date'])
+    x = futures_calendar_dates.index(row['Front Contract Exp']) - futures_calendar_dates.index(row['Date'])
+    y = futures_calendar_dates.index(row['Front Contract Exp']) - futures_calendar_dates.index(row['Prev Contract Exp'])
+    z = x / y
+    z_weights.append(z)
+    dr_dt_weights = pd.DataFrame({'dr/dt': z_weights}, index=timestamps)
+    
+    
+            
+from datetime import datetime
+index = datetime.strptime('2018-11-15 00:00:00', '%Y-%m-%d %H:%M:%S')
+    
+    
+g_1 = 0.5
+g_2 = g_1 + 1/6
+g_3 = g_2 + 1/6
+g_4 = g_3 + 1/6
+
+minvolcharge = 0.025
+slope = 0.05
+
+
+index_price = 100
+skip_first = True  
+
+
+for index, row in combined_signals.iterrows():
+    for i in range(1,7):
+        next_futures_date = index + pd.Timedelta(days=i)
+        if next_futures_date in combined_signals.index:
+            dr_dt = dr_dt_weights.loc[next_futures_date, 'dr/dt']
+            break
+
+    if skip_first:
+        skip_first = False
+        prev_date_index = index
+        continue
+    else:
+        thrM_w = (max(0, min(1/3, (1/3)*((row['Signal']-g_1)/(g_2 - g_1)))))
+        twoM_w = (max(0, min(1/3, (1/3)*((row['Signal']-g_2)/(g_3 - g_2)))))
+        oneM_w = (max(0, min(1/3, (1/3)*((row['Signal']-g_3)/(g_4 - g_3)))))
+        
+        if index in fc.index:
+            col_index = fc.loc[index].first_valid_index()
+            col_index_2 = fc.columns.get_loc(col_index) + 1
+            col_index_fir, col_index_sec, col_index_thi, col_index_fou = col_index, fc.columns[col_index_2], \
+                    fc.columns[col_index_2 + 1], fc.columns[col_index_2 + 2]
+            
+            fir_Price_Diff = fc.loc[index,col_index_fir] - fc.loc[prev_date_index,col_index_fir]
+            sec_Price_Diff = fc.loc[index,col_index_sec] - fc.loc[prev_date_index,col_index_sec]
+            thi_Price_Diff = fc.loc[index,col_index_thi] - fc.loc[prev_date_index,col_index_thi]
+            fou_Price_Diff = fc.loc[index,col_index_fou] - fc.loc[prev_date_index,col_index_fou]
+            
+            cost = 0
+
+    fro_weight = oneM_w * dr_dt
+    sec_weight = oneM_w * (1 - dr_dt) + twoM_w * (dr_dt)
+    thi_weight = twoM_w * (1 - dr_dt) + thrM_w * (dr_dt)
+    fou_weight = thrM_w * (1 - dr_dt)
+    
+    fro_Unit = fro_weight * (index_price / fc.loc[prev_date_index,col_index_fir])
+    sec_Unit = sec_weight * (index_price / fc.loc[prev_date_index,col_index_sec])
+    thi_Unit = thi_weight * (index_price / fc.loc[prev_date_index,col_index_thi])
+    fou_Unit = fou_weight * (index_price / fc.loc[prev_date_index,col_index_fou])
+    
+    if ma.isnan(sec_Unit):
+        print('BREAK')
+        break
+    else:
+        print(sec_Unit)
+    prev_date_index = index
+
+
+
+    index_price = index_price + (fro_Unit*fir_Price_Diff) + (sec_Unit*sec_Price_Diff) + \
+        (thi_Unit*thi_Price_Diff) + (fou_Unit*fou_Price_Diff) - cost
+    
+    
+for indexr, row in futures_contract.iterrows():
+    print(row)
+    
+
+
+
+
+
 
 
