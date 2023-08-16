@@ -505,7 +505,7 @@ class liqAltsBmkDataUpdater(hfBmkDataUpdater):
        """
         return dxf.bbgDataXformer(UPDATE_DATA_FP+self.filename,sheet_name='bbg_d', freq = '1D', col_list=HF_COL_LIST).data_xform
 
-class bmkDataUpdater(hfBmkDataUpdater):
+class bmkDataUpdater(bbgDataUpdater):
     """
     Class for updating Benchmark data.
     
@@ -608,6 +608,7 @@ class equityHedgeReturnsUpdater(bmkDataUpdater):
         """
         super().__init__(filename,report_name, ret_filename)
         
+    #TODO: replace calling create_update_dict() after creating vrr, putspread xformers
     def xform_data(self):
         """
         Transform the Equity Hedge Returns data.
@@ -616,13 +617,7 @@ class equityHedgeReturnsUpdater(bmkDataUpdater):
             transformed_data (dict): Transformed Equity Hedge Returns data.
         """
         return create_update_dict()
-        
-    def update_report(self):
-        """
-        Update the report with Equity Hedge Returns data.
 
-        """
-        rp.getReturnsReport(self.report_name, self.data_dict, True)
 
 class liquidAltsReturnsUpdater(mainUpdater):
     def __init__(self, filename=None, report_name="all_liquid_alts_data"):
