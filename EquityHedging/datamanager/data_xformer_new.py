@@ -46,7 +46,7 @@ def format_data(df_index, freq="1M", dropna=True, drop_zero=False):
         data = data.loc[(data!=0).any(1)]
     return data
 
-def get_data_dict(data, data_type='index', dropna=True, drop_zero=True):
+def get_data_dict(data, index_data=True, dropna=True, drop_zero=True):
     """
     Converts daily data into a dictionary of dataframes containing returns 
     data of different frequencies
@@ -60,7 +60,7 @@ def get_data_dict(data, data_type='index', dropna=True, drop_zero=True):
     """
     freq_list = ['Daily', 'Weekly', 'Monthly', 'Quarterly', 'Yearly']
     data_dict = {}
-    if data_type != 'index':
+    if not index_data:
         try:
             data.index = pd.to_datetime(data.index)
         except TypeError:
@@ -164,7 +164,7 @@ class dataXformer():
         if self.format_data:
             #transform data to dictionary of return dataframes if Freq is Daily
             if self.freq == '1D':
-                return get_data_dict(self.data_import)
+                return get_data_dict(self.data_import, self.index_data)
             else:
                 #transform data to return dataframe if index_data is True
                 if self.index_data:
