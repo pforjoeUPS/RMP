@@ -25,7 +25,7 @@ QIS_UNIVERSE = CWD + '\\Cluster Analysis\\data\\'
 
 NEW_DATA_COL_LIST = ['SPTR', 'SX5T','M1WD', 'Long Corp', 'STRIPS', 'Down Var',
  'Vortex', 'VOLA I', 'VOLA II','Dynamic VOLA','Dynamic Put Spread',
-                    'GW Dispersion', 'Corr Hedge','Def Var (Mon)', 'Def Var (Fri)', 'Def Var (Wed)', 'Commodity Basket']
+                    'GW Dispersion', 'Corr Hedge','Def Var (Mon)', 'Def Var (Fri)', 'Def Var (Wed)', 'Commodity Basket', 'ESPRSO']
 
 def merge_dicts(main_dict, new_dict, fillzeros = True):
     """
@@ -781,12 +781,12 @@ def update_returns_data():
 # right now it is adding strategy name to column list through append... this can be an issue if you run multiple times
 # --> quick solution, add strategy name straight to colum list variable at top
 def add_new_strat_to_returns_data(new_strat_name= '', filename = '', sheet_name=''):
-    new_strat = pd.read_excel(NEW_DATA + filename,
-                                           sheet_name = sheet_name, index_col=0)
+    new_strat = pd.read_excel(NEW_DATA + 'esprso.xlsx',
+                                           sheet_name = 'Sheet1', index_col=0)
     
     data = pd.read_excel(UPDATE_DATA + 'ups_data.xlsx', sheet_name= 'data', index_col=0)
     total_data = merge_data_frames(data, new_strat)
-    NEW_DATA_COL_LIST.append(new_strat_name)
+    #NEW_DATA_COL_LIST.append(new_strat_name)
     total_data.columns = NEW_DATA_COL_LIST
     
     data_dict = get_data_dict(total_data)
