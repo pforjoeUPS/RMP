@@ -242,10 +242,10 @@ combined_signals = calculating_combined_signals(VIXtoVIXFutures_z, diff_z_score)
 
 
 from datetime import datetime
-a = datetime.strptime('2004-06-02 00:00:00', '%Y-%m-%d %H:%M:%S')
 b = datetime.strptime('2006-10-31 00:00:00', '%Y-%m-%d %H:%M:%S')
 #FIGURE OUT HOW TO REMOVE ROWS FROM BEGINNING TO 2006 OCTOBER (WHERE FUTURES CONTRACTS ARE CONSISTENT TO 4 MONTHS)
-combined_signals = combined_signals.drop(combined_signals.index[:b])
+rows_to_delete = combined_signals.index.get_loc(b)
+combined_signals = combined_signals.iloc[rows_to_delete:]
 
 
 
@@ -265,8 +265,8 @@ for _, row in dataF.iterrows():
     
     
             
-from datetime import datetime
-index = datetime.strptime('2018-11-15 00:00:00', '%Y-%m-%d %H:%M:%S')
+#from datetime import datetime
+#index = datetime.strptime('2018-11-15 00:00:00', '%Y-%m-%d %H:%M:%S')
     
     
 g_1 = 0.5
@@ -321,17 +321,14 @@ for index, row in combined_signals.iterrows():
     thi_Unit = thi_weight * (index_price / fc.loc[prev_date_index,col_index_thi])
     fou_Unit = fou_weight * (index_price / fc.loc[prev_date_index,col_index_fou])
     
-    if ma.isnan(sec_Unit):
-        print('BREAK')
-        break
-    else:
-        print(sec_Unit)
     prev_date_index = index
 
 
 
     index_price = index_price + (fro_Unit*fir_Price_Diff) + (sec_Unit*sec_Price_Diff) + \
         (thi_Unit*thi_Price_Diff) + (fou_Unit*fou_Price_Diff) - cost
+        
+    print(index_price)
     
     
 for indexr, row in futures_contract.iterrows():
