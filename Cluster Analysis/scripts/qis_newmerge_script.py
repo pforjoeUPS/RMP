@@ -23,7 +23,7 @@ new_file = 'update_QIS_uni.xlsx'
 new_sheet_name = 'Sheet1'
 
 # Read the original Excel file into a Pandas DataFrame
-existing_df = pd.read_excel(existing_file, sheet_name=existing_sheet_name, skiprows=1, engine='openpyxl')
+existing_df = pd.read_excel(CWD + "\\Cluster Analysis\\data\\" +existing_file, sheet_name=existing_sheet_name, skiprows=1, engine='openpyxl')
 
 # Read the new data Excel file into a Pandas DataFrame
 new_df = pd.read_excel(new_file, sheet_name=new_sheet_name)
