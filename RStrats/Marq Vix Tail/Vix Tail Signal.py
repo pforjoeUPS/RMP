@@ -7,6 +7,7 @@ Created on Wed Jul  5 09:16:03 2023
 
 import pandas as pd
 import math as ma
+from datetime import datetime
 from EquityHedging.datamanager import data_manager as dm
 
 
@@ -236,17 +237,14 @@ def calculating_combined_signals (inverted_z, diff_z):
 combined_signals = calculating_combined_signals(VIXtoVIXFutures_z, diff_z_score)
 
 
-
-
-
-
-
-from datetime import datetime
-b = datetime.strptime('2006-10-31 00:00:00', '%Y-%m-%d %H:%M:%S')
-#FIGURE OUT HOW TO REMOVE ROWS FROM BEGINNING TO 2006 OCTOBER (WHERE FUTURES CONTRACTS ARE CONSISTENT TO 4 MONTHS)
-rows_to_delete = combined_signals.index.get_loc(b)
+#when futures had four continous contracts
+Y = datetime.strptime('2006-10-31 00:00:00', '%Y-%m-%d %H:%M:%S')
+#when VMARTRHG index began
+start_date = datetime.strptime('2007-01-03 00:00:00', '%Y-%m-%d %H:%M:%S')
+rows_to_delete = combined_signals.index.get_loc(start_date)
 combined_signals = combined_signals.iloc[rows_to_delete:]
 
+vix_close_1d = pd.read_excel('C:\\Users\\PCR7FJW\\Desktop\\SPX and VIX.xlsx', sheet_name='Sheet1',names=['VIX'])
 
 
 
@@ -262,12 +260,7 @@ for _, row in dataF.iterrows():
     z = x / y
     z_weights.append(z)
     dr_dt_weights = pd.DataFrame({'dr/dt': z_weights}, index=timestamps)
-    
-    
-            
-#from datetime import datetime
-#index = datetime.strptime('2018-11-15 00:00:00', '%Y-%m-%d %H:%M:%S')
-    
+
     
 g_1 = 0.5
 g_2 = g_1 + 1/6
@@ -276,6 +269,7 @@ g_4 = g_3 + 1/6
 
 minvolcharge = 0.025
 slope = 0.05
+basevol = 20
 
 
 index_price = 100
@@ -292,37 +286,54 @@ for index, row in combined_signals.iterrows():
     if skip_first:
         skip_first = False
         prev_date_index = index
+        prev_turnover = 0
         continue
     else:
         thrM_w = (max(0, min(1/3, (1/3)*((row['Signal']-g_1)/(g_2 - g_1)))))
         twoM_w = (max(0, min(1/3, (1/3)*((row['Signal']-g_2)/(g_3 - g_2)))))
         oneM_w = (max(0, min(1/3, (1/3)*((row['Signal']-g_3)/(g_4 - g_3)))))
         
-        if index in fc.index:
-            col_index = fc.loc[index].first_valid_index()
-            col_index_2 = fc.columns.get_loc(col_index) + 1
-            col_index_fir, col_index_sec, col_index_thi, col_index_fou = col_index, fc.columns[col_index_2], \
+        prev_col_index = fc.loc[prev_date_index].first_valid_index()
+        col_index = fc.loc[index].first_valid_index()
+        col_index_2 = fc.columns.get_loc(col_index) + 1
+        col_index_fir, col_index_sec, col_index_thi, col_index_fou = col_index, fc.columns[col_index_2], \
                     fc.columns[col_index_2 + 1], fc.columns[col_index_2 + 2]
             
-            fir_Price_Diff = fc.loc[index,col_index_fir] - fc.loc[prev_date_index,col_index_fir]
-            sec_Price_Diff = fc.loc[index,col_index_sec] - fc.loc[prev_date_index,col_index_sec]
-            thi_Price_Diff = fc.loc[index,col_index_thi] - fc.loc[prev_date_index,col_index_thi]
-            fou_Price_Diff = fc.loc[index,col_index_fou] - fc.loc[prev_date_index,col_index_fou]
-            
-            cost = 0
-
-    fro_weight = oneM_w * dr_dt
-    sec_weight = oneM_w * (1 - dr_dt) + twoM_w * (dr_dt)
-    thi_weight = twoM_w * (1 - dr_dt) + thrM_w * (dr_dt)
-    fou_weight = thrM_w * (1 - dr_dt)
+        fir_Price_Diff = fc.loc[index,col_index_fir] - fc.loc[prev_date_index,col_index_fir]
+        sec_Price_Diff = fc.loc[index,col_index_sec] - fc.loc[prev_date_index,col_index_sec]
+        thi_Price_Diff = fc.loc[index,col_index_thi] - fc.loc[prev_date_index,col_index_thi]
+        fou_Price_Diff = fc.loc[index,col_index_fou] - fc.loc[prev_date_index,col_index_fou]
+        
+        
+        fro_weight = oneM_w * dr_dt
+        sec_weight = oneM_w * (1 - dr_dt) + twoM_w * (dr_dt)
+        thi_weight = twoM_w * (1 - dr_dt) + thrM_w * (dr_dt)
+        fou_weight = thrM_w * (1 - dr_dt)
     
-    fro_Unit = fro_weight * (index_price / fc.loc[prev_date_index,col_index_fir])
-    sec_Unit = sec_weight * (index_price / fc.loc[prev_date_index,col_index_sec])
-    thi_Unit = thi_weight * (index_price / fc.loc[prev_date_index,col_index_thi])
-    fou_Unit = fou_weight * (index_price / fc.loc[prev_date_index,col_index_fou])
-    
-    prev_date_index = index
+        fro_Unit = fro_weight * (index_price / fc.loc[prev_date_index,col_index_fir])
+        sec_Unit = sec_weight * (index_price / fc.loc[prev_date_index,col_index_sec])
+        thi_Unit = thi_weight * (index_price / fc.loc[prev_date_index,col_index_thi])
+        fou_Unit = fou_weight * (index_price / fc.loc[prev_date_index,col_index_fou])
+        
+        prev_fro_Unit, prev_sec_Unit, prev_thi_Unit, prev_fou_Unit = fro_Unit, sec_Unit, thi_Unit, fou_Unit
+        
+                
+        if col_index == prev_col_index:
+            turnover = abs(fro_Unit - prev_fro_Unit)* fc.loc[prev_date_index, col_index_fir] + \
+                       abs(sec_Unit - prev_sec_Unit)* fc.loc[prev_date_index, col_index_sec] + \
+                       abs(thi_Unit - prev_thi_Unit)* fc.loc[prev_date_index, col_index_thi] + \
+                       abs(fou_Unit - prev_fou_Unit)* fc.loc[prev_date_index, col_index_fou]
+        else:
+            turnover = abs(prev_fro_Unit)*fc.loc[prev_date_index, col_index_fir] + \
+                       abs(fro_Unit - prev_sec_Unit)*fc.loc[prev_date_index, col_index_sec] + \
+                       abs(sec_Unit - prev_thi_Unit)*fc.loc[prev_date_index, col_index_thi] + \
+                       abs(thi_Unit - prev_fou_Unit)*fc.loc[prev_date_index, col_index_fou]
+        
+        vol_charge = minvolcharge + slope * max(vix_close_1d.loc[prev_date_index, 'VIX']/basevol-1,0)
+        cost = (max(prev_turnover*(vol_charge/vix_close_1d.loc[prev_date_index, 'VIX']), prev_turnover*(max(vix_close_1d.loc[prev_date_index, 'VIX'],20)/10000)))
 
+        prev_date_index = index
+        prev_turnover = turnover
 
 
     index_price = index_price + (fro_Unit*fir_Price_Diff) + (sec_Unit*sec_Price_Diff) + \
@@ -330,9 +341,6 @@ for index, row in combined_signals.iterrows():
         
     print(index_price)
     
-    
-for indexr, row in futures_contract.iterrows():
-    print(row)
     
 
 
