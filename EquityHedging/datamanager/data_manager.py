@@ -21,7 +21,6 @@ EQUITY_HEDGING_RETURNS_DATA = RETURNS_DATA_FP + 'ups_equity_hedge\\returns_data.
 NEW_DATA = RETURNS_DATA_FP + 'new_strats\\'
 UPDATE_DATA = RETURNS_DATA_FP + 'update_strats\\'
 EQUITY_HEDGE_DATA = RETURNS_DATA_FP + 'ups_equity_hedge\\'
-QIS_UNIVERSE = CWD + '\\Cluster Analysis\\data\\'
 
 NEW_DATA_COL_LIST = ['SPTR', 'SX5T','M1WD','VIX','UX3', 'Long Corp', 'STRIPS', 'Down Var',
  'Vortex', 'VOLA I', 'VOLA II','Dynamic VOLA','Dynamic Put Spread',
@@ -776,15 +775,6 @@ def update_returns_data():
     return returns_dict
 
 
-def get_qis_uni_dict():
-    qis_uni = {}
-    #sheet_names = util.get_sheetnames_xlsx(QIS_UNIVERSE + "QIS Universe Time Series TEST.xlsx")
-    sheet_names = util.get_sheetnames_xlsx(QIS_UNIVERSE + "QIS Universe Returns1.xlsx")
-    for sheet in sheet_names:
-        #index_price = pd.read_excel(QIS_UNIVERSE + "QIS Universe Time Series TEST.xlsx", sheet_name = sheet, index_col=0,header = 1)
-        qis_uni[sheet] = pd.read_excel(QIS_UNIVERSE + "QIS Universe Returns1.xlsx", sheet_name = sheet, index_col=0,header = 0)
-        #qis_uni[sheet] = format_data(index_price, freq = '1D')
-    return qis_uni
 
 def merge_multiple_strats(strategy_list,filename_list,sheet_name_list):
     new_strategies=[]
