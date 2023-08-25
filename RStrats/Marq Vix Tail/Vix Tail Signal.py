@@ -254,8 +254,8 @@ def calculate_dr_dt_weights(data):
 
 dr_dt_weights = calculate_dr_dt_weights(dataF)
 
-def calculate_VIXTail_index(signal):    
-    g_1 = 0.5
+def calculate_VIXTail_index(signal, invest_threshold=0.5):    
+    g_1 = invest_threshold
     g_2 = g_1 + 1/6
     g_3 = g_2 + 1/6
     g_4 = g_3 + 1/6
@@ -361,49 +361,18 @@ rows_to_delete = combined_signals.index.get_loc(start_date)
 combined_signals = combined_signals.iloc[rows_to_delete:]
 combined_signals = combined_signals.iloc[:-1]
 
-replicated_time_series = calculate_VIXTail_index(combined_signals)
+replicated_time_series_0 = calculate_VIXTail_index(combined_signals, invest_threshold=0)
+replicated_time_series_25 = calculate_VIXTail_index(combined_signals, invest_threshold=0.25)
+replicated_time_series_35 = calculate_VIXTail_index(combined_signals, invest_threshold=0.35)
+replicated_time_series_50 = calculate_VIXTail_index(combined_signals)
+replicated_time_series_75 = calculate_VIXTail_index(combined_signals,invest_threshold=0.75)
+replicated_time_series_100 = calculate_VIXTail_index(combined_signals, invest_threshold=1)
 
 spx_df = underlying_data_SPX_VIX.set_index('Date', inplace=False)
 
 x = replicated_time_series.merge(spx_df['SPX'], left_index=True, right_index=True, how='left')
 y = replicated_time_series.merge(combined_signals['Signal'], left_index=True, right_index=True, how='left')
 
-
-# Calculate linear regression
-slope, intercept, r_value, p_value, std_err = linregress(x['SPX'], x['index'])
-
-# Display regression parameters
-print("Slope:", slope)
-print("Intercept:", intercept)
-print("R-squared:", r_value**2)
-print("P-value:", p_value)
-print("Standard Error:", std_err)
-
-# Plot the data and regression line
-plt.scatter(x['SPX'], x['index'], label='Data')
-plt.plot(x['SPX'], intercept + slope * x['SPX'], color='red', label='Regression Line')
-plt.xlabel('SPX')
-plt.ylabel('index')
-plt.legend()
-plt.show()
-
-# Calculate linear regression
-slope, intercept, r_value, p_value, std_err = linregress(y['Signal'], y['index'])
-
-# Display regression parameters
-print("Slope:", slope)
-print("Intercept:", intercept)
-print("R-squared:", r_value**2)
-print("P-value:", p_value)
-print("Standard Error:", std_err)
-
-# Plot the data and regression line
-plt.scatter(y['Signal'], y['index'], label='Data')
-plt.plot(y['Signal'], intercept + slope * y['Signal'], color='red', label='Regression Line')
-plt.xlabel('Signal')
-plt.ylabel('index')
-plt.legend()
-plt.show()   
 
 
 all_z_scores = combined_signals.merge(VIXtoVIXFutures_z['inverted_z_score'], left_index = True, right_index=True, how='left').merge(diff_z_score['diff_z_score'], left_index = True, right_index=True, how='left')
