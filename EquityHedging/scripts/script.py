@@ -26,9 +26,9 @@ returns= dm.get_equity_hedge_returns(equity_bmk, include_fi, strat_drop_list)
 #Add new strat
 new_strat = False
 if new_strat:
-    strategy_list = ['Moments']
-    filename = 'JPM Moments.xlsx'
-    sheet_name = 'Sheet2'
+    strategy_list = ['QSP']
+    filename = 'QSPAM.xlsx'
+    sheet_name = 'Timeseries'
     new_strategy = dm.get_new_strategy_returns_data(filename, sheet_name, strategy_list)
     new_strategy_dict = dm.get_data_dict(new_strategy, data_type='index')
     returns = dm.merge_dicts(returns, new_strategy_dict)
@@ -38,7 +38,7 @@ if new_strat:
 
 #get notional weights
 notional_weights = dm.get_notional_weights(returns['Monthly'])
-notional_weights = [11, 1, 1, 1, 0.83, 0.27, 1, .25, 1, 1, 1, 1, 0.5]
+notional_weights = [11, 1, 1, 1, 0.83, 0.27, 1, .25, 1, 1, 0.4, 0.1]
 returns = dm.get_returns_VRR_Portfolio(returns, notional_weights)
 
 notional_weights[4:6] = [notional_weights[4] + notional_weights[5]]
