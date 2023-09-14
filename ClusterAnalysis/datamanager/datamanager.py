@@ -16,8 +16,8 @@ from scipy.spatial.distance import pdist, squareform
 from scipy.cluster.hierarchy import dendrogram, linkage, fcluster 
 
 CWD = os.getcwd()
-NORMALIZED_HM_FP = CWD + "\\ClusterAnalysis\\data\\'Normalized_Hedge_Metrics.xlsx'"
-QIS_UNIVERSE_FP = CWD + '\\ClusterAnalysis\\QIS Universe Returns.xlsx'
+NORMALIZED_HM_FP = CWD + "\\ClusterAnalysis\\data\\Normalized_Hedge_Metrics.xlsx"
+QIS_UNIVERSE_FP = CWD + '\\ClusterAnalysis\\data\\QIS Universe Returns.xlsx'
 
 def get_qis_uni_dict():
     qis_uni = {}
@@ -30,21 +30,21 @@ def get_qis_uni_dict():
 
 
 def get_normalized_hm():
-    normalized_hm = pd.read_excel(NORMALIZED_HM_FP, sheet_name = "Hedge metrics", index_col = 0,
-                                  usecols = ['Downside Reliability', 'Convexity', 'Cost', 'Decay'])
+    normalized_hm = pd.read_excel(NORMALIZED_HM_FP, sheet_name = "Hedge_Metrics", index_col = 0)
     
-    return normalized_hm
+    normalized_hm_df = normalized_hm[['Downside Reliability', 'Convexity', 'Cost', 'Decay']]
+    
+    
+    return normalized_hm_df
 
 def hierarchical_clustering_analysis(normalized_hm_df, n_clusters):
     
     # Calculate the pairwise distances between strategies
-    distances = pdist(normalized_hm_df)
+    distances = pdist(normalized_hm_df, metric = "euclidean")
     
-    # Convert the pairwise distances to a square distance matrix
-    square_distances = squareform(distances)
     
     # Perform hierarchical clustering using linkage on the square distance matrix
-    linked = linkage(square_distances, 'ward')
+    linked = linkage(distances, 'ward')
     num_clusters = 3
     
     clusters = fcluster(linked, t=num_clusters, criterion='maxclust')
@@ -62,31 +62,31 @@ def best_in_cluster(normalized_hm_df, n_clusters):
          top2.reset_index(inplace = True)
          #add strat names to list
          best_in_cluster_strats = best_in_cluster_strats + (top2["index"].tolist())
-    return best_in_cluster
+    return best_in_cluster_strats
 
-def best_in_metric(normalized_hm_df):
+def best_in_metric(normalized_hm_df, decay_factor = "Total"):
     best_in_metric_strats= []
    #loop through each metric and find top 2 strategies with the largest score for that metric
-    for i in list(normalized_hm_df.columns):
+    for i in list(normalized_hm_df.columns.drop(["Total","Cluster"])):
         if i == "Decay":
             #gets all strategies that rank highes in decay (i.e. 1) 
             decay = normalized_hm_df[normalized_hm_df["Decay"] ==1]
             #then select top 2 strats based on total score
-            top2 = decay.nlargest(2,"Total")
+            top2 = decay.nlargest(2,decay_factor)
         else:
              top2 = normalized_hm_df.nlargest(2,i)
         #add strat names to list
         top2.reset_index(inplace = True)
         best_in_metric_strats = best_in_metric_strats + (top2["index"].tolist())
     
-    return best_in_metric
+    return best_in_metric_strats
 
-def get_best_in_universe(normalized_hm_df, top_n_strats = 8):
+def best_in_universe(normalized_hm_df, top_n_strats = 8):
     #find top n strats with largest total score within the QIS universe
     top_performing = normalized_hm_df.nlargest(top_n_strats,"Total")
     top_performing.reset_index(inplace = True)
-    best_in_universe = top_performing["index"].tolist()
-    return  best_in_universe
+    best_in_universe_strats = top_performing["index"].tolist()
+    return  best_in_universe_strats
 
 
 def get_best_returns_data(qis_uni_dict, best_list):
@@ -103,20 +103,22 @@ def get_best_returns_data(qis_uni_dict, best_list):
                 pass
     return returns_data
 
-def find_best_sharpe(results_df, weights_df):
+def find_best_sharpe(results_df,weights_df):
+    
    
-    # Find the index of the portfolio with the highest Sharpe ratio
     max_sharpe_idx = np.argmax(results_df.loc['Sharpe'])
+    
     #create empty data frame with strategies as the row names
     weights_max_sharpe = pd.DataFrame(index = list(weights_df.index))
+    results_max_sharpe = pd.DataFrame()
     
     #find weights tha match the max sharpe index
     weights_max_sharpe['Weights'] = weights_df[max_sharpe_idx]
     
     #find return stats that match the max sharpe index
-    results_max_sharpe = results_df.iloc[max_sharpe_idx]
+    results_max_sharpe['Weighted_Portfolio'] = results_df[max_sharpe_idx]
     
-    best_dict = {"Weights": weights_max_sharpe, "Results":results_max_sharpe}
+    best_dict = {"Return Stats":results_max_sharpe, "Weights": weights_max_sharpe, }
 
     return best_dict
 
@@ -143,24 +145,28 @@ def get_efficient_frontier(best_strats_ret_df):
         portfolio_return = np.sum(weights * mean_returns)
         portfolio_stddev = np.sqrt(np.dot(weights.T, np.dot(cov_matrix, weights)))
         
-        results_df[i] = portfolio_return  # Return
-        results_df[i] = portfolio_stddev  # Standard Deviation
-        results_df[i] = portfolio_return / portfolio_stddev  # Sharpe Ratio
+        results_df[i]= [portfolio_return,portfolio_stddev,(portfolio_return / portfolio_stddev)] # Return
+        
         weights_df[i] =  weights  # Store weights
     
     
-    results_df = results_df.transpose()
+
     results_df.index = ['Returns','StDev','Sharpe']
     
     
     weights_df.index = list(best_strats_ret_df.columns)
     
-    efficient_frontier = {"Return Stats": results_df, "Weights": weights_df}
+    top_sharpe_idx = np.argmax(results_df.loc['Sharpe'])
+    
+    efficient_frontier = {"Return Stats": results_df, "Weights": weights_df, 
+                          "Weighted Portfolio Ret Stats": results_df[top_sharpe_idx],
+                          "Weights for Portfolio": weights_df[top_sharpe_idx]}
 
     return efficient_frontier
 
-
-
+def get_notional_weights(weights, total_notional, equity_notional):
+    notional_weights = [equity_notional] +[i * total_notional for i in weights]
+    return notional_weights
 
 
 
