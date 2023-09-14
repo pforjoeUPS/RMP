@@ -24,7 +24,7 @@ QIS_UNIVERSE = CWD + '\\Cluster Analysis\\data\\'
 NEW_DATA_COL_LIST = ['SPTR', 'SX5T','M1WD', 'Long Corp', 'STRIPS', 'Down Var',
  'Vortex', 'VOLA I', 'VOLA II','Dynamic VOLA','Dynamic Put Spread',
                     'GW Dispersion', 'Corr Hedge','Def Var (Mon)', 'Def Var (Fri)', 'Def Var (Wed)', 
-                    'Commodity Basket']
+                    'Commodity Basket','ESPRSO']
 
 def merge_dicts(main_dict, new_dict, fillzeros = False):
     """
@@ -304,16 +304,17 @@ def create_copy_with_fi(df_returns, equity = 'SPTR', freq='1M', include_fi=False
             strategy_returns['FI Benchmark'] = (strategy_returns['Long Corp'] + strategy_returns['STRIPS'])/2
             strategy_returns = strategy_returns[[equity, 'FI Benchmark', '99%/90% Put Spread', 
                                                  'Down Var', 'Vortex', 'VOLA 3','Dynamic Put Spread',
-                                                  'VRR 2', 'VRR Trend', 'GW Dispersion', 'Corr Hedge','Def Var','Commodity Basket']]
+                                                  'VRR 2', 'VRR Trend', 'GW Dispersion', 'Corr Hedge','Def Var','Commodity Basket','ESPRSO']]
         else:
             strategy_returns = strategy_returns[[equity, '99%/90% Put Spread', 
                                                  'Down Var', 'Vortex', 'VOLA 3','Dynamic Put Spread',
-                                                 'VRR 2', 'VRR Trend', 'GW Dispersion', 'Corr Hedge','Def Var','Commodity Basket']]
+                                                 'VRR 2', 'VRR Trend', 'GW Dispersion', 'Corr Hedge','Def Var','Commodity Basket','ESPRSO']]
     else:
         strategy_returns = strategy_returns[[equity, '99%/90% Put Spread', 'Down Var', 'Vortex',
                                              'VOLA 3','Dynamic Put Spread', 'VRR 2', 'VRR Trend', 
-                                             'GW Dispersion', 'Corr Hedge','Def Var','Commodity Basket']]
-    
+
+                                             'GW Dispersion', 'Corr Hedge','Def Var','Commodity Basket','ESPRSO']]
+
     return strategy_returns
 
 def get_real_cols(df):
