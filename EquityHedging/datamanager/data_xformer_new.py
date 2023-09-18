@@ -320,9 +320,70 @@ class innocapExpDataXformer(innocapDataXformer):
         return exposure_dict
 
 #TODO: create vrrDataXformer
-class vrrDataXformer():
+class vrrDataXformer(dataXformer):
+    def __init__(self, filepath, data_source='nexen'):
+        """
+        Converts excel file into a nexenDataXformer object
+
+        Parameters
+        ----------
+        filepath : string
+            Valid string path.
+        data_source : string, optional
+            source of excel file. The default is 'nexen'.
+        Returns
+        -------
+        nexenDataXformer object
+
+        """
+        
+        super().__init__(filepath,data_source)
+        
+    def import_data(self):
+        #individually read vrr, vrr2, vrr trend data
+        vrr = di.dataImporter(self.filepath, sheet_name = "VRR").data_import
+        vrr2 = di.dataImporter(self.filepath, sheet_name = "VRR2").data_import
+        vrr_trend = di.dataImporter(self.filepath, sheet_name = "VRR Trend").data_import
+        
+        #merge dataframes
+        vrr_df = dm.merge_data_frames(vrr, vrr2)
+        vrr_df = dm.merge_data_frames(vrr_df, vrr_trend)
+        
+        return vrr_df
+        
     pass
 
+
 #TODO: create putSpreadDataXformer
-class putSpreadDataXformer():
+class putSpreadDataXformer(dataXformer):
+    def __init__(self, filepath, data_source='put_spread'):
+        """
+        Converts excel file into a nexenDataXformer object
+
+        Parameters
+        ----------
+        filepath : string
+            Valid string path.
+        data_source : string, optional
+            source of excel file. The default is 'nexen'.
+        Returns
+        -------
+        nexenDataXformer object
+
+        """
+        
+        super().__init__(filepath,data_source)
+    def import_data(self):
+        return di.putspreadDataImporter(self.filepath).data_import   
+    
+    def xform_data(self):
+        data = self.data_import
+        #add column into dataframe
+        data = data[['Put Spread']]
+    
+        #add price into dataframe
+        data = get_prices_df(data)
+              
+        
+        return data
     pass                 
