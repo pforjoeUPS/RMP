@@ -225,9 +225,406 @@ def calculating_diff_z_score(data,underlier_lambda,z_score_lambda):
     return hist_imp_z_scores
 
 
+<<<<<<< Updated upstream
+=======
+def calculating_combined_signals (inverted_z, diff_z, weight = 0.5):
+    comb = dm.merge_data_frames(VIXtoVIXFutures_z, diff_z_score)
+    combined_signal = []
+    for index, row in comb.iterrows():
+        comb_z = weight*row['inverted_z_score'] + (1-weight)*row['diff_z_score']
+        combined_signal.append(comb_z)
+    comb['Signal'] = combined_signal
+    comb = comb.drop(columns = ['inverted_z_score', 'diff_z_score'])
+    return comb
+
+#Nextsteps:
+    #Make code more dynamic by beging able to do adjusted z-scores, change signal weights g_(num)
+    #Calculate cost/returns and create index 
+
+#Calculates weights for dR/dT
+def calculate_dr_dt_weights(data):
+    timestamps = []
+    z_weights = []
+    for _, row in data.iterrows():
+        timestamps.append(row['Date'])
+        x = futures_calendar_dates.index(row['Front Contract Exp']) - futures_calendar_dates.index(row['Date'])
+        y = futures_calendar_dates.index(row['Front Contract Exp']) - futures_calendar_dates.index(row['Prev Contract Exp'])
+        z = x / y
+        z_weights.append(z)
+    dr_dt = pd.DataFrame({'dr/dt': z_weights}, index=timestamps)
+    return dr_dt
+
+dr_dt_weights = calculate_dr_dt_weights(dataF)
+
+def calculate_VIXTail_index(signal, invest_threshold=0.5, invest_speed = 'normal'):    
+    #g_1 = invest_threshold
+    #g_2 = g_1 + 1/6
+    #g_3 = g_2 + 1/6
+    #g_4 = g_3 + 1/6
+    increment = (1 - invest_threshold)/3
+    g_1 = invest_threshold
+    g_2 = g_1 + increment
+    g_3 = g_2 + increment
+    g_4 = g_3 + increment
+    
+    minvolcharge = 0.025
+    slope = 0.05
+    basevol = 20
+    
+    
+    index_price = 100
+    skip_first = True  
+    
+    timestamps = []
+    index_price_list = []
+    
+    for index, row in signal.iterrows():
+        timestamps.append(index)
+        for i in range(1,7):
+            next_futures_date = index + pd.Timedelta(days=i)
+            if next_futures_date in combined_signals.index:
+                dr_dt = dr_dt_weights.loc[next_futures_date, 'dr/dt']
+                break
+    
+        if skip_first:
+            skip_first = False
+            prev_date_index = index
+            prev_turnover = 0
+            index_price_list.append(index_price)
+            prev_fro_Unit, prev_sec_Unit, prev_thi_Unit, prev_fou_Unit = 0, 0, 0, 0
+            
+            continue
+        else:
+            if invest_speed == 'normal' or row['Signal'] <= invest_threshold:
+                thrM_w = (max(0, min(1/3, (1/3)*((row['Signal']-g_1)/(g_2 - g_1)))))
+                twoM_w = (max(0, min(1/3, (1/3)*((row['Signal']-g_2)/(g_3 - g_2)))))
+                oneM_w = (max(0, min(1/3, (1/3)*((row['Signal']-g_3)/(g_4 - g_3)))))
+                
+            elif invest_speed == 'fast':
+                if row['Signal'] >= g_4:
+                    thrM_w = twoM_w = oneM_w = 1/3
+                else:
+                    a = 1 / ((invest_threshold - 1)**2)
+                    invested_percent = -a*((row['Signal'] - 1)**2) + 1
+                    
+                    thrM_w, invested_percent = (1/3, invested_percent - 1/3) if invested_percent >= 1/3 else (0, invested_percent)
+                    twoM_w, invested_percent = (1/3, invested_percent - 1/3) if invested_percent >= 1/3 else (0, invested_percent)
+                    oneM_w = invested_percent
+
+            elif invest_speed == 'slow':
+                if row['Signal'] >= g_4:
+                    thrM_w = twoM_w = oneM_w = 1/3
+                else:
+                    a = 1 / (1-invest_threshold)
+                    invested_percent = -((a*(1-row['Signal']))**0.5)+1
+                    
+                    thrM_w, invested_percent = (1/3, invested_percent - 1/3) if invested_percent >= 1/3 else (0, invested_percent)
+                    twoM_w, invested_percent = (1/3, invested_percent - 1/3) if invested_percent >= 1/3 else (0, invested_percent)
+                    oneM_w = invested_percent
+            
+            prev_col_index = fc.loc[prev_date_index].first_valid_index()
+            col_index = fc.loc[index].first_valid_index()
+            col_index_2 = fc.columns.get_loc(col_index) + 1
+            col_index_fir, col_index_sec, col_index_thi, col_index_fou = col_index, fc.columns[col_index_2], \
+                        fc.columns[col_index_2 + 1], fc.columns[col_index_2 + 2]
+                
+            fir_Price_Diff = fc.loc[index,col_index_fir] - fc.loc[prev_date_index,col_index_fir]
+            sec_Price_Diff = fc.loc[index,col_index_sec] - fc.loc[prev_date_index,col_index_sec]
+            thi_Price_Diff = fc.loc[index,col_index_thi] - fc.loc[prev_date_index,col_index_thi]
+            fou_Price_Diff = fc.loc[index,col_index_fou] - fc.loc[prev_date_index,col_index_fou]
+            
+            
+            fro_weight = oneM_w * dr_dt
+            sec_weight = oneM_w * (1 - dr_dt) + twoM_w * (dr_dt)
+            thi_weight = twoM_w * (1 - dr_dt) + thrM_w * (dr_dt)
+            fou_weight = thrM_w * (1 - dr_dt)
+    
+        
+            fro_Unit = fro_weight * (index_price / fc.loc[prev_date_index,col_index_fir])
+            sec_Unit = sec_weight * (index_price / fc.loc[prev_date_index,col_index_sec])
+            thi_Unit = thi_weight * (index_price / fc.loc[prev_date_index,col_index_thi])
+            fou_Unit = fou_weight * (index_price / fc.loc[prev_date_index,col_index_fou])
+            
+           # benefit_index_price = index_price + (prev_fro_Unit*fir_Price_Diff) + (prev_sec_Unit*sec_Price_Diff) + \
+            #    (prev_thi_Unit*thi_Price_Diff) + (prev_fou_Unit*fou_Price_Diff)
+            
+                    
+            if col_index == prev_col_index:
+                turnover = abs(fro_Unit - prev_fro_Unit)* fc.loc[prev_date_index, col_index_fir] + \
+                           abs(sec_Unit - prev_sec_Unit)* fc.loc[prev_date_index, col_index_sec] + \
+                           abs(thi_Unit - prev_thi_Unit)* fc.loc[prev_date_index, col_index_thi] + \
+                           abs(fou_Unit - prev_fou_Unit)* fc.loc[prev_date_index, col_index_fou]
+            else:
+                turnover = abs(prev_fro_Unit)*fc.loc[prev_date_index, col_index_fir] + \
+                           abs(fro_Unit - prev_sec_Unit)*fc.loc[prev_date_index, col_index_sec] + \
+                           abs(sec_Unit - prev_thi_Unit)*fc.loc[prev_date_index, col_index_thi] + \
+                           abs(thi_Unit - prev_fou_Unit)*fc.loc[prev_date_index, col_index_fou]
+    
+            
+            
+            vol_charge = minvolcharge + slope * max(vix_close_1d.loc[prev_date_index, 'VIX']/basevol-1,0)
+            cost = (max(prev_turnover*(vol_charge/vix_close_1d.loc[prev_date_index, 'VIX']), prev_turnover*(max(vix_close_1d.loc[prev_date_index, 'VIX'],20)/10000)))
+    
+    
+    
+        index_price = index_price + (prev_fro_Unit*fir_Price_Diff) + (prev_sec_Unit*sec_Price_Diff) + \
+            (prev_thi_Unit*thi_Price_Diff) + (prev_fou_Unit*fou_Price_Diff) - cost
+        index_price_list.append(index_price)
+        
+        prev_fro_Unit, prev_sec_Unit, prev_thi_Unit, prev_fou_Unit = fro_Unit, sec_Unit, thi_Unit, fou_Unit
+        prev_date_index = index
+        prev_turnover = turnover
+            
+    time_series = pd.DataFrame({'index': index_price_list}, index=timestamps)
+    
+    return time_series
+
+def calculate_VIXTail_indexVTWO(signal, invest_threshold=0.5):
+    #g_1 = invest_threshold
+    #g_2 = g_1 + 1/6
+    #g_3 = g_2 + 1/6
+    #g_4 = g_3 + 1/6
+    increment = (1 - invest_threshold)/3
+    g_1 = invest_threshold
+    g_2 = g_1 + increment
+    g_3 = g_2 + increment
+    g_4 = g_3 + increment
+    
+    minvolcharge = 0.025
+    slope = 0.05
+    basevol = 20
+    
+    
+    index_price = 100
+    skip_first = True  
+    
+    timestamps = []
+    index_price_list = []
+    
+    for index, row in signal.iterrows():
+        timestamps.append(index)            
+        for i in range(1,7):
+            next_futures_date = index + pd.Timedelta(days=i)
+            if next_futures_date in combined_signals.index:
+                dr_dt = dr_dt_weights.loc[next_futures_date, 'dr/dt']
+                break
+
+        if skip_first:
+            skip_first = False
+            prev_date_index = index
+            prev_signal = row['Signal']
+            prev_turnover = 0
+            index_price_list.append(index_price)
+            prev_fro_Unit, prev_sec_Unit, prev_thi_Unit, prev_fou_Unit = 0, 0, 0, 0
+            
+            continue
+        else:
+            if prev_signal <= 0:
+                invest_speed = 'slow'
+            else:
+                invest_speed = 'fast'
+                
+            if invest_speed == 'normal' or row['Signal'] <= invest_threshold:
+                thrM_w = (max(0, min(1/3, (1/3)*((row['Signal']-g_1)/(g_2 - g_1)))))
+                twoM_w = (max(0, min(1/3, (1/3)*((row['Signal']-g_2)/(g_3 - g_2)))))
+                oneM_w = (max(0, min(1/3, (1/3)*((row['Signal']-g_3)/(g_4 - g_3)))))
+            elif invest_speed == 'fast':
+                if row['Signal'] >= g_4:
+                    thrM_w = twoM_w = oneM_w = 1/3
+                else:
+                    a = 1 / ((invest_threshold - 1)**2)
+                    invested_percent = -a*((row['Signal'] - 1)**2) + 1
+                    
+                    thrM_w, invested_percent = (1/3, invested_percent - 1/3) if invested_percent >= 1/3 else (0, invested_percent)
+                    twoM_w, invested_percent = (1/3, invested_percent - 1/3) if invested_percent >= 1/3 else (0, invested_percent)
+                    oneM_w = invested_percent
+
+            elif invest_speed == 'slow':
+                if row['Signal'] >= g_4:
+                    thrM_w = twoM_w = oneM_w = 1/3
+                else:
+                    a = 1 / (1-invest_threshold)
+                    invested_percent = -((a*(1-0.999999))**0.5)+1
+                    
+                    thrM_w, invested_percent = (1/3, invested_percent - 1/3) if invested_percent >= 1/3 else (0, invested_percent)
+                    twoM_w, invested_percent = (1/3, invested_percent - 1/3) if invested_percent >= 1/3 else (0, invested_percent)
+                    oneM_w = invested_percent
+            
+            prev_col_index = fc.loc[prev_date_index].first_valid_index()
+            col_index = fc.loc[index].first_valid_index()
+            col_index_2 = fc.columns.get_loc(col_index) + 1
+            col_index_fir, col_index_sec, col_index_thi, col_index_fou = col_index, fc.columns[col_index_2], \
+                        fc.columns[col_index_2 + 1], fc.columns[col_index_2 + 2]
+                
+            fir_Price_Diff = fc.loc[index,col_index_fir] - fc.loc[prev_date_index,col_index_fir]
+            sec_Price_Diff = fc.loc[index,col_index_sec] - fc.loc[prev_date_index,col_index_sec]
+            thi_Price_Diff = fc.loc[index,col_index_thi] - fc.loc[prev_date_index,col_index_thi]
+            fou_Price_Diff = fc.loc[index,col_index_fou] - fc.loc[prev_date_index,col_index_fou]
+            
+            
+            fro_weight = oneM_w * dr_dt
+            sec_weight = oneM_w * (1 - dr_dt) + twoM_w * (dr_dt)
+            thi_weight = twoM_w * (1 - dr_dt) + thrM_w * (dr_dt)
+            fou_weight = thrM_w * (1 - dr_dt)
+    
+        
+            fro_Unit = fro_weight * (index_price / fc.loc[prev_date_index,col_index_fir])
+            sec_Unit = sec_weight * (index_price / fc.loc[prev_date_index,col_index_sec])
+            thi_Unit = thi_weight * (index_price / fc.loc[prev_date_index,col_index_thi])
+            fou_Unit = fou_weight * (index_price / fc.loc[prev_date_index,col_index_fou])
+            
+           # benefit_index_price = index_price + (prev_fro_Unit*fir_Price_Diff) + (prev_sec_Unit*sec_Price_Diff) + \
+            #    (prev_thi_Unit*thi_Price_Diff) + (prev_fou_Unit*fou_Price_Diff)
+            
+                    
+            if col_index == prev_col_index:
+                turnover = abs(fro_Unit - prev_fro_Unit)* fc.loc[prev_date_index, col_index_fir] + \
+                           abs(sec_Unit - prev_sec_Unit)* fc.loc[prev_date_index, col_index_sec] + \
+                           abs(thi_Unit - prev_thi_Unit)* fc.loc[prev_date_index, col_index_thi] + \
+                           abs(fou_Unit - prev_fou_Unit)* fc.loc[prev_date_index, col_index_fou]
+            else:
+                turnover = abs(prev_fro_Unit)*fc.loc[prev_date_index, col_index_fir] + \
+                           abs(fro_Unit - prev_sec_Unit)*fc.loc[prev_date_index, col_index_sec] + \
+                           abs(sec_Unit - prev_thi_Unit)*fc.loc[prev_date_index, col_index_thi] + \
+                           abs(thi_Unit - prev_fou_Unit)*fc.loc[prev_date_index, col_index_fou]
+    
+            
+            
+            vol_charge = minvolcharge + slope * max(vix_close_1d.loc[prev_date_index, 'VIX']/basevol-1,0)
+            cost = (max(prev_turnover*(vol_charge/vix_close_1d.loc[prev_date_index, 'VIX']), prev_turnover*(max(vix_close_1d.loc[prev_date_index, 'VIX'],20)/10000)))
+    
+    
+    
+        index_price = index_price + (prev_fro_Unit*fir_Price_Diff) + (prev_sec_Unit*sec_Price_Diff) + \
+            (prev_thi_Unit*thi_Price_Diff) + (prev_fou_Unit*fou_Price_Diff) - cost
+        index_price_list.append(index_price)
+        
+        prev_fro_Unit, prev_sec_Unit, prev_thi_Unit, prev_fou_Unit = fro_Unit, sec_Unit, thi_Unit, fou_Unit
+        prev_date_index = index
+        prev_signal = row['Signal']
+        prev_turnover = turnover
+            
+    time_series = pd.DataFrame({'index': index_price_list}, index=timestamps)
+    
+    return time_series
+
+def calculate_VIXTail_indexBinary(signal, invest_threshold=0.5):
+    #g_1 = invest_threshold
+    #g_2 = g_1 + 1/6
+    #g_3 = g_2 + 1/6
+    #g_4 = g_3 + 1/6
+    increment = (1 - invest_threshold)/3
+    g_1 = invest_threshold
+    g_2 = g_1 + increment
+    g_3 = g_2 + increment
+    g_4 = g_3 + increment
+    
+    minvolcharge = 0.025
+    slope = 0.05
+    basevol = 20
+    
+    
+    index_price = 100
+    skip_first = True  
+    
+    timestamps = []
+    index_price_list = []
+    
+    for index, row in signal.iterrows():
+        timestamps.append(index)            
+        for i in range(1,7):
+            next_futures_date = index + pd.Timedelta(days=i)
+            if next_futures_date in combined_signals.index:
+                dr_dt = dr_dt_weights.loc[next_futures_date, 'dr/dt']
+                break
+
+        if skip_first:
+            skip_first = False
+            prev_date_index = index
+            prev_signal = row['Signal']
+            prev_turnover = 0
+            index_price_list.append(index_price)
+            prev_fro_Unit, prev_sec_Unit, prev_thi_Unit, prev_fou_Unit = 0, 0, 0, 0
+            
+            continue
+        else:
+            if row['Signal'] >= invest_threshold:
+                thrM_w = twoM_w = oneM_w = 1/3
+            else:
+                thrM_w = twoM_w = oneM_w = 0
+            
+            prev_col_index = fc.loc[prev_date_index].first_valid_index()
+            col_index = fc.loc[index].first_valid_index()
+            col_index_2 = fc.columns.get_loc(col_index) + 1
+            col_index_fir, col_index_sec, col_index_thi, col_index_fou = col_index, fc.columns[col_index_2], \
+                        fc.columns[col_index_2 + 1], fc.columns[col_index_2 + 2]
+                
+            fir_Price_Diff = fc.loc[index,col_index_fir] - fc.loc[prev_date_index,col_index_fir]
+            sec_Price_Diff = fc.loc[index,col_index_sec] - fc.loc[prev_date_index,col_index_sec]
+            thi_Price_Diff = fc.loc[index,col_index_thi] - fc.loc[prev_date_index,col_index_thi]
+            fou_Price_Diff = fc.loc[index,col_index_fou] - fc.loc[prev_date_index,col_index_fou]
+            
+            
+            fro_weight = oneM_w * dr_dt
+            sec_weight = oneM_w * (1 - dr_dt) + twoM_w * (dr_dt)
+            thi_weight = twoM_w * (1 - dr_dt) + thrM_w * (dr_dt)
+            fou_weight = thrM_w * (1 - dr_dt)
+    
+        
+            fro_Unit = fro_weight * (index_price / fc.loc[prev_date_index,col_index_fir])
+            sec_Unit = sec_weight * (index_price / fc.loc[prev_date_index,col_index_sec])
+            thi_Unit = thi_weight * (index_price / fc.loc[prev_date_index,col_index_thi])
+            fou_Unit = fou_weight * (index_price / fc.loc[prev_date_index,col_index_fou])
+            
+           # benefit_index_price = index_price + (prev_fro_Unit*fir_Price_Diff) + (prev_sec_Unit*sec_Price_Diff) + \
+            #    (prev_thi_Unit*thi_Price_Diff) + (prev_fou_Unit*fou_Price_Diff)
+            
+                    
+            if col_index == prev_col_index:
+                turnover = abs(fro_Unit - prev_fro_Unit)* fc.loc[prev_date_index, col_index_fir] + \
+                           abs(sec_Unit - prev_sec_Unit)* fc.loc[prev_date_index, col_index_sec] + \
+                           abs(thi_Unit - prev_thi_Unit)* fc.loc[prev_date_index, col_index_thi] + \
+                           abs(fou_Unit - prev_fou_Unit)* fc.loc[prev_date_index, col_index_fou]
+            else:
+                turnover = abs(prev_fro_Unit)*fc.loc[prev_date_index, col_index_fir] + \
+                           abs(fro_Unit - prev_sec_Unit)*fc.loc[prev_date_index, col_index_sec] + \
+                           abs(sec_Unit - prev_thi_Unit)*fc.loc[prev_date_index, col_index_thi] + \
+                           abs(thi_Unit - prev_fou_Unit)*fc.loc[prev_date_index, col_index_fou]
+    
+            
+            
+            vol_charge = minvolcharge + slope * max(vix_close_1d.loc[prev_date_index, 'VIX']/basevol-1,0)
+            cost = (max(prev_turnover*(vol_charge/vix_close_1d.loc[prev_date_index, 'VIX']), prev_turnover*(max(vix_close_1d.loc[prev_date_index, 'VIX'],20)/10000)))
+    
+    
+    
+        index_price = index_price + (prev_fro_Unit*fir_Price_Diff) + (prev_sec_Unit*sec_Price_Diff) + \
+            (prev_thi_Unit*thi_Price_Diff) + (prev_fou_Unit*fou_Price_Diff) - cost
+        index_price_list.append(index_price)
+        
+        prev_fro_Unit, prev_sec_Unit, prev_thi_Unit, prev_fou_Unit = fro_Unit, sec_Unit, thi_Unit, fou_Unit
+        prev_date_index = index
+        prev_signal = row['Signal']
+        prev_turnover = turnover
+            
+    time_series = pd.DataFrame({'index': index_price_list}, index=timestamps)
+    
+    return time_series
+
+
+>>>>>>> Stashed changes
 diff_z_score = calculating_diff_z_score(underlying_data_SPX_VIX,underlier_lambda,z_score_lambda)
 
+<<<<<<< Updated upstream
 comb = dm.merge_data_frames(VIXtoVIXFutures_z, diff_z_score)
+=======
+rep_time_series_normal = calculate_VIXTail_index(combined_signals, invest_threshold=0.6)
+rep_time_series_fast = calculate_VIXTail_index(combined_signals, invest_threshold=0.6, invest_speed = 'fast')
+rep_time_series_slow = calculate_VIXTail_index(combined_signals, invest_threshold=0.6, invest_speed = 'slow')
+rep_time_series_hybrid = calculate_VIXTail_indexVTWO(combined_signals, invest_threshold=0.6)
+
+rep_time_series_binary = calculate_VIXTail_indexBinary(combined_signals, invest_threshold=0.5)
+>>>>>>> Stashed changes
 
 combined_signal = []
 for index, row in comb.iterrows():
