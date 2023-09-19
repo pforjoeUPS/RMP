@@ -25,7 +25,7 @@ QIS_UNIVERSE = CWD + '\\Cluster Analysis\\data\\'
 
 NEW_DATA_COL_LIST = ['SPTR', 'SX5T','M1WD', 'Long Corp', 'STRIPS', 'Down Var',
  'Vortex', 'VOLA I', 'VOLA II','Dynamic VOLA','Dynamic Put Spread',
-                    'GW Dispersion', 'Corr Hedge','Def Var (Mon)', 'Def Var (Fri)', 'Def Var (Wed)', 'Commodity Basket']
+                    'GW Dispersion', 'Corr Hedge','Def Var (Mon)', 'Def Var (Fri)', 'Def Var (Wed)', 'Commodity Basket', 'ESPRSO', 'EVolCon']
 
 def merge_dicts(main_dict, new_dict, fillzeros = True):
     """
@@ -295,15 +295,15 @@ def create_copy_with_fi(df_returns, equity = 'SPTR', freq='1M', include_fi=False
             strategy_returns['FI Benchmark'] = (strategy_returns['Long Corp'] + strategy_returns['STRIPS'])/2
             strategy_returns = strategy_returns[[equity, 'FI Benchmark', '99%/90% Put Spread', 
                                                  'Down Var', 'Vortex', 'VOLA','Dynamic Put Spread',
-                                                 'VRR 2', 'VRR Trend', 'GW Dispersion', 'Corr Hedge','Def Var']]
+                                                 'VRR 2', 'VRR Trend', 'GW Dispersion', 'Corr Hedge','Def Var', 'Commodity Basket', 'ESPRSO', 'EVolCon']]
         else:
             strategy_returns = strategy_returns[[equity, '99%/90% Put Spread', 
                                                  'Down Var', 'Vortex', 'VOLA','Dynamic Put Spread',
-                                                 'VRR 2', 'VRR Trend', 'GW Dispersion', 'Corr Hedge','Def Var']]
+                                                 'VRR 2', 'VRR Trend', 'GW Dispersion', 'Corr Hedge','Def Var', 'Commodity Basket', 'ESPRSO', 'EVolCon']]
     else:
         strategy_returns = strategy_returns[[equity, '99%/90% Put Spread', 'Down Var', 'Vortex',
                                              'VOLA','Dynamic Put Spread','VRR 2', 'VRR Trend', 
-                                             'GW Dispersion', 'Corr Hedge','Def Var']]
+                                             'GW Dispersion', 'Corr Hedge','Def Var', 'Commodity Basket', 'ESPRSO', 'EVolCon']]
     
     return strategy_returns
 
@@ -781,12 +781,12 @@ def update_returns_data():
 # right now it is adding strategy name to column list through append... this can be an issue if you run multiple times
 # --> quick solution, add strategy name straight to colum list variable at top
 def add_new_strat_to_returns_data(new_strat_name= '', filename = '', sheet_name=''):
-    new_strat = pd.read_excel(NEW_DATA + filename,
-                                           sheet_name = sheet_name, index_col=0)
+    new_strat = pd.read_excel('C:\\Users\\PCR7FJW\\Documents\\RMP\\EquityHedging\\data\\new_strats\\' + 'evolcon.xlsx',
+                                           sheet_name = 'Sheet1', index_col=0)
     
-    data = pd.read_excel(UPDATE_DATA + 'ups_data.xlsx', sheet_name= 'data', index_col=0)
+    data = pd.read_excel('C:\\Users\\PCR7FJW\\Documents\\RMP\\EquityHedging\\data\\update_strats\\' + 'ups_data.xlsx', sheet_name= 'data', index_col=0)
     total_data = merge_data_frames(data, new_strat)
-    NEW_DATA_COL_LIST.append(new_strat_name)
+    #NEW_DATA_COL_LIST.append(new_strat_name)
     total_data.columns = NEW_DATA_COL_LIST
     
     data_dict = get_data_dict(total_data)
