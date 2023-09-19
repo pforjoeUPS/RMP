@@ -201,6 +201,40 @@ class nexenDataImporter(dataImporter):
         self.data_import.columns = ['Name', 'Account Id', 'Return Type', 'Dates', 'Market Value', 'Return']
 
 #TODO: create vrrDataImporter
+
+# =============================================================================
+# class vrrDataImporter(dataImporter):
+#     def __init__(self, filepath ,sheet_name = 0, index_col=0,skip_rows=[],
+#                  data_source='socgen', col_list=[], drop_na=False, index_data = True):
+#         """
+#         Reads an excel file into a vrrDataImporter object 
+# 
+#         Parameters
+#         ----------
+#         filepath : string
+#             Valid string path.
+#         sheet_name : int, string, list of strings, ints, optional
+#             name(s) of excel sheet(s) or positions. The default is 0.
+#         index_col : int, optional
+#             The default is None.
+#         skip_rows : list, optional
+#             list of rows to skip when importing. The default is [].
+#         data_source : string, optional
+#             source of excel file. The default is 'socgen'.
+#         drop_na : bool, optional
+#             drop NaN values. The default is False.
+#         index_data : TYPE, optional
+#             DESCRIPTION. The default is False.
+#             
+#         Returns
+#         -------
+#         nexenDataImporter object
+# 
+#         """
+#     pass  
+# =============================================================================
+     
+
 class putspreadDataImporter(dataImporter):
     def __init__(self, filepath ,sheet_name = "Daily", index_col=0, skip_rows=[1],
                  data_source='put_spread', drop_na=False, index_data = False):
