@@ -111,6 +111,42 @@ def get_price_series(return_series):
         price_series[i] = (return_series[i] + 1) * price_series[i-1]
     return price_series
 
+def add_bps(vrr_dict, strat_name, add_back=.0025):
+    '''
+    Adds bps back to the returns for the vrr strategy
+
+    Parameters
+    ----------
+    vrr_dict : dictionary
+        DESCRIPTION.
+    add_back : float
+        DESCRIPTION. The default is .0025.
+
+    Returns
+    -------
+    temp_dict : dictionary
+        dictionary of VRR returns with bips added to it
+
+    '''
+    #create empty dictionary
+    temp_dict = {}
+    
+    #iterate through keys of a dictionary
+    for key in vrr_dict:
+        
+        #set dataframe equal to dictionary's key
+        temp_df = vrr_dict[key].copy()
+        
+        #set variable equaly to the frequency of key
+        freq = dm.switch_string_freq(key)
+        
+        #add to dataframe
+        temp_df[strat_name] += add_back/(dm.switch_freq_int(freq))
+        
+        #add value to the temp dictionary
+        temp_dict[key] = temp_df
+    return temp_dict
+
 class dataXformer():
     def __init__(self, filepath, sheet_name=0, data_source='custom', freq='1M', col_list=[]
                  , drop_na = True, index_data = False, format_data = False):
@@ -319,71 +355,92 @@ class innocapExpDataXformer(innocapDataXformer):
             exposure_dict[name] = resample_data(exposure_dict[name], self.freq)
         return exposure_dict
 
-#TODO: create vrrDataXformer
+
 class vrrDataXformer(dataXformer):
-    def __init__(self, filepath, data_source='nexen'):
+    def __init__(self, filepath, data_source='VRR Tracks'):
         """
-        Converts excel file into a nexenDataXformer object
+        Converts excel file into a vrrDataXformer object
 
         Parameters
         ----------
         filepath : string
             Valid string path.
         data_source : string, optional
-            source of excel file. The default is 'nexen'.
+            source of excel file. The default is 'VRR Tracks'.
         Returns
         -------
-        nexenDataXformer object
+        vrrDataXformer object
 
         """
         
         super().__init__(filepath,data_source)
         
     def import_data(self):
-        #individually read vrr, vrr2, vrr trend data
-        vrr = di.dataImporter(self.filepath, sheet_name = "VRR").data_import
-        vrr2 = di.dataImporter(self.filepath, sheet_name = "VRR2").data_import
-        vrr_trend = di.dataImporter(self.filepath, sheet_name = "VRR Trend").data_import
+        #create dictionary with vrr, vrr2, and vrr trend data frames
+        vrr_dict = di.dataImporter(self.filepath, sheet_name = ["VRR","VRR2","VRR Trend"], drop_na=False).data_import
         
-        #merge dataframes
-        vrr_df = dm.merge_data_frames(vrr, vrr2)
-        vrr_df = dm.merge_data_frames(vrr_df, vrr_trend)
+        return vrr_dict
+    
+    
+    def xform_data(self):     
+        vrr_df_dict = self.data_import        
         
-        return vrr_df
+        #merge vrr dataframes
+        vrr_df = dm.merge_data_frames(vrr_df_dict['VRR'], vrr_df_dict['VRR2'])
+        vrr_df = dm.merge_data_frames(vrr_df, vrr_df_dict['VRR Trend'])
+       
+        #get vrr data dict
+        vrr_returns_dict = get_data_dict(vrr_df)
         
+        #add back bps
+        vrr_returns_dict = add_bps(vrr_returns_dict,'VRR')
+        vrr_returns_dict = add_bps(vrr_returns_dict,'VRR 2', add_back= 0.005)
+        vrr_returns_dict = add_bps(vrr_returns_dict, 'VRR Trend', add_back= 0.005)
+        
+        
+        return vrr_returns_dict
+    
+    
     pass
 
 
-#TODO: create putSpreadDataXformer
+
 class putSpreadDataXformer(dataXformer):
     def __init__(self, filepath, data_source='put_spread'):
         """
-        Converts excel file into a nexenDataXformer object
+        Converts excel file into a putSpreadDataXformer object
 
         Parameters
         ----------
         filepath : string
             Valid string path.
         data_source : string, optional
-            source of excel file. The default is 'nexen'.
+            source of excel file. The default is 'put_spread'.
         Returns
         -------
-        nexenDataXformer object
+        putSpreadDataXformer object
 
         """
         
         super().__init__(filepath,data_source)
+        
     def import_data(self):
         return di.putspreadDataImporter(self.filepath).data_import   
     
     def xform_data(self):
         data = self.data_import
-        #add column into dataframe
-        data = data[['Put Spread']]
-    
-        #add price into dataframe
-        data = get_prices_df(data)
-              
         
-        return data
+        #only keep 'Put Spread' column
+        data = data[['Put Spread']]
+        
+        #rename column 
+        data.columns = ['99%/90% Put Spread']
+        
+        #get price dataframe
+        data = get_prices_df(data)
+        
+        #get put spread data dict
+        data_dict = get_data_dict(data, index_data = True)
+
+        return data_dict
     pass                 
