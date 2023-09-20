@@ -200,12 +200,11 @@ class nexenDataImporter(dataImporter):
                                'As Of Date\n','Market Value\n', 'Account Monthly Return\n']]
         self.data_import.columns = ['Name', 'Account Id', 'Return Type', 'Dates', 'Market Value', 'Return']
 
-#TODO: create vrrDataImporter
 class putspreadDataImporter(dataImporter):
     def __init__(self, filepath ,sheet_name = "Daily", index_col=0, skip_rows=[1],
                  data_source='put_spread', drop_na=False, index_data = False):
         """
-        Reads an excel file into a nexenDataImporter object 
+        Reads an excel file into a putspreadDataImporter object 
 
         Parameters
         ----------
@@ -226,7 +225,7 @@ class putspreadDataImporter(dataImporter):
 
         Returns
         -------
-        nexenDataImporter object
+        putspreadDataImporter object
 
         """
         super().__init__(filepath, sheet_name, index_col, skip_rows,
