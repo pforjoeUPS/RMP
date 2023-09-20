@@ -277,7 +277,7 @@ def create_vrr_portfolio(returns, weights):
 def drop_nas(data):
     if type(data) == dict:
         for key in data:
-            data[key].drop.dropna(inplace=True)
+            data[key].dropna(inplace=True)
     else:
         data.dropna(inplace=True)
     return data
