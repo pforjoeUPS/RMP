@@ -7,6 +7,7 @@ Created on Sun Aug 14 20:13:09 2022
 import os
 from .import data_manager as dm
 from .import data_xformer_new as dxf
+from .import data_importer as di
 import pandas as pd
 from ..reporting.excel import new_reports as rp
 
@@ -544,6 +545,7 @@ class bmkDataUpdater(bbgDataUpdater):
         Returns:
             data_dict (dict): Calculated data dictionary for Benchmark data.
         """
+        #TODO: add comments
         data_dict = dxf.copy_data(self.data_xform)
         returns_dict = get_return_data(self.ret_filename, FREQ_LIST)
         data_dict = match_dict_columns(returns_dict, data_dict)
@@ -608,15 +610,41 @@ class equityHedgeReturnsUpdater(bmkDataUpdater):
         """
         super().__init__(filename,report_name, ret_filename)
         
-    #TODO: replace calling create_update_dict() after creating vrr, putspread xformers
+        
     def xform_data(self):
-        """
-        Transform the Equity Hedge Returns data.
+        '''
+        Create a dictionary that updates returns data
 
-        Returns:
-            transformed_data (dict): Transformed Equity Hedge Returns data.
-        """
-        return create_update_dict()
+        Returns
+        -------
+        new_data_dict : Dictionary
+            Contains the updated information after adding new returns data
+
+        '''
+        #Import data from bloomberg into dataframe and create dictionary with different frequencies
+        new_ups_data_dict = dxf.bbgDataXformer(filepath = UPDATE_DATA_FP+'ups_data.xlsx', sheet_name = 'bbg', format_data = True, freq = '1D').data_xform 
+        #rename columns to match current returns file
+        for key in new_ups_data_dict:
+            
+            new_ups_data_dict[key].columns = ['SPTR', 'SX5T','M1WD', 'Long Corp', 'STRIPS', 'Down Var',
+             'Vortex', 'VOLA I', 'VOLA II','Dynamic VOLA','Dynamic Put Spread',
+                                'GW Dispersion', 'Corr Hedge','Def Var (Mon)', 'Def Var (Fri)', 'Def Var (Wed)', 
+                                'Commodity Basket']
+
+        #Import vrr returns dictionary
+        vrr_dict = dxf.vrrDataXformer(filepath = UPDATE_DATA_FP+'vrr_tracks_data.xlsx').data_xform
+        
+        #Import put spread returns dictionary
+        put_spread_dict = dxf.putSpreadDataXformer(filepath = UPDATE_DATA_FP+'put_spread_data.xlsx').data_xform
+        
+        #merge returns dictionaries
+        new_data_dict = dm.merge_dicts_list([new_ups_data_dict, vrr_dict, put_spread_dict])
+        
+        return new_data_dict
+        
+    
+
+    
 
 
 class liquidAltsReturnsUpdater(mainUpdater):
