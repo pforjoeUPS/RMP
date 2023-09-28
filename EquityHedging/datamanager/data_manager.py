@@ -441,6 +441,7 @@ def get_prices_df(df_returns):
             df_prices[col][i] = (df_returns[col][i] + 1) * df_prices[col][i-1]
     return df_prices
 
+#TODO: Copy this to eqHedgeHandler()
 def get_new_strategy_returns_data(report_name, sheet_name, strategy_list=[]):
     """
     dataframe of stratgy returns
