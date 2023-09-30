@@ -46,6 +46,7 @@ def format_data(df_index, freq="1M", dropna=True, drop_zero=False):
         data = data.loc[(data!=0).any(1)]
     return data
 
+#TODO: update to be able to create dictionary regardless of frequency
 def get_data_dict(data, index_data=True, dropna=True, drop_zero=True):
     """
     Converts daily data into a dictionary of dataframes containing returns 
@@ -111,6 +112,7 @@ def get_price_series(return_series):
         price_series[i] = (return_series[i] + 1) * price_series[i-1]
     return price_series
 
+#TODO: rethink this function
 def add_bps(vrr_dict, strat_name, add_back=.0025):
     '''
     Adds bps back to the returns for the vrr strategy
@@ -356,6 +358,7 @@ class innocapExpDataXformer(innocapDataXformer):
         return exposure_dict
 
 
+#TODO: remove data_source variable
 class vrrDataXformer(dataXformer):
     def __init__(self, filepath, data_source='VRR Tracks'):
         """
@@ -372,21 +375,25 @@ class vrrDataXformer(dataXformer):
         vrrDataXformer object
 
         """
-        
+        #TODO: this is a bug, data_source is being assigned to the attribute self.sheet_name
         super().__init__(filepath,data_source)
-        
+    
+    #TODO: make this a one line function        
+    #TODO: add drop_na=False as variable
     def import_data(self):
         #create dictionary with vrr, vrr2, and vrr trend data frames
-        vrr_dict = di.dataImporter(self.filepath, sheet_name = ["VRR","VRR2","VRR Trend"], drop_na=False).data_import
+        vrr_dict = di.dataImporter(self.filepath, sheet_name = ["VRR","VRR 2","VRR Trend"], drop_na=False).data_import
         
         return vrr_dict
     
-    
+    #TODO: discuss with Maddie
     def xform_data(self):     
+        #TODO: no need for this
         vrr_df_dict = self.data_import        
         
         #merge vrr dataframes
-        vrr_df = dm.merge_data_frames(vrr_df_dict['VRR'], vrr_df_dict['VRR2'])
+        #TODO: reference self.data_import
+        vrr_df = dm.merge_data_frames(vrr_df_dict['VRR'], vrr_df_dict['VRR 2'])
         vrr_df = dm.merge_data_frames(vrr_df, vrr_df_dict['VRR Trend'])
        
         #get vrr data dict
@@ -400,10 +407,8 @@ class vrrDataXformer(dataXformer):
         
         return vrr_returns_dict
     
-    
+    #TODO: Delete pass
     pass
-
-
 
 class putSpreadDataXformer(dataXformer):
     def __init__(self, filepath, data_source='put_spread'):
@@ -428,6 +433,7 @@ class putSpreadDataXformer(dataXformer):
         return di.putspreadDataImporter(self.filepath).data_import   
     
     def xform_data(self):
+        #no need for this
         data = self.data_import
         
         #only keep 'Put Spread' column
@@ -443,4 +449,5 @@ class putSpreadDataXformer(dataXformer):
         data_dict = get_data_dict(data, index_data = True)
 
         return data_dict
+    #TODO: Delete pass
     pass                 

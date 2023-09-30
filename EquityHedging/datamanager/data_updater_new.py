@@ -623,13 +623,14 @@ class equityHedgeReturnsUpdater(bmkDataUpdater):
         '''
         #Import data from bloomberg into dataframe and create dictionary with different frequencies
         new_ups_data_dict = dxf.bbgDataXformer(filepath = UPDATE_DATA_FP+'ups_data.xlsx', sheet_name = 'bbg', format_data = True, freq = '1D').data_xform 
+        #TODO: This isn't necessary, match_dict_columns in calc_data_dict() takes care of this
         #rename columns to match current returns file
-        for key in new_ups_data_dict:
+        # for key in new_ups_data_dict:
             
-            new_ups_data_dict[key].columns = ['SPTR', 'SX5T','M1WD', 'Long Corp', 'STRIPS', 'Down Var',
-             'Vortex', 'VOLA I', 'VOLA II','Dynamic VOLA','Dynamic Put Spread',
-                                'GW Dispersion', 'Corr Hedge','Def Var (Mon)', 'Def Var (Fri)', 'Def Var (Wed)', 
-                                'Commodity Basket']
+        #     new_ups_data_dict[key].columns = ['SPTR', 'SX5T','M1WD', 'Long Corp', 'STRIPS', 'Down Var',
+        #                                       'Vortex', 'VOLA I', 'VOLA II','Dynamic VOLA','Dynamic Put Spread',
+        #                                       'GW Dispersion', 'Corr Hedge','Def Var (Mon)', 'Def Var (Fri)', 'Def Var (Wed)', 
+        #                                       'Commodity Basket']
 
         #Import vrr returns dictionary
         vrr_dict = dxf.vrrDataXformer(filepath = UPDATE_DATA_FP+'vrr_tracks_data.xlsx').data_xform
@@ -641,6 +642,7 @@ class equityHedgeReturnsUpdater(bmkDataUpdater):
         new_data_dict = dm.merge_dicts_list([new_ups_data_dict, vrr_dict, put_spread_dict])
         
         return new_data_dict
+    
         
     
 

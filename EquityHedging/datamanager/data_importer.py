@@ -200,6 +200,7 @@ class nexenDataImporter(dataImporter):
                                'As Of Date\n','Market Value\n', 'Account Monthly Return\n']]
         self.data_import.columns = ['Name', 'Account Id', 'Return Type', 'Dates', 'Market Value', 'Return']
 
+#TODO: make data_source 'custom'
 class putspreadDataImporter(dataImporter):
     def __init__(self, filepath ,sheet_name = "Daily", index_col=0, skip_rows=[1],
                  data_source='put_spread', drop_na=False, index_data = False):
@@ -233,5 +234,6 @@ class putspreadDataImporter(dataImporter):
         
         self.data_import.columns = ['99 Rep','Short Put','Put Spread']
 
+    #TODO: Delete pass
     pass  
      
