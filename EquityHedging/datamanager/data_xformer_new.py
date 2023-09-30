@@ -6,17 +6,12 @@ Created on Fri Jul 14 2023
 """
 
 import pandas as pd
+import copy
 from .import data_importer as di
 from .import data_manager as dm
 
 def copy_data(data):
-    if type(data) == dict:
-        dict_copy = {}
-        for key in data:
-            dict_copy[key] = data[key].copy()
-        return dict_copy
-    else:
-        return data.copy()
+    return copy.deepcopy(data) if type(data) == dict else data.copy()
     
 def resample_data(df, freq="1M"):
     data = df.copy()
