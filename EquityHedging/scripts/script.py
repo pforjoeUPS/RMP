@@ -34,25 +34,12 @@ if new_strat:
     returns = dm.merge_dicts(returns, new_strategy_dict)
 
 
-
-
 #get notional weights
-<<<<<<< HEAD
-<<<<<<< Updated upstream
 #notional_weights = dm.get_notional_weights(returns['Monthly'])
-notional_weights = [11, 0.85, 1.09, 1.00, 0.82, 0.27, 0.99, .23, 1.00]
-=======
-notional_weights = dm.get_notional_weights(returns['Monthly'])
-notional_weights = [11, 1, 1, 1, 0.83, 0.27, 1, .25, 1, 1, 0.4, 1, 1]
->>>>>>> Stashed changes
-=======
-notional_weights = dm.get_notional_weights(returns['Monthly'])
-notional_weights = [11, 1, 1, 1, 0.83, 0.27, 1, .25, 1, 1, 0.4, 1]
->>>>>>> f5949165fa3eb4b05c74e7d0c249fc29c3ce4798
+notional_weights = [11, 1, 1.25, 1, 0.75, 0.25, 1, .25, 1, 1, 0.4, 1]
+#notional_weights = [11, 1.25, 1, 1, 1, .25, 1, 1, 0.4, 1, 1]
 returns = dm.get_returns_VRR_Portfolio(returns, notional_weights)
-
 notional_weights[4:6] = [notional_weights[4] + notional_weights[5]]
-
 df_weights = get_df_weights(notional_weights, list(returns['Monthly'].columns), include_fi)
 
 
@@ -92,8 +79,17 @@ check_ann = False
 if check_ann:
     annual_dollar_returns = summary.get_annual_dollar_returns(returns, notional_weights)
 
+
+#moving certain strats to end so we can compare against portfolio
+column_to_move = 'Down Var'
+for i in returns:
+    new_order = [col for col in returns[i].columns if col != column_to_move] + [column_to_move]
+    returns[i] = returns[i][new_order]
+    
+
+
 #run report
-equity_hedge_report = 'equity_hedge_analysis_test'
+equity_hedge_report = 'downvar_equity_hedge_analysis'
 selloffs = True
 # start = time.time()
 rp.get_equity_hedge_report(equity_hedge_report, returns,notional_weights, include_fi, new_strat, weighted[0], selloffs)
