@@ -153,11 +153,13 @@ class liqAltsPortHandler(liqAltsBmkHandler):
         return mgr_list
 
 
+#TODO: make strat_drop_list default to an empty list now
 class eqHedgeHandler(mktHandler):
     def __init__(self, equity_bmk = 'SPTR',include_fi = False, all_data=False, strat_drop_list=['99%/90% Put Spread', 'Vortex']):
         super().__init__(equity_bmk, include_fi, all_data)
         self.strat_drop_list = strat_drop_list
         self.returns = dm.merge_dicts(self.mkt_returns, self.get_returns())
+        #TODO: work on functional to overwrite the nmtionals in EQ_HEDGE_STRAT_DICT
         self.notional_dict = self.get_notional_weights()
         
     def get_returns(self):
@@ -195,6 +197,7 @@ class eqHedgeHandler(mktHandler):
         return new_strategy_returns
     
     def add_new_strat(self, filename, sheet_name, strategy_list, notional_list):
+        #TODO: not sure if this will be used plus there may be some bugs in here
         if isinstance(filename, list):
             new_strat_dict = {}
             for i in range(0,len(filename)):
