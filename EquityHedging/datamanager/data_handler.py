@@ -154,16 +154,11 @@ class liqAltsPortHandler(liqAltsBmkHandler):
 
 
 class eqHedgeHandler(mktHandler):
-    def __init__(self, equity_bmk = 'SPTR',include_fi = False, all_data=False, strat_drop_list=['99%/90% Put Spread', 'Vortex'],
-                 new_strat = False, new_strat_names = ['esprso'], new_strat_filename = 'esprso.xlsx'):
+    def __init__(self, equity_bmk = 'SPTR',include_fi = False, all_data=False, strat_drop_list=['99%/90% Put Spread', 'Vortex']):
         super().__init__(equity_bmk, include_fi, all_data)
         self.strat_drop_list = strat_drop_list
-        self.new_strat = new_strat
-        self.new_strat_names = new_strat_names
-        self.new_strat_filename = new_strat_filename
-        #self.new_strat_returns = self.get_new_strat_returns()
         self.returns = dm.merge_dicts(self.mkt_returns, self.get_returns())
-        self.strat_notional_dict = self.get_notional_weights()
+        self.notional_dict = self.get_notional_weights()
         
     def get_returns(self):
         returns_dict = {}
@@ -181,30 +176,47 @@ class eqHedgeHandler(mktHandler):
             if self.strat_drop_list:
                 temp_ret.drop(self.strat_drop_list, axis=1, inplace=True)
             returns_dict[freq_string] = temp_ret.copy()
-            
-        if self.new_strat:
-            new_strategy = dm.get_new_strategy_returns_data(self.new_strat_filename, 'Sheet1', self.new_strat_names)
-            new_strategy_dict = dm.get_data_dict(new_strategy, data_type='index')
-            returns_dict = dm.merge_dicts(returns_dict, new_strategy_dict)
         return returns_dict
     
+    def get_new_strategy_returns_data(self, filename, sheet_name, strategy_list):
+        df_strategy = pd.read_excel(NEW_STRAT_DATA_FP+filename, sheet_name=sheet_name, index_col=0)
+        df_strategy = dm.get_real_cols(df_strategy)
+        if strategy_list:
+            df_strategy.columns = strategy_list
+        try:
+            df_strategy.index = pd.to_datetime(df_strategy.index)
+        except TypeError:
+            pass
+        df_strategy = df_strategy.resample('1D').ffill()
+        new_strategy_returns = df_strategy.copy()
+        if 'Index' in sheet_name:
+            new_strategy_returns = df_strategy.pct_change(1)
+        new_strategy_returns.dropna(inplace=True)
+        return new_strategy_returns
+    
+    def add_new_strat(self, filename, sheet_name, strategy_list, notional_list):
+        if isinstance(filename, list):
+            new_strat_dict = {}
+            for i in range(0,len(filename)):
+                new_strat = self.get_new_strategy_returns_data(filename[i], sheet_name[i], strategy_list[i:i+1])
+                new_strat_dict_temp = dm.get_data_dict(new_strat, data_type='index')
+                if i == 0:
+                    new_strat_dict = new_strat_dict_temp
+                else:
+                    new_strat_dict = dm.merge_dicts(new_strat_dict, new_strat_dict_temp)
+        else:
+            new_strat = self.get_new_strategy_returns_data(filename, sheet_name, strategy_list)
+            new_strat_dict = dm.get_data_dict(new_strat, data_type='index')
+            
+        self.returns = dm.merge_dicts(self.returns, new_strat_dict)
+        self.update_notional(strategy_list, notional_list)
 
-# =============================================================================
-#     def get_new_strat_returns(self):
-#         if self.new_strat:
-#             new_strat = dm.get_new_strategy_returns_data(self.new_strat_filename, 'Sheet1', self.new_strat_names)
-#             return new_strat
-#         else:
-#             return None
-# =============================================================================
+    def update_notional(self, strategy_list, notional_list):
+        notional_list = [float(x) for x in notional_list]
+        self.notional_dict.update(dict(zip(strategy_list, notional_list)))
     
     def get_notional_weights(self):
-        notional_dict = EQ_HEDGE_STRAT_DICT
-        if self.new_strat:
-            new_strat_notional = [float(input('notional value (Billions) for ' + new_strat + ': ')) for new_strat in self.new_strat_names]
-            new_EQ_HEDGE_STRAT_DICT = {key: value for key, value in zip(self.new_strat_names, new_strat_notional)}
-            notional_dict.update(new_EQ_HEDGE_STRAT_DICT)
-        else:
-            pass
+        notional_dict = EQ_HEDGE_STRAT_DICT.copy()
+        for key in self.strat_drop_list:
+            notional_dict.pop(key)
         return notional_dict
-               
