@@ -25,21 +25,22 @@ strat_drop_list = ['99%/90% Put Spread', 'Vortex']
 new_strat = False
 returns= dm.get_equity_hedge_returns(equity_bmk, include_fi, strat_drop_list)
 
-eq_hedge_dh = dh.eqHedgeHandler(equity_bmk='SPTR', include_fi=True, strat_drop_list=['99%/90% Put Spread', 'Vortex'])
+eq_hedge_dh = dh.eqHedgeHandler(equity_bmk='SPTR', include_fi=False, strat_drop_list=[], update_strat_list=[])
+
+
 
 #Add new strat
 new_strat = False
 if new_strat:
-    strategy_list = ['esprso', 'evolcon']
-    filename = ['esprso.xlsx', 'evolcon.xlsx']
-    sheet_name = ['Sheet1', 'Sheet1']
-    notional_list = [1,1]
+    strategy_list = ['esprso']
+    filename = 'esprso.xlsx'
+    sheet_name = 'Sheet1'
+    notional_list = [1]
     new_strategy = dm.get_new_strategy_returns_data(filename, sheet_name, strategy_list)
     new_strategy_dict = dm.get_data_dict(new_strategy, data_type='index')
     returns = dm.merge_dicts(returns, new_strategy_dict)
 
 eq_hedge_dh.add_new_strat(filename, sheet_name, strategy_list, notional_list)
-
 
 
 
@@ -53,6 +54,7 @@ df_weights = get_df_weights(notional_weights, list(returns['Monthly'].columns), 
 
 
 #returns = eq_hedge_dh.returns
+
 
 #compute correlations
 check_corr = False
