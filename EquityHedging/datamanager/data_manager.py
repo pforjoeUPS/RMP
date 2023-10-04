@@ -607,12 +607,9 @@ def create_update_dict():
     vrr_trend_dict =add_bps(vrr_trend_dict, 'VRR Trend', add_back= 0.005)
     
  
-    #get put spread data
-    put_spread_dict = get_data_to_update(['99 Rep', 'Short Put', '99%/90% Put Spread'], 'put_spread_data.xlsx', 'Daily', put_spread = True)
-    
     #merge vrr and put spread dicts to the new_data dict
 
-    new_data_dict = merge_dicts_list([new_ups_data_dict, put_spread_dict, vrr_dict,vrr2_dict,vrr_trend_dict], fillzeros=False)
+    new_data_dict = merge_dicts_list([new_ups_data_dict, vrr_dict,vrr2_dict,vrr_trend_dict], fillzeros=False)
 
     #get data from returns_data.xlsx into dictionary
     returns_dict = get_equity_hedge_returns(all_data=True)
