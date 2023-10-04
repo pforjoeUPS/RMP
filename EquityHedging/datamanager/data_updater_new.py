@@ -23,7 +23,7 @@ HF_COL_LIST = ['HFRX Macro/CTA', 'SG Trend','HFRX Absolute Return','DM Equity',
                'HFRX Eq Hedge','HFRX Event driven','HFRX Convert Arb','HFRX EM',
                'HFRX Commodities','HFRX RV']
 FREQ_LIST = ['Daily', 'Weekly', 'Monthly', 'Quarterly', 'Yearly']
-EQ_HEGDE_COL_LIST = ['SPTR', 'SX5T','M1WD', 'Long Corp', 'STRIPS', 'Down Var',
+EQ_HEGDE_COL_LIST = ['Down Var',
                      'Vortex', 'VOLA I', 'VOLA II','Dynamic VOLA','Dynamic Put Spread',
                      'GW Dispersion', 'Corr Hedge','Def Var (Mon)', 'Def Var (Fri)',
                      'Def Var (Wed)', 'Commodity Basket']
@@ -194,11 +194,9 @@ def create_update_dict():
     vrr2_dict = add_bps(vrr2_dict,'VRR 2', add_back= 0.005)
     vrr_trend_dict =add_bps(vrr_trend_dict, 'VRR Trend', add_back= 0.005)
     
-    #get put spread data
-    put_spread_dict = get_data_to_update(['99 Rep', 'Short Put', '99%/90% Put Spread'], 'put_spread_data.xlsx', 'Daily', put_spread = True)
-    
+   
     #merge vrr and put spread dicts to the new_data dict
-    new_data_dict = dm.merge_dicts_list([new_ups_data_dict,put_spread_dict, vrr_dict, vrr2_dict, vrr_trend_dict], True)
+    new_data_dict = dm.merge_dicts_list([new_ups_data_dict, vrr_dict, vrr2_dict, vrr_trend_dict], True)
     
     #get data from returns_data.xlsx into dictionary
     returns_dict = dm.get_equity_hedge_returns(all_data=True)
@@ -623,23 +621,12 @@ class equityHedgeReturnsUpdater(bmkDataUpdater):
         '''
         #Import data from bloomberg into dataframe and create dictionary with different frequencies
         new_ups_data_dict = dxf.bbgDataXformer(filepath = UPDATE_DATA_FP+'ups_data.xlsx', sheet_name = 'bbg', format_data = True, freq = '1D').data_xform 
-        #TODO: This isn't necessary, match_dict_columns in calc_data_dict() takes care of this
-        #rename columns to match current returns file
-        # for key in new_ups_data_dict:
-            
-        #     new_ups_data_dict[key].columns = ['SPTR', 'SX5T','M1WD', 'Long Corp', 'STRIPS', 'Down Var',
-        #                                       'Vortex', 'VOLA I', 'VOLA II','Dynamic VOLA','Dynamic Put Spread',
-        #                                       'GW Dispersion', 'Corr Hedge','Def Var (Mon)', 'Def Var (Fri)', 'Def Var (Wed)', 
-        #                                       'Commodity Basket']
 
         #Import vrr returns dictionary
         vrr_dict = dxf.vrrDataXformer(filepath = UPDATE_DATA_FP+'vrr_tracks_data.xlsx').data_xform
         
-        #Import put spread returns dictionary
-        put_spread_dict = dxf.putSpreadDataXformer(filepath = UPDATE_DATA_FP+'put_spread_data.xlsx').data_xform
-        
         #merge returns dictionaries
-        new_data_dict = dm.merge_dicts_list([new_ups_data_dict, vrr_dict, put_spread_dict])
+        new_data_dict = dm.merge_dicts_list([new_ups_data_dict, vrr_dict])
         
         return new_data_dict
     

@@ -108,6 +108,7 @@ def get_price_series(return_series):
     return price_series
 
 #TODO: rethink this function
+#loop through freq not strats
 def add_bps(vrr_dict, strat_name, add_back=.0025):
     '''
     Adds bps back to the returns for the vrr strategy
@@ -353,9 +354,8 @@ class innocapExpDataXformer(innocapDataXformer):
         return exposure_dict
 
 
-#TODO: remove data_source variable
 class vrrDataXformer(dataXformer):
-    def __init__(self, filepath, data_source='VRR Tracks'):
+    def __init__(self, filepath, sheet_name = ["VRR","VRR 2","VRR Trend"],  data_source='custom',drop_na = False):
         """
         Converts excel file into a vrrDataXformer object
 
@@ -364,35 +364,23 @@ class vrrDataXformer(dataXformer):
         filepath : string
             Valid string path.
         data_source : string, optional
-            source of excel file. The default is 'VRR Tracks'.
+            source of excel file. The default is 'custom'.
         Returns
         -------
         vrrDataXformer object
 
         """
-        #TODO: this is a bug, data_source is being assigned to the attribute self.sheet_name
-        super().__init__(filepath,data_source)
+        super().__init__(filepath,sheet_name, data_source)
     
-    #TODO: make this a one line function        
-    #TODO: add drop_na=False as variable
+
     def import_data(self):
         #create dictionary with vrr, vrr2, and vrr trend data frames
-        vrr_dict = di.dataImporter(self.filepath, sheet_name = ["VRR","VRR 2","VRR Trend"], drop_na=False).data_import
-        
-        return vrr_dict
+        return di.dataImporter(self.filepath, self.sheet_name, drop_na = self.drop_na).data_import
     
-    #TODO: discuss with Maddie
+    #TODO: fix add bps
     def xform_data(self):     
-        #TODO: no need for this
-        vrr_df_dict = self.data_import        
-        
-        #merge vrr dataframes
-        #TODO: reference self.data_import
-        vrr_df = dm.merge_data_frames(vrr_df_dict['VRR'], vrr_df_dict['VRR 2'])
-        vrr_df = dm.merge_data_frames(vrr_df, vrr_df_dict['VRR Trend'])
-       
-        #get vrr data dict
-        vrr_returns_dict = get_data_dict(vrr_df)
+    
+        vrr_returns_dict = get_data_dict(pd.concat(self.data_import.values(), axis=1))
         
         #add back bps
         vrr_returns_dict = add_bps(vrr_returns_dict,'VRR')
@@ -402,47 +390,43 @@ class vrrDataXformer(dataXformer):
         
         return vrr_returns_dict
     
-    #TODO: Delete pass
-    pass
 
-class putSpreadDataXformer(dataXformer):
-    def __init__(self, filepath, data_source='put_spread'):
-        """
-        Converts excel file into a putSpreadDataXformer object
 
-        Parameters
-        ----------
-        filepath : string
-            Valid string path.
-        data_source : string, optional
-            source of excel file. The default is 'put_spread'.
-        Returns
-        -------
-        putSpreadDataXformer object
+# class putSpreadDataXformer(dataXformer):
+#     def __init__(self, filepath, data_source='put_spread'):
+#         """
+#         Converts excel file into a putSpreadDataXformer object
 
-        """
+#         Parameters
+#         ----------
+#         filepath : string
+#             Valid string path.
+#         data_source : string, optional
+#             source of excel file. The default is 'put_spread'.
+#         Returns
+#         -------
+#         putSpreadDataXformer object
+
+#         """
         
-        super().__init__(filepath,data_source)
+#         super().__init__(filepath,data_source)
         
-    def import_data(self):
-        return di.putspreadDataImporter(self.filepath).data_import   
+#     def import_data(self):
+#         return di.putspreadDataImporter(self.filepath).data_import   
     
-    def xform_data(self):
-        #no need for this
-        data = self.data_import
-        
-        #only keep 'Put Spread' column
-        data = data[['Put Spread']]
-        
-        #rename column 
-        data.columns = ['99%/90% Put Spread']
-        
-        #get price dataframe
-        data = get_prices_df(data)
-        
-        #get put spread data dict
-        data_dict = get_data_dict(data, index_data = True)
+#     def xform_data(self):
 
-        return data_dict
-    #TODO: Delete pass
-    pass                 
+#         #only keep 'Put Spread' column
+#         data = self.data_import[['Put Spread']]
+        
+#         #rename column 
+#         data.columns = ['99%/90% Put Spread']
+        
+#         #get price dataframe
+#         data = get_prices_df(data)
+        
+#         #get put spread data dict
+#         data_dict = get_data_dict(data, index_data = True)
+
+#         return data_dict
+         

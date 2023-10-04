@@ -200,40 +200,38 @@ class nexenDataImporter(dataImporter):
                                'As Of Date\n','Market Value\n', 'Account Monthly Return\n']]
         self.data_import.columns = ['Name', 'Account Id', 'Return Type', 'Dates', 'Market Value', 'Return']
 
-#TODO: make data_source 'custom'
-class putspreadDataImporter(dataImporter):
-    def __init__(self, filepath ,sheet_name = "Daily", index_col=0, skip_rows=[1],
-                 data_source='put_spread', drop_na=False, index_data = False):
-        """
-        Reads an excel file into a putspreadDataImporter object 
 
-        Parameters
-        ----------
-        filepath : string
-            Valid string path.
-        sheet_name : int, string, list of strings, ints, optional
-            name(s) of excel sheet(s) or positions. The default is 0.
-        index_col : int, optional
-            The default is None.
-        skip_rows : list, optional
-            list of rows to skip when importing. The default is [].
-        data_source : string, optional
-            source of excel file. The default is 'nexen'.
-        drop_na : bool, optional
-            drop NaN values. The default is False.
-        index_data : TYPE, optional
-            DESCRIPTION. The default is False.
+# class putspreadDataImporter(dataImporter):
+#     def __init__(self, filepath ,sheet_name = "Daily", index_col=0, skip_rows=[1],
+#                  data_source='custom', drop_na=False, index_data = False):
+#         """
+#         Reads an excel file into a putspreadDataImporter object 
 
-        Returns
-        -------
-        putspreadDataImporter object
+#         Parameters
+#         ----------
+#         filepath : string
+#             Valid string path.
+#         sheet_name : int, string, list of strings, ints, optional
+#             name(s) of excel sheet(s) or positions. The default is 0.
+#         index_col : int, optional
+#             The default is None.
+#         skip_rows : list, optional
+#             list of rows to skip when importing. The default is [].
+#         data_source : string, optional
+#             source of excel file. The default is 'nexen'.
+#         drop_na : bool, optional
+#             drop NaN values. The default is False.
+#         index_data : TYPE, optional
+#             DESCRIPTION. The default is False.
 
-        """
-        super().__init__(filepath, sheet_name, index_col, skip_rows,
-                              data_source,drop_na, index_data)
+#         Returns
+#         -------
+#         putspreadDataImporter object
+
+#         """
+#         super().__init__(filepath, sheet_name, index_col, skip_rows,
+#                               data_source,drop_na, index_data)
         
-        self.data_import.columns = ['99 Rep','Short Put','Put Spread']
+#         self.data_import.columns = ['99 Rep','Short Put','Put Spread']
 
-    #TODO: Delete pass
-    pass  
      
