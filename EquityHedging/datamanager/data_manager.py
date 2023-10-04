@@ -293,15 +293,15 @@ def create_copy_with_fi(df_returns, equity = 'SPTR', freq='1M', include_fi=False
     if freq == '1W' or freq == '1M':
         if include_fi:
             strategy_returns['FI Benchmark'] = (strategy_returns['Long Corp'] + strategy_returns['STRIPS'])/2
-            strategy_returns = strategy_returns[[equity, 'FI Benchmark', '99%/90% Put Spread', 
+            strategy_returns = strategy_returns[[equity, 'FI Benchmark',
                                                  'Down Var', 'Vortex', 'VOLA','Dynamic Put Spread',
                                                  'VRR 2', 'VRR Trend', 'GW Dispersion', 'Corr Hedge','Def Var', 'Commodity Basket', 'ESPRSO', 'EVolCon']]
         else:
-            strategy_returns = strategy_returns[[equity, '99%/90% Put Spread', 
+            strategy_returns = strategy_returns[[equity, 
                                                  'Down Var', 'Vortex', 'VOLA','Dynamic Put Spread',
                                                  'VRR 2', 'VRR Trend', 'GW Dispersion', 'Corr Hedge','Def Var', 'Commodity Basket', 'ESPRSO', 'EVolCon']]
     else:
-        strategy_returns = strategy_returns[[equity, '99%/90% Put Spread', 'Down Var', 'Vortex',
+        strategy_returns = strategy_returns[[equity, 'Down Var', 'Vortex',
                                              'VOLA','Dynamic Put Spread','VRR 2', 'VRR Trend', 
                                              'GW Dispersion', 'Corr Hedge','Def Var', 'Commodity Basket', 'ESPRSO', 'EVolCon']]
     
@@ -603,13 +603,14 @@ def create_update_dict():
     
     
     #get put spread data
-    put_spread_dict = get_data_to_update(['99 Rep', 'Short Put', '99%/90% Put Spread'], 'put_spread_data.xlsx', 'Daily', put_spread = True)
+    #put_spread_dict = get_data_to_update(['99 Rep', 'Short Put', '99%/90% Put Spread'], 'put_spread_data.xlsx', 'Daily', put_spread = True)
+    
     #incorporate swap fee to putspread
     new_data_dict = add_bps(new_data_dict, 'Dynamic Put Spread', add_back= -0.0015)
     
     #merge vrr and put spread dicts to the new_data dict
 
-    new_ups_data_dict = merge_dicts_list([new_data_dict, put_spread_dict, vrr_dict,vrr2_dict,vrr_trend_dict], fillzeros=False)
+    new_ups_data_dict = merge_dicts_list([new_data_dict, vrr_dict,vrr2_dict,vrr_trend_dict], fillzeros=False)
 
     #get data from returns_data.xlsx into dictionary
     returns_dict = get_equity_hedge_returns(all_data=True)
