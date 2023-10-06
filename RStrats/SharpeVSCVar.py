@@ -10,9 +10,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 from EquityHedging.datamanager import data_manager as dm
 from EquityHedging.analytics import returns_stats  as rs
+import os
+
+CWD = os.getcwd()
 
 #Moments only
-index_prices = pd.read_excel('C:\\Users\\PCR7FJW\\Documents\\RMP\\RStrats\\' + 'JPMMomentsAnalysis.xlsx', sheet_name = 'Index', index_col=0)
+index_prices = pd.read_excel(CWD+'\\RStrats\\' + 'JPMMomentsAnalysis.xlsx', sheet_name = 'Index', index_col=0)
 ol_weights = [0,.01,.02,.03,.04,.05,.06,.07,.08,.09,.1,.11,.12,.13,.14,.15]
 for i in ol_weights:
     index_prices[str(i)] = index_prices['M1WD']+(index_prices['Moments']*i)
@@ -24,34 +27,54 @@ sharpe_list = []
 trackerror_list = []
 ir_list = []
 corr_list = []
+max_dd_list = []
+
 for col in returns_moments_only:
     ret_vol = rs.get_ret_vol_ratio(returns_moments_only[col],'1D')
     cvar = rs.get_cvar(returns_moments_only[col], p = 0.05)
-
-    track_error = (returns_moments_only[col]- returns_moments_only['M1WD']).std()
-    #add information ratio = mean_excess_returns / (returns_moments_only[col]- returns_moments_only['M1WD']).mean() / track_error
-    #add correltaion = correlation_coefficient = returns_moments_only['M1WD'].corr(returns_moments_only[col])
+    excess_return = (returns_moments_only[col]- returns_moments_only['M1WD'])
+    track_error = excess_return.std()
+    if track_error == 0:
+        information_ratio = 0
+    else:     
+        information_ratio = excess_return.mean()/ track_error
+    correlation = returns_moments_only['M1WD'].corr(returns_moments_only[col])
+    max_dd = rs.get_max_dd(index_prices[col])
+    
     cvar_list.append(cvar)
     sharpe_list.append(ret_vol)
     trackerror_list.append(track_error)
-    #ir_list.append(information_ratio)
-    #correlation.append(correlation)
-
+    ir_list.append(information_ratio)
+    corr_list.append(correlation)
+    max_dd_list.append(max_dd)
+    
 df_metrics = pd.DataFrame()
 df_metrics['Sharpe'] = sharpe_list
 df_metrics['CVaR'] = cvar_list
 df_metrics['Tracking Error'] = trackerror_list
+df_metrics['IR'] = ir_list
+df_metrics['Corr'] = corr_list
+df_metrics['Max DD'] = max_dd_list 
 df_metrics.set_index(returns_moments_only.columns,inplace=True)
 df_metrics['Rank'] = df_metrics['Tracking Error'].rank()
-df_metrics['Rank'] = df_metrics['Rank'] * 10
+df_metrics['Rank'] = df_metrics['Rank'] * 50
 
-fig, ax = plt.subplots(figsize=(10, 5))
+
+# Specify the file path where you want to save the Excel file
+file_path = CWD +'\\RStrats\\moments_metrics.xlsx'
+
+# Export the DataFrame to an Excel file
+df_metrics.to_excel(file_path, index=True)  # Set index=False to exclude the DataFrame index in the Excel file
+print(f"DataFrame exported to {file_path}")
+
+
+fig, ax = plt.subplots(figsize=(20, 10))
 
 plt.scatter(df_metrics['CVaR'], df_metrics['Sharpe'], s= df_metrics['Rank'], c = 'blue', marker='o', label='')
 labels = ['','0%','1%','2%','3%','4%','5%','6%','7%','8%','9%','10%','11%','12%','13%','14%','15%']
 # Add labels to each data point
 for i, label in enumerate(labels):
-    plt.annotate(label, (df_metrics['CVaR'][i], df_metrics['Sharpe'][i]), textcoords="offset points", xytext=(-5,8), ha='center')
+    plt.annotate(label, (df_metrics['CVaR'][i], df_metrics['Sharpe'][i]), textcoords="offset points", xytext=(-5,20), ha='center')
 
 # Customize the plot
 plt.xticks(rotation=-45)
