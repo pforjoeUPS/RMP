@@ -620,7 +620,8 @@ class equityHedgeReturnsUpdater(bmkDataUpdater):
 
         '''
         #Import data from bloomberg into dataframe and create dictionary with different frequencies
-        new_ups_data_dict = dxf.bbgDataXformer(filepath = UPDATE_DATA_FP+'ups_data.xlsx', sheet_name = 'bbg', format_data = True, freq = '1D').data_xform 
+        new_ups_data_dict = dxf.bbgDataXformer(filepath = UPDATE_DATA_FP+'ups_data.xlsx', sheet_name = 'bbg', 
+                                               format_data = True, freq = '1D', col_list = EQ_HEGDE_COL_LIST).data_xform 
 
         #Import vrr returns dictionary
         vrr_dict = dxf.vrrDataXformer(filepath = UPDATE_DATA_FP+'vrr_tracks_data.xlsx').data_xform
