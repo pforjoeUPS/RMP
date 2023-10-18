@@ -109,7 +109,7 @@ def get_price_series(return_series):
 
 #TODO: rethink this function
 #loop through freq not strats
-def add_bps(vrr_dict, strat_name, add_back=.0025):
+def add_bps(vrr_dict, add_back=[.0025, .005,.005]):
     '''
     Adds bps back to the returns for the vrr strategy
 
@@ -138,8 +138,11 @@ def add_bps(vrr_dict, strat_name, add_back=.0025):
         #set variable equaly to the frequency of key
         freq = dm.switch_string_freq(key)
         
+        #set annual fees for each frew
+        bps = [value/(dm.switch_freq_int(freq)) for value in add_back]
+        
         #add to dataframe
-        temp_df[strat_name] += add_back/(dm.switch_freq_int(freq))
+        temp_df += bps
         
         #add value to the temp dictionary
         temp_dict[key] = temp_df
@@ -377,18 +380,12 @@ class vrrDataXformer(dataXformer):
         #create dictionary with vrr, vrr2, and vrr trend data frames
         return di.dataImporter(self.filepath, self.sheet_name, drop_na = self.drop_na).data_import
     
-    #TODO: fix add bps
+
     def xform_data(self):     
     
         vrr_returns_dict = get_data_dict(pd.concat(self.data_import.values(), axis=1))
-        
-        #add back bps
-        vrr_returns_dict = add_bps(vrr_returns_dict,'VRR')
-        vrr_returns_dict = add_bps(vrr_returns_dict,'VRR 2', add_back= 0.005)
-        vrr_returns_dict = add_bps(vrr_returns_dict, 'VRR Trend', add_back= 0.005)
-        
-        
-        return vrr_returns_dict
+
+        return add_bps(vrr_returns_dict)
     
 
 
