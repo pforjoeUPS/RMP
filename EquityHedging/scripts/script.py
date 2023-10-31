@@ -19,7 +19,7 @@ from EquityHedging.reporting import formatter as plots
 equity_bmk = 'SPTR'
 include_fi = False
 weighted = [True, False]
-strat_drop_list = ['99%/90% Put Spread', 'Vortex']
+strat_drop_list = ['Vortex']
 new_strat = True
 returns= dm.get_equity_hedge_returns(equity_bmk, include_fi, strat_drop_list)
 

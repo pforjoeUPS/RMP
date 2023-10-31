@@ -10,79 +10,193 @@ import numpy as np
 import matplotlib.pyplot as plt
 from EquityHedging.datamanager import data_manager as dm
 from EquityHedging.analytics import returns_stats  as rs
+from matplotlib.ticker import FuncFormatter
 import os
-
 CWD = os.getcwd()
 
-#Moments only
-index_prices = pd.read_excel(CWD+'\\RStrats\\' + 'JPMMomentsAnalysis.xlsx', sheet_name = 'Index', index_col=0)
-ol_weights = [0,.01,.02,.03,.04,.05,.06,.07,.08,.09,.1,.11,.12,.13,.14,.15]
-for i in ol_weights:
-    index_prices[str(i)] = index_prices['M1WD']+(index_prices['Moments']*i)
-index_prices = index_prices.drop('Moments',axis=1)
-returns_moments_only = dm.get_data_dict(index_prices)['Daily']
+def percent_formatter(x, pos):
+    return f'{x * 100:.2f}%'
 
-cvar_list = []
-sharpe_list = []
-trackerror_list = []
-ir_list = []
-corr_list = []
-max_dd_list = []
+def get_max_dd_from_returns(df):
+    # Calculate the cumulative returns
+    df['Cumulative_Returns'] = (1 + df).cumprod()
 
-for col in returns_moments_only:
-    ret_vol = rs.get_ret_vol_ratio(returns_moments_only[col],'1D')
-    cvar = rs.get_cvar(returns_moments_only[col], p = 0.05)
-    excess_return = (returns_moments_only[col]- returns_moments_only['M1WD'])
-    track_error = excess_return.std()
-    if track_error == 0:
-        information_ratio = 0
-    else:     
-        information_ratio = excess_return.mean()/ track_error
-    correlation = returns_moments_only['M1WD'].corr(returns_moments_only[col])
-    max_dd = rs.get_max_dd(index_prices[col])
+    # Calculate the previous peaks
+    df['Previous_Peaks'] = df['Cumulative_Returns'].cummax()
+
+    # Calculate the drawdowns
+    df['Drawdowns'] = (df['Cumulative_Returns'] / df['Previous_Peaks']) - 1
     
-    cvar_list.append(cvar)
-    sharpe_list.append(ret_vol)
-    trackerror_list.append(track_error)
-    ir_list.append(information_ratio)
-    corr_list.append(correlation)
-    max_dd_list.append(max_dd)
+    # Calculate the Maximum Drawdown
+    max_drawdown = df['Drawdowns'].min()
+    return max_drawdown
+
+
+def get_returns_analysis(df_index_prices, BMK = '', Strat = '', weights = [.01,.02,.03,.04,.05,.06,.07,.08,.09,.1,.11,.12,.13,.14,.15]):  
+    df_weighted_prices = pd.DataFrame({BMK: df_index_prices[BMK],Strat: df_index_prices[Strat]})
+    StratStartLevel = df_index_prices[Strat][0]
+    MXWDIMStartLevel = df_index_prices[BMK][0]
+    for i in weights:
+        StratShare = i * 100.0 / StratStartLevel
+        MXWDIMShare = 100.0 / MXWDIMStartLevel
+        df_weighted_prices[str(i)] = 100.0 + StratShare * (df_index_prices[Strat] - StratStartLevel) + MXWDIMShare * (df_index_prices[BMK]  - MXWDIMStartLevel)
+ 
+    returns_strat_only = dm.get_data_dict(df_weighted_prices)['Daily'].drop((Strat), axis=1)
+
+    var_list = []
+    cvar_list = []
+    sharpe_list = []
+    ret_list = []
+    vol_list = []
+    trackerror_list = []
+    ir_list = []
+    corr_list = []
+    max_dd_list = []
     
-df_metrics = pd.DataFrame()
-df_metrics['Sharpe'] = sharpe_list
-df_metrics['CVaR'] = cvar_list
-df_metrics['Tracking Error'] = trackerror_list
-df_metrics['IR'] = ir_list
-df_metrics['Corr'] = corr_list
-df_metrics['Max DD'] = max_dd_list 
-df_metrics.set_index(returns_moments_only.columns,inplace=True)
-df_metrics['Rank'] = df_metrics['Tracking Error'].rank()
-df_metrics['Rank'] = df_metrics['Rank'] * 50
+    for col in returns_strat_only:
+        ret = returns_strat_only[col].mean() * 252
+        vol = returns_strat_only[col].std() * np.sqrt(252)
+        sharpe = ret/vol
+        bottom5pct = np.percentile(returns_strat_only[col].values[1:],q=5)
+        cvar = returns_strat_only[col][returns_strat_only[col] < bottom5pct].mean()
+        excess_return = (returns_strat_only[col]- returns_strat_only[BMK])
+        track_error = np.std(excess_return) * np.sqrt(252)
+        if track_error == 0:
+            information_ratio = 0
+        else:     
+            information_ratio = excess_return.mean() * 252 / track_error
+        correlation = returns_strat_only[BMK].corr(returns_strat_only[col])
+        max_dd = get_max_dd_from_returns(returns_strat_only[col])
+        
+        var_list.append(bottom5pct)
+        cvar_list.append(cvar)
+        sharpe_list.append(sharpe)
+        ret_list.append(ret)
+        vol_list.append(vol)
+        trackerror_list.append(track_error)
+        ir_list.append(information_ratio)
+        corr_list.append(correlation)
+        max_dd_list.append(max_dd)
+        
+    df_metrics = pd.DataFrame()
+    df_metrics['Ret'] = ret_list
+    df_metrics['Vol'] = vol_list
+    df_metrics['Sharpe'] = sharpe_list
+    df_metrics['5%-ile'] = var_list
+    df_metrics['CVaR'] = cvar_list
+    df_metrics['Tracking Error'] = trackerror_list
+    df_metrics['IR'] = ir_list
+    df_metrics['Corr'] = corr_list
+    df_metrics['Max DD'] = max_dd_list 
+    df_metrics.set_index(returns_strat_only.columns,inplace=True)
+    df_metrics['Rank'] = df_metrics['Tracking Error'].rank()
+    df_metrics['Rank'] = df_metrics['Rank'] * 50
+    
+    return df_metrics
+
+#plot SharpeVSCVaR
+def show_SharpeCVaR(df_metrics, Strat = ''):
+    fig, ax = plt.subplots(figsize=(23, 15))
+    plt.scatter(df_metrics['CVaR'], df_metrics['Sharpe'], s= df_metrics['Rank'], c = 'blue', marker='o', label='')
+    labels = ['0%','1%','2%','3%','4%','5%','6%','7%','8%','9%','10%','11%','12%','13%','14%','15%']
+    # Add labels to each data point
+    for i, label in enumerate(labels):
+        plt.annotate(label, (df_metrics['CVaR'][i], df_metrics['Sharpe'][i]), textcoords="offset points", xytext=(-5,20), ha='center')
+    #Round x and y axes
+    for i, (x, y) in enumerate(zip(df_metrics['CVaR'], df_metrics['Sharpe'])):
+       x_rounded = round(x, 4)
+       y_rounded = round(y, 3)
+       label = f'({x_rounded}%, {y_rounded})'
+       plt.text(x+0.00002, y, label, ha='left', va='bottom')
+    # Customize the plot
+    plt.xticks(rotation=-45)
+    plt.gca().xaxis.set_major_formatter(FuncFormatter(percent_formatter))
+    plt.xlabel('CVaR')
+    plt.ylabel('Sharpe')
+    plt.title('MXWDIM w ' + Strat)
+    plt.show()
+
+#plot for sharpe, cvar, tracking error, correlation, information ratio against extended weights of strategy
+def show_plots(df_metrics, Strat = ''):
+    plot_list = ['Sharpe', 'CVaR', 'Tracking Error', 'Corr', 'IR']
+    ol_weight_index_list = df_metrics.index.tolist()
+    for graph in plot_list:
+        if graph == 'IR':
+            ol_weight_index_list_IR = ol_weight_index_list.copy()
+            ol_weight_index_list_IR.pop(0)
+            ol_weight_index_list_IR_float = [float(x) for x in ol_weight_index_list_IR]
+            df_metrics_IR = df_metrics[graph].copy().tolist()
+            df_metrics_IR.pop(0)
+            plt.scatter(ol_weight_index_list_IR_float, df_metrics_IR, c = 'blue', marker='o', label='')
+            
+            plt.gca().xaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f'{x:.0%}'))
+    
+            plt.xticks(rotation=-45)
+            plt.xlabel('Extended ' + Strat + ' Weights')
+            plt.ylabel(graph)
+            plt.title('MXWDIM w ' + Strat + ': ' + 'Information Ratio')
+            #plt.legend()
+            plt.show()
+        else:
+            plt.scatter(ol_weight_index_list, df_metrics[graph], c = 'blue', marker='o', label='')
+            plt.xticks(rotation=-45)
+            plt.xlabel('Extended ' + Strat + ' Weights')
+            plt.ylabel(graph)
+            plt.title('MXWDIM w ' + Strat + ': ' + graph)
+            #plt.legend()
+            plt.show()
 
 
-# Specify the file path where you want to save the Excel file
-file_path = CWD +'\\RStrats\\moments_metrics.xlsx'
 
+#commods basket
+commods_baskets = pd.read_excel(CWD+'\\RStrats\\' + 'Commods Example.xlsx', sheet_name = 'Sheet1', index_col = 0)
+strat_list = commods_baskets.columns.tolist()
+strat_list.remove('MXWDIM')
+
+#Get Analysis Metrics
+dict_strat_metrics = {}
+for strat in strat_list:
+    df_stratname = f'{strat}_metrics'
+    dict_strat_metrics[df_stratname] = get_returns_analysis(commods_baskets, BMK = 'MXWDIM', Strat = strat)
+
+#Graph plots
+for strat in strat_list:
+    df_stratname = f'{strat}_metrics'
+    show_SharpeCVaR(dict_strat_metrics[df_stratname], Strat = strat)
+    show_plots(dict_strat_metrics[df_stratname], Strat = strat)
+
+#Transpose dataframes and Create an ExcelWriter object and specify the file name
+for strat, df in dict_strat_metrics.items():
+    df = df.transpose()
+    df.columns = [df.columns[0]] + [f'{float(col) * 100:.0f}%' for col in df.columns[1:]]
+    dict_strat_metrics[strat] = df
+with pd.ExcelWriter(CWD+'\\RStrats\\' + 'CommodsProgramMetrics.xlsx', engine='xlsxwriter') as writer:
+    for sheet_name, df in dict_strat_metrics.items():
+        df.to_excel(writer, sheet_name=sheet_name, index=True)
+    
+    
+
+
+#moments
+indicies = pd.read_excel(CWD+'\\RStrats\\' + 'JPMMomentsAnalysis.xlsx', sheet_name = 'index data', index_col=0)
+df_metrics = get_returns_analysis(indicies, BMK = 'MSCI', Strat = 'Moments')
+
+file_path = CWD +'\\RStrats\\moments_metrics1.xlsx'
 # Export the DataFrame to an Excel file
 df_metrics.to_excel(file_path, index=True)  # Set index=False to exclude the DataFrame index in the Excel file
 print(f"DataFrame exported to {file_path}")
 
 
-fig, ax = plt.subplots(figsize=(20, 10))
 
-plt.scatter(df_metrics['CVaR'], df_metrics['Sharpe'], s= df_metrics['Rank'], c = 'blue', marker='o', label='')
-labels = ['','0%','1%','2%','3%','4%','5%','6%','7%','8%','9%','10%','11%','12%','13%','14%','15%']
-# Add labels to each data point
-for i, label in enumerate(labels):
-    plt.annotate(label, (df_metrics['CVaR'][i], df_metrics['Sharpe'][i]), textcoords="offset points", xytext=(-5,20), ha='center')
+#program w moments
+p_weights = [0,0.1,0.2,0.3,0.4,0.5]
+indicies = pd.read_excel(CWD+'\\RStrats\\' + 'weighted hedgesSAM.xlsx', sheet_name = 'Sheet1', index_col=0)
+df_metrics = get_returns_analysis(indicies, BMK = 'MSCI', Strat = 'ProgramWMoments', weights = p_weights )
 
-# Customize the plot
-plt.xticks(rotation=-45)
-plt.xlabel('CVaR')
-plt.ylabel('Sharpe')
-plt.title('M1WD w Moments')
-plt.legend()
-plt.show()
+file_path = CWD +'\\RStrats\\programWmoments_metrics.xlsx'
+# Export the DataFrame to an Excel file
+df_metrics.to_excel(file_path, index=True)  # Set index=False to exclude the DataFrame index in the Excel file
+print(f"DataFrame exported to {file_path}")
 
 
 
@@ -91,113 +205,4 @@ plt.show()
 
 
 
-#Program w Moments
-strat_returns = pd.read_excel('C:\\Users\\PCR7FJW\\Documents\\RMP\\RStrats\\' + 'JPMMomentsAnalysis.xlsx', sheet_name = 'Strat Returns', index_col=0)
-moments_returns = pd.read_excel('C:\\Users\\PCR7FJW\\Documents\\RMP\\RStrats\\' + 'JPMMomentsAnalysis.xlsx', sheet_name = 'Moments Return', index_col=0)
-strat_returns = pd.merge(strat_returns, moments_returns, left_index=True, right_index=True, how="inner")
-
-notional_weights = [11, 1, 1.25, 1, 1, 1, .25, 1, 1, 0.4, 1, 0.5]
-weights = []
-for i, notional in enumerate(notional_weights):
-    if i == 0:
-        weights.append(1)
-    else:
-        weights.append(notional / sum(notional_weights[1:12]))
-
-for i in range(0,len(notional_weights)):
-    strat_returns[strat_returns.columns[i]] = strat_returns[strat_returns.columns[i]]*weights[i]
-
-for col in strat_returns.columns:
-    if col == 'M1WD':
-        strat_returns['Weighted_Strat_Returns'] = strat_returns['M1WD']*0
-    else:
-        strat_returns['Weighted_Strat_Returns'] += strat_returns[col]
-        strat_returns = strat_returns.drop(columns=[col])
-
-strat_return_index_prices = dm.get_prices_df(strat_returns)
-
-ol_weights = [0,.05,.1,.15,.2,.25,.3,.35,.4,.45,.5]
-for i in ol_weights:
-    strat_return_index_prices[str(i)] = strat_return_index_prices['M1WD']+(strat_return_index_prices['Weighted_Strat_Returns']*i)
-strat_return_index_prices = strat_return_index_prices.drop('Weighted_Strat_Returns',axis=1)
-returns_program_w_moments = dm.get_data_dict(strat_return_index_prices.reset_index(drop=True))['Daily']
-
-
-#Program w/o Moments
-strat_returns = pd.read_excel('C:\\Users\\PCR7FJW\\Documents\\RMP\\RStrats\\' + 'JPMMomentsAnalysis.xlsx', sheet_name = 'Strat Returns', index_col=0)
-notional_weights = [11, 1, 1.25, 1, 1, 1, .25, 1, 1, 0.4, 1]
-weights = []
-for i, notional in enumerate(notional_weights):
-    if i == 0:
-        weights.append(1)
-    else:
-        weights.append(notional / sum(notional_weights[1:11]))
-
-for i in range(0,len(notional_weights)):
-    strat_returns[strat_returns.columns[i]] = strat_returns[strat_returns.columns[i]]*weights[i]
-
-for col in strat_returns.columns:
-    if col == 'M1WD':
-        strat_returns['Weighted_Strat_Returns'] = strat_returns['M1WD']*0
-    else:
-        strat_returns['Weighted_Strat_Returns'] += strat_returns[col]
-        strat_returns = strat_returns.drop(columns=[col])
-
-strat_return_index_prices = dm.get_prices_df(strat_returns)
-
-ol_weights = [0,.05,.1,.15,.2,.25,.3,.35,.4,.45,.5]
-for i in ol_weights:
-    strat_return_index_prices[str(i)] = strat_return_index_prices['M1WD']+(strat_return_index_prices['Weighted_Strat_Returns']*i)
-strat_return_index_prices = strat_return_index_prices.drop('Weighted_Strat_Returns',axis=1)
-returns_program_wo_moments = dm.get_data_dict(strat_return_index_prices.reset_index(drop=True))['Daily']
-
-
-
-data_sets_dict = {}
-for returns in [returns_program_w_moments, returns_program_wo_moments]:
-    cvar_list = []
-    sharpe_list = []
-    trackerror_list = []
-    for col in returns:
-        ret_vol = rs.get_ret_vol_ratio(returns[col],'1D')
-        cvar = rs.get_cvar(returns[col], p = 0.05)
-        track_error = np.std(returns[col]- returns['M1WD'])
-        
-        cvar_list.append(cvar)
-        sharpe_list.append(ret_vol)
-        trackerror_list.append(track_error)
-
-    df_metrics = pd.DataFrame()
-    df_metrics['Sharpe'] = sharpe_list
-    df_metrics['CVaR'] = cvar_list
-    df_metrics['Tracking Error'] = trackerror_list
-    df_metrics.set_index(returns.columns,inplace=True)
-    df_metrics['Rank'] = df_metrics['Tracking Error'].rank()
-    df_metrics['Rank'] = df_metrics['Rank'] * 8
-    
-    data_sets_dict['Program w Moments'] = df_metrics
-    data_sets_dict['Program wo Moments'] = df_metrics
-
-
-fig, ax = plt.subplots(figsize=(8, 3))
-
-plt.scatter(data_sets_dict['Program w Moments']['CVaR'], data_sets_dict['Program w Moments']['Sharpe'], s= data_sets_dict['Program w Moments']['Rank'],
-            c='blue', marker='v', label='With Moments')
-plt.scatter(data_sets_dict['Program wo Moments']['CVaR'], data_sets_dict['Program wo Moments']['Sharpe'], s= data_sets_dict['Program wo Moments']['Rank'], 
-            c='green', marker='^', label='Without Moments')
-
-
-labels = ['','0%','5%','10%','15%','20%','25%','30%','35%','40%','45%','50%']
-# Add labels to each data point
-for i, label in enumerate(labels):
-    plt.annotate(label, (data_sets_dict['Program w Moments']['CVaR'][i], data_sets_dict['Program w Moments']['Sharpe'][i]), textcoords="offset points", xytext=(-5,8), ha='center')
-
-
-# Customize the plot
-plt.xticks(rotation=-45)
-plt.xlabel('CVaR')
-plt.ylabel('Sharpe')
-plt.title('Program w and wo Moments')
-plt.legend()
-plt.show()
 
