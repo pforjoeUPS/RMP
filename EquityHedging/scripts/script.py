@@ -26,9 +26,9 @@ returns= dm.get_equity_hedge_returns(equity_bmk, include_fi, strat_drop_list)
 #Add new strat
 new_strat = False
 if new_strat:
-    strategy_list = ['QSP']
-    filename = 'QSPAM.xlsx'
-    sheet_name = 'Timeseries'
+    strategy_list = ['MACQ Macro TH']
+    filename = 'macro_th_index_levels.xlsx'
+    sheet_name = 'Sheet1'
     new_strategy = dm.get_new_strategy_returns_data(filename, sheet_name, strategy_list)
     new_strategy_dict = dm.get_data_dict(new_strategy, data_type='index')
     returns = dm.merge_dicts(returns, new_strategy_dict)
@@ -36,7 +36,7 @@ if new_strat:
 
 #get notional weights
 #notional_weights = dm.get_notional_weights(returns['Monthly'])
-notional_weights = [11, 1, 1.25, 1, 0.75, 0.25, 1, .25, 1, 1, 0.4, 1]
+notional_weights = [11, 1, 1.25, 1, 0.75, 0.25, 1, .25, 1, 1, 0.4, 1,1]
 #notional_weights = [11, 1.25, 1, 1, 1, .25, 1, 1, 0.4, 1, 1]
 returns = dm.get_returns_VRR_Portfolio(returns, notional_weights)
 notional_weights[4:6] = [notional_weights[4] + notional_weights[5]]
@@ -89,7 +89,7 @@ for i in returns:
 
 
 #run report
-equity_hedge_report = 'downvar_equity_hedge_analysis'
+equity_hedge_report = 'MACQMacroTH_equity_hedge_analysis.xlsx'
 selloffs = True
 # start = time.time()
 rp.get_equity_hedge_report(equity_hedge_report, returns,notional_weights, include_fi, new_strat, weighted[0], selloffs)

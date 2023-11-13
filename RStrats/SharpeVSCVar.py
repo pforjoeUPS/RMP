@@ -166,93 +166,97 @@ def transpose_export_excel_file(strat_metrics, strat_type = '', multiple = False
         for strat, df in strat_metrics.items():
             df = df.transpose()
             df.columns = [df.columns[0]] + [f'{float(col) * 100:.0f}%' for col in df.columns[1:]]
-            dict_strat_metrics[strat] = df
+            strat_metrics[strat] = df
         with pd.ExcelWriter(CWD+'\\RStrats\\' + strat_type + 'MetricsAnalysis.xlsx', engine='xlsxwriter') as writer:
-            for sheet_name, df in dict_strat_metrics.items():
+            for sheet_name, df in strat_metrics.items():
                 df.to_excel(writer, sheet_name=sheet_name, index=True)
     else:
         strat_metrics = strat_metrics.transpose()
-        file_path = CWD +'\\RStrats\\'+ Strat + 'Metrics.xlsx'
+        file_path = CWD +'\\RStrats\\'+ strat_type + 'Metrics.xlsx'
         # Export the DataFrame to an Excel file
         strat_metrics.to_excel(file_path, index=True)
         
-    print(f"DataFrame exported to {file_path}")
 
 
-df_index_prices = pd.read_excel(CWD+'\\RStrats\\' + 'Performance Q3 2023.xlsx', sheet_name = 'Sheet2', index_col=0)
-MXWDIM_index = pd.read_excel(CWD+'\\RStrats\\' + 'Commods Example.xlsx', sheet_name = 'Sheet2', index_col=0)['MXWDIM']
-
-strats_weighted_index = get_weighted_index(df_index_prices, notional_weights = [1,1.25,1,1,1,.25,1,1,.55,1])
-
-df_index_prices = pd.read_excel(CWD+'\\RStrats\\' + 'Commods Example.xlsx', sheet_name = 'Sheet4', index_col=0)
-MXWDIM_index = pd.read_excel(CWD+'\\RStrats\\' + 'Commods Example.xlsx', sheet_name = 'Sheet2', index_col=0)['MXWDIM']
-
-commods_weighted_index = get_weighted_index(df_index_prices, notional_weights = [1.25, 0.167, 0.167, 0.167, 0.167, 0.167, 0.167])
-df_index_prices = pd.concat([MXWDIM_index, commods_weighted_index], axis=1, keys=["MXWDIM", "Commods Weighted Index"], join='inner')
-
-
-
-
-#FOR SINGULAR INDEX ANALYSIS
-BMK = 'MXWDIM'
-Strat = 'Commods Weighted Index'
-weights = [.05,.1,.15,.2,.25,.3,.35,.4,.45,.5]
-
-df_metrics = get_returns_analysis(df_index_prices, BMK = BMK, Strat = Strat, weights = weights)
-show_SharpeCVaR(df_metrics, BMK = BMK, Strat = Strat, weights = weights)
-show_plots(df_metrics, Strat = Strat)
-transpose_export_excel_file(df_metrics, strat_type = Strat)
-
-
-
-#FOR MULTIPLE INDICIES ANALYSIS
-BMK = 'MXWDIM'
-filename = 'Commods Example.xlsx'
-sheetname = 'Sheet2'
-strat_type = 'Commods Basket'
-strat_index = pd.read_excel(CWD+'\\RStrats\\' + filename, sheet_name = sheetname, index_col = 0)
-strat_list = strat_index.columns.tolist()
-strat_list.remove('MXWDIM')
-
-#Get Analysis Metrics
-dict_strat_metrics = {}
-for strat in strat_list:
-    df_stratname = f'{strat}'
-    dict_strat_metrics[df_stratname] = get_returns_analysis(strat_index, BMK = 'MXWDIM', Strat = strat)
-
-#Graph plots
-for strat in strat_list:
-    df_stratname = f'{strat}'
-    show_SharpeCVaR(dict_strat_metrics[df_stratname], Strat = strat)
-    show_plots(dict_strat_metrics[df_stratname], Strat = strat)
-
-#graphing against strategies
-test_strat_list = list(dict_strat_metrics.keys())
-plot_list = ['Ret', 'Vol', 'Sharpe', 'CVaR', 'Tracking Error', 'Corr', 'IR',]
-for graph in plot_list:
-    plt.figure(figsize=(8, 6))
-    for strat in test_strat_list:
-        ol_weights_index_list = dict_strat_metrics[strat].index.tolist()
-        metrics_results_list = dict_strat_metrics[strat][graph]
-        if graph == 'IR':
-            ol_weights_index_list.pop(0)
-            ol_weights_index_list = [float(x) for x in ol_weights_index_list]
-            metrics_results_list = dict_strat_metrics[strat][graph].copy().tolist()
-            metrics_results_list.pop(0)
-        plt.scatter(ol_weights_index_list, metrics_results_list, label=strat, marker='o')
-    plt.xticks(rotation=-45)
-    plt.xlabel('Extended Weights')
-    plt.ylabel(graph)
-    plt.title(strat_type + ': ' + graph)
-    if graph == 'IR':
-        plt.gca().xaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f'{x:.0%}'))
-    
-    plt.legend(loc='upper left', bbox_to_anchor=(1, 1))
-    plt.show()
-
-#get report
-transpose_export_excel_file(dict_strat_metrics, strat_type = strat_type, multiple = True)
-
+# =============================================================================
+# df_index_prices = pd.read_excel(CWD+'\\RStrats\\' + 'Performance Q3 2023.xlsx', sheet_name = 'Sheet2', index_col=0)
+# MXWDIM_index = pd.read_excel(CWD+'\\RStrats\\' + 'Commods Example.xlsx', sheet_name = 'Sheet2', index_col=0)['MXWDIM']
+# 
+# strats_weighted_index = get_weighted_index(df_index_prices, notional_weights = [1,1.25,1,1,1,.25,1,1,.55,1])
+# 
+# df_index_prices = pd.read_excel(CWD+'\\RStrats\\' + 'Commods Example.xlsx', sheet_name = 'Sheet4', index_col=0)
+# MXWDIM_index = pd.read_excel(CWD+'\\RStrats\\' + 'Commods Example.xlsx', sheet_name = 'Sheet2', index_col=0)['MXWDIM']
+# 
+# commods_weighted_index = get_weighted_index(df_index_prices, notional_weights = [1.25, 0.167, 0.167, 0.167, 0.167, 0.167, 0.167])
+# df_index_prices = pd.concat([MXWDIM_index, commods_weighted_index], axis=1, keys=["MXWDIM", "Commods Weighted Index"], join='inner')
+# 
+# 
+# 
+# 
+# #FOR SINGULAR INDEX ANALYSIS
+# BMK = 'MXWDIM'
+# Strat = 'Commods Weighted Index'
+# weights = [.05,.1,.15,.2,.25,.3,.35,.4,.45,.5]
+# 
+# df_metrics = get_returns_analysis(df_index_prices, BMK = BMK, Strat = Strat, weights = weights)
+# show_SharpeCVaR(df_metrics, BMK = BMK, Strat = Strat, weights = weights)
+# show_plots(df_metrics, Strat = Strat)
+# transpose_export_excel_file(df_metrics, strat_type = Strat)
+# 
+# 
+# 
+# 
+# 
+# 
+# #FOR MULTIPLE INDICIES ANALYSIS
+# BMK = 'MXWDIM'
+# filename = 'Strat Returns 2016-092023.xlsx'
+# sheetname = 'Sheet1'
+# strat_type = 'EqHedgeProgram'
+# strat_index = pd.read_excel(CWD+'\\RStrats\\' + filename, sheet_name = sheetname, index_col = 0)
+# strat_list = strat_index.columns.tolist()
+# strat_list.remove('MXWDIM')
+# 
+# #Get Analysis Metrics
+# dict_strat_metrics = {}
+# for strat in strat_list:
+#     df_stratname = f'{strat}'
+#     dict_strat_metrics[df_stratname] = get_returns_analysis(strat_index, BMK = 'MXWDIM', Strat = strat)
+# 
+# #Graph plots
+# for strat in strat_list:
+#     df_stratname = f'{strat}'
+#     show_SharpeCVaR(dict_strat_metrics[df_stratname], Strat = strat)
+#     show_plots(dict_strat_metrics[df_stratname], Strat = strat)
+# 
+# #graphing against strategies
+# test_strat_list = list(dict_strat_metrics.keys())
+# plot_list = ['Ret', 'Vol', 'Sharpe', 'CVaR', 'Tracking Error', 'Corr', 'IR',]
+# for graph in plot_list:
+#     plt.figure(figsize=(8, 6))
+#     for strat in test_strat_list:
+#         ol_weights_index_list = dict_strat_metrics[strat].index.tolist()
+#         metrics_results_list = dict_strat_metrics[strat][graph]
+#         if graph == 'IR':
+#             ol_weights_index_list.pop(0)
+#             ol_weights_index_list = [float(x) for x in ol_weights_index_list]
+#             metrics_results_list = dict_strat_metrics[strat][graph].copy().tolist()
+#             metrics_results_list.pop(0)
+#         plt.scatter(ol_weights_index_list, metrics_results_list, label=strat, marker='o')
+#     plt.xticks(rotation=-45)
+#     plt.xlabel('Extended Weights')
+#     plt.ylabel(graph)
+#     plt.title(strat_type + ': ' + graph)
+#     if graph == 'IR':
+#         plt.gca().xaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f'{x:.0%}'))
+#     
+#     plt.legend(loc='upper left', bbox_to_anchor=(1, 1))
+#     plt.show()
+# 
+# #get report
+# transpose_export_excel_file(dict_strat_metrics, strat_type = strat_type, multiple = True)
+# 
+# =============================================================================
 
 
 
