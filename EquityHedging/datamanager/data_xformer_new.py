@@ -107,46 +107,6 @@ def get_price_series(return_series):
         price_series[i] = (return_series[i] + 1) * price_series[i-1]
     return price_series
 
-#TODO: rethink this function
-#loop through freq not strats
-def add_bps(vrr_dict, add_back=[.0025, .005,.005]):
-    '''
-    Adds bps back to the returns for the vrr strategy
-
-    Parameters
-    ----------
-    vrr_dict : dictionary
-        DESCRIPTION.
-    add_back : float
-        DESCRIPTION. The default is .0025.
-
-    Returns
-    -------
-    temp_dict : dictionary
-        dictionary of VRR returns with bips added to it
-
-    '''
-    #create empty dictionary
-    temp_dict = {}
-    
-    #iterate through keys of a dictionary
-    for key in vrr_dict:
-        
-        #set dataframe equal to dictionary's key
-        temp_df = vrr_dict[key].copy()
-        
-        #set variable equaly to the frequency of key
-        freq = dm.switch_string_freq(key)
-        
-        #set annual fees for each frew
-        bps = [value/(dm.switch_freq_int(freq)) for value in add_back]
-        
-        #add to dataframe
-        temp_df += bps
-        
-        #add value to the temp dictionary
-        temp_dict[key] = temp_df
-    return temp_dict
 
 class dataXformer():
     def __init__(self, filepath, sheet_name=0, data_source='custom', freq='1M', col_list=[]
@@ -381,11 +341,52 @@ class vrrDataXformer(dataXformer):
         return di.dataImporter(self.filepath, self.sheet_name, drop_na = self.drop_na).data_import
     
 
+    def add_bps(self, vrr_returns_dict,add_back=[.0025, .005,.005]):
+        '''
+        Adds bps back to the returns for the vrr strategy
+
+        Parameters
+        ----------
+        vrr_dict : dictionary
+            DESCRIPTION.
+        add_back : float
+            DESCRIPTION. The default is .0025.
+
+        Returns
+        -------
+        temp_dict : dictionary
+            dictionary of VRR returns with bips added to it
+
+        '''
+        #create empty dictionary
+        temp_dict = {}
+        
+
+        #iterate through keys of a dictionary
+        for key in vrr_returns_dict:
+            
+            #set dataframe equal to dictionary's key
+            temp_df = vrr_returns_dict[key].copy()
+            
+            #set variable equaly to the frequency of key
+            freq = dm.switch_string_freq(key)
+            
+            #set annual fees for each frew
+            bps = [value/(dm.switch_freq_int(freq)) for value in add_back]
+            
+            #add to dataframe
+            temp_df += bps
+            
+            #add value to the temp dictionary
+            temp_dict[key] = temp_df
+        return temp_dict
+
+
     def xform_data(self):     
     
         vrr_returns_dict = get_data_dict(pd.concat(self.data_import.values(), axis=1))
 
-        return add_bps(vrr_returns_dict)
+        return self.add_bps(vrr_returns_dict)
     
 
 
