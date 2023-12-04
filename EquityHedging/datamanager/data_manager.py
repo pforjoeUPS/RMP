@@ -27,7 +27,7 @@ QIS_UNIVERSE = CWD + '\\Cluster Analysis\\data\\'
 NEW_DATA_COL_LIST = ['SPTR', 'SX5T','M1WD', 'Long Corp', 'STRIPS', 'Down Var',
  'Vortex', 'VOLA I', 'VOLA II','Dynamic VOLA','Dynamic Put Spread',
                     'GW Dispersion', 'Corr Hedge','Def Var (Mon)', 'Def Var (Fri)', 'Def Var (Wed)', 
-                    'Commodity Basket','ESPRSO']
+                    'Commodity Basket','ESPRSO','EVolCon']
 
 def merge_dicts(main_dict, new_dict, fillzeros = False):
 
@@ -307,15 +307,15 @@ def create_copy_with_fi(df_returns, equity = 'SPTR', freq='1M', include_fi=False
             strategy_returns = strategy_returns[[equity, 'FI Benchmark', 
 
                                                  'Down Var', 'Vortex', 'VOLA 3','Dynamic Put Spread',
-                                                  'VRR 2', 'VRR Trend', 'GW Dispersion', 'Corr Hedge','Def Var','Commodity Basket','ESPRSO']]
+                                                  'VRR 2', 'VRR Trend', 'GW Dispersion', 'Corr Hedge','Def Var','Commodity Basket','ESPRSO','EVolCon']]
         else:
             strategy_returns = strategy_returns[[equity,
                                                  'Down Var', 'Vortex', 'VOLA 3','Dynamic Put Spread',
-                                                 'VRR 2', 'VRR Trend', 'GW Dispersion', 'Corr Hedge','Def Var','Commodity Basket','ESPRSO']]
+                                                 'VRR 2', 'VRR Trend', 'GW Dispersion', 'Corr Hedge','Def Var','Commodity Basket','ESPRSO','EVolCon']]
     else:
         strategy_returns = strategy_returns[[equity, 'Down Var', 'Vortex',
                                              'VOLA 3','Dynamic Put Spread', 'VRR 2', 'VRR Trend', 
-                                             'GW Dispersion', 'Corr Hedge','Def Var','Commodity Basket','ESPRSO']]
+                                             'GW Dispersion', 'Corr Hedge','Def Var','Commodity Basket','ESPRSO','EVolCon']]
 
     return strategy_returns
 
