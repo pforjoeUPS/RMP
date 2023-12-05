@@ -24,6 +24,33 @@ def bootstrap_resample(data):
     resample_indices = np.random.choice(n, n, replace=True)
     return data.iloc[resample_indices].reset_index(drop=True)
 
+def calculate_cagr(returns_series, years_lookback = 3):
+    years = returns_series.index.year.unique().tolist()[-years_lookback:]
+    returns = returns_series.loc[f'{years[0]}-01-01':f'{years[-1]}-12-31']
+    cum_returns = (1 + returns).cumprod() - 1
+    total_return = cum_returns.iloc[-1]
+    num_years = len(returns) / 252
+    cagr = (1 + total_return) ** (1 / num_years) - 1
+    return cagr
+
+def calculate_max_drawdown(returns_series):
+    cum_returns = (1 + returns_series).cumprod()
+    peak = cum_returns.cummax()
+    drawdown = (cum_returns/peak)-1
+    max_drawdown = drawdown.min()
+    return max_drawdown
+
+def calculate_average_annual_drawdowns(returns_series, years_lookback = 3):
+    avg_max_dd = 0
+    for year in returns_series.index.year.unique().tolist()[-years_lookback:]:
+        returns_year = returns_series.loc[f'{year}-01-01':f'{year}-12-31']
+        max_dd_year = calculate_max_drawdown(returns_year)
+        avg_max_dd += max_dd_year
+    avg_max_dd /= years_lookback
+    return avg_max_dd
+
+
+
 def mean_variance_optimization_V1(returns):
     """
     Perform mean-variance optimization and return the optimal weights
@@ -128,14 +155,6 @@ def mean_variance_optimization_V2(returns, num_iterations=1000):
     return final_optimal_weights
 
 
-def calculate_max_drawdown(returns_series):
-    cum_returns = np.cumprod(1 + returns_series) - 1
-    peak = np.maximum.accumulate(cum_returns)
-    drawdown = cum_returns - peak
-    max_drawdown = np.min(drawdown)
-    return max_drawdown
-
-
 def mean_variance_optimization_V3(returns, num_iterations=1000):
     """
     Perform mean-variance optimizatio and return the optimal weights with resmapling correlation matrix
@@ -203,7 +222,7 @@ def mean_variance_optimization_V3(returns, num_iterations=1000):
 def mean_variance_optimization_V4(returns, num_iterations=1000):
     """
     Perform mean-variance optimizatio and return the optimal weights with resmapling correlation matrix
-    Objective using calmar
+    Objective using calmar and sharpe
     
     Parameters:
     returns -- DataFrame
@@ -271,10 +290,75 @@ def mean_variance_optimization_V4(returns, num_iterations=1000):
     final_optimal_weights = np.mean(all_optimal_weights, axis=0)
 
     return final_optimal_weights
+
+
+def mean_variance_optimization_V5(returns, num_iterations=1000):
+    """
+    Perform mean-variance optimization and return the optimal weights with resampled correlation matrix
+    Objective using CAGR divided by average annual maximum drawdown
+    
+    Parameters:
+    returns -- DataFrame
+    num_iterations -- int
+
+    Returns:
+    final_optimal_weights -- array
+    """
+    
+    # Calculate the mean and volatility of returns
+    mean_returns = returns.mean() * 252
+    volatility = returns.std(axis=0)
+
+    # Resample correlation matrices using bootstrap
+    resampled_matrices = []
+
+    for _ in range(num_iterations):
+        # Bootstrap resampling for returns data
+        resampled_returns = bootstrap_resample(returns)
+
+        # Calculate the correlation matrix for the resampled dataset
+        resampled_matrix = np.corrcoef(resampled_returns, rowvar=False)
+        
+        # Append the resampled matrix to the list
+        resampled_matrices.append(resampled_matrix)
+    
+    # Objective function using CAGR divided by average annual maximum drawdown
+    def objective(weights, expected_returns, covariance_matrix):
+        cagr = calculate_cagr(returns @ weights)
+        avg_max_drawdown = calculate_average_annual_drawdowns(returns @ weights)
+        sterling_ratio = cagr / (abs(avg_max_drawdown) + 0.1)
+        return -sterling_ratio
+
+    # Optimization for each sampled matrix
+    all_optimal_weights = []
+
+    for correlation_matrix in resampled_matrices:
+        covariance_matrix = calculate_covariance_matrix(correlation_matrix, volatility)
+        
+        # Constraints and bounds
+        constraints = ({'type': 'eq', 'fun': lambda weights: np.sum(weights) - 1})
+        bounds = tuple((0, 0.5) for _ in range(len(returns.columns.tolist())))
+
+        # Initial guess
+        initial_weights = np.ones(len(returns.columns.tolist())) / len(returns.columns.tolist())
+
+        # Perform optimization
+        result = minimize(objective, initial_weights, args=(mean_returns, covariance_matrix),
+                          method='SLSQP', bounds=bounds, constraints=constraints)
+
+        # Collect optimal weights
+        optimal_weights = result.x
+        all_optimal_weights.append(optimal_weights)
+
+    # Aggregate results (e.g., take the mean or median)
+    final_optimal_weights = np.mean(all_optimal_weights, axis=0)
+
+    return final_optimal_weights
+
+
 #==================================================================================================================
 #MXWDIM DATA
-MXWDIM_index = pd.read_excel(CWD+'\\RStrats\\' + 'Commods Example.xlsx', sheet_name = 'Sheet2', index_col=0)
-MXWDIM_index = MXWDIM_index[['MXWDIM']].copy()
+MXWDIM_index = pd.read_excel(CWD+'\\RStrats\\' + 'MXWDIM Historical Price.xlsx', sheet_name = 'Sheet2', index_col=0)
 
 
 #PROGRAM DATA
@@ -295,11 +379,24 @@ df_index_prices = pd.merge(new_strat, new_strat1, left_index=True, right_index=T
 #GRIND LOWER HEDGES DATA
 new_strat = pd.read_excel(dm.NEW_DATA + 'esprso.xlsx',
                                            sheet_name = 'Sheet2', index_col=0)
-new_strat1 = new_strat = pd.read_excel(dm.NEW_DATA + 'Barclays Grind Lower Ts.xlsx',
+new_strat1 = pd.read_excel(dm.NEW_DATA + 'Barclays Grind Lower Ts.xlsx',
                                            sheet_name = 'Sheet1', index_col=0)
-new_strat2 = new_strat = pd.read_excel(dm.NEW_DATA + 'Barclays Grind Lower TS.xlsx',
-                                           sheet_name = 'SG', index_col=0)
-df_index_prices = df_index_prices = pd.merge(new_strat, new_strat1, left_index=True, right_index=True, how='inner').merge(new_strat2, left_index=True, right_index=True, how='inner')
+#new_strat2 = pd.read_excel(dm.NEW_DATA + 'Barclays Grind Lower TS.xlsx',
+                                           #sheet_name = 'SG', index_col=0)
+df_index_prices = df_index_prices = pd.merge(new_strat, new_strat1, left_index=True, right_index=True, how='inner')
+
+
+#RATES STRATEGIES
+new_strat = pd.read_excel(CWD+'\\RStrats\\' + 'VRR Timeseries.xlsx',
+                                           sheet_name = 'wTrend', index_col=0)
+new_strat1 = pd.read_excel(dm.NEW_DATA + 'NOMURA RATES.xlsx',
+                                           sheet_name = 'USD', index_col=0)
+new_strat2 = pd.read_excel(dm.NEW_DATA + 'NOMURA RATES.xlsx',
+                                           sheet_name = 'UBS CONVEX', index_col=0)
+df_index_prices = pd.merge(new_strat, new_strat1, left_index=True, right_index=True, how='inner').merge(new_strat2, left_index=True, right_index=True, how='inner')
+#JUST UBS CONTRUCTION LEGS
+df_index_prices = pd.read_excel(dm.NEW_DATA + 'UPS - Defensive Rates tracks.xlsx',
+                                           sheet_name = 'CONSTRUCT', index_col=0)
 
 
 #calculated returns off of price data
@@ -309,8 +406,9 @@ returns = df_index_prices.pct_change().dropna()
 mean_var_weights_V2 = pd.DataFrame({'Optimal Weight V2': mean_variance_optimization_V2(returns).tolist()}, index=returns.columns.tolist())
 mean_var_weights_V3 = pd.DataFrame({'Optimal Weight V3': mean_variance_optimization_V3(returns).tolist()}, index=returns.columns.tolist())
 mean_var_weights_V4 = pd.DataFrame({'Optimal Weight V4': mean_variance_optimization_V4(returns).tolist()}, index=returns.columns.tolist())
+mean_var_weights_V5 = pd.DataFrame({'Optimal Weight V5': mean_variance_optimization_V5(returns).tolist()}, index=returns.columns.tolist())
 
-program_mean_var_weights = pd.merge(mean_var_weights_V2, mean_var_weights_V3, left_index=True, right_index=True, how='inner').merge(mean_var_weights_V4, left_index=True, right_index=True, how='inner')
+program_mean_var_weights = pd.merge(mean_var_weights_V2, mean_var_weights_V3, left_index=True, right_index=True, how='inner').merge(mean_var_weights_V4, left_index=True, right_index=True, how='inner').merge(mean_var_weights_V5, left_index=True, right_index=True, how='inner')
 
 
 
