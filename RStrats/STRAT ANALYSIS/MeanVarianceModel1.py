@@ -292,7 +292,7 @@ def mean_variance_optimization_V4(returns, num_iterations=1000):
     return final_optimal_weights
 
 
-def mean_variance_optimization_V5(returns, num_iterations=1000):
+def mean_variance_optimization_V5(returns, num_iterations=1000, years_lookback = 3, rf_rate = 0.1):
     """
     Perform mean-variance optimization and return the optimal weights with resampled correlation matrix
     Objective using CAGR divided by average annual maximum drawdown
@@ -324,9 +324,9 @@ def mean_variance_optimization_V5(returns, num_iterations=1000):
     
     # Objective function using CAGR divided by average annual maximum drawdown
     def objective(weights, expected_returns, covariance_matrix):
-        cagr = calculate_cagr(returns @ weights)
-        avg_max_drawdown = calculate_average_annual_drawdowns(returns @ weights)
-        sterling_ratio = cagr / (abs(avg_max_drawdown) + 0.1)
+        cagr = calculate_cagr(returns @ weights, years_lookback)
+        avg_max_drawdown = calculate_average_annual_drawdowns(returns @ weights, years_lookback)
+        sterling_ratio = cagr / (abs(avg_max_drawdown) + rf_rate)
         return -sterling_ratio
 
     # Optimization for each sampled matrix
@@ -364,6 +364,9 @@ MXWDIM_index = pd.read_excel(CWD+'\\RStrats\\' + 'MXWDIM Historical Price.xlsx',
 #PROGRAM DATA
 df_index_prices = pd.read_excel(CWD+'\\RStrats\\' + 'weighted hedgesSam.xlsx', sheet_name = 'Sheet2', index_col=0)
 df_index_prices = df_index_prices.drop('Commodity Basket', axis=1)
+
+#COMMODITIES
+df_index_prices = pd.read_excel(CWD+'\\RStrats\\' + 'Commods Example.xlsx', sheet_name = 'Sheet4', index_col=0)
 
 
 #DISPERSION DATA
@@ -413,7 +416,7 @@ program_mean_var_weights = pd.merge(mean_var_weights_V2, mean_var_weights_V3, le
 
 
 
-
+#======================================================================================================================================
 #V1_index = SVC.get_weighted_index(df_index_prices, notional_weights = mean_var_weights_V1['Optimal Weight'].tolist())
 V2_index = SVC.get_weighted_index(df_index_prices, notional_weights = program_mean_var_weights['Optimal Weight V2'].tolist())
 V3_index = SVC.get_weighted_index(df_index_prices, notional_weights = program_mean_var_weights['Optimal Weight V3'].tolist())
