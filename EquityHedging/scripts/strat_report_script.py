@@ -4,7 +4,8 @@ Created on Wed Jun 29 22:21:38 2022
 
 @author: RRQ1FYQ
 """
-
+import os
+CWD = os.getcwd()
 from EquityHedging.datamanager import data_manager as dm
 from EquityHedging.analytics import summary, util
 from EquityHedging.reporting.excel import reports as rp
@@ -13,7 +14,7 @@ import pandas as pd
 
 equity_bmk = 'SPTR'
 strat_drop_list = ['SPTR', 'Down Var', 'Vortex', 'Dynamic Put Spread',
-                   'Def Var','GW Dispersion', 'Corr Hedge', 'VOLA', 'Commodity Basket', 'ESPRSO', 'EVolCon']
+                   'Def Var','GW Dispersion', 'Corr Hedge', 'VOLA', 'Commodity Basket', 'ESPRSO', 'EVolCon', 'Moments']
 include_fi = False
 
 #create returns data dictionary for equity benchmark
