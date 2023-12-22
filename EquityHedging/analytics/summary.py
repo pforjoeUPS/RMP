@@ -12,13 +12,15 @@ from .hedge_metrics import get_hedge_metrics_2
 from .import premia_metrics as pm
 from .import util
 from .returns_stats import get_return_stats
+from .import returns_stats as rs
 from .corr_stats import get_corr_analysis
 from .historical_selloffs import get_hist_sim_table
 from .rolling_cum import get_rolling_cum
 from .import risk
 
 
-def get_analysis(df_returns, notional_weights=[], include_fi=False, new_strat=False, freq='1M', weighted = False):
+def get_analysis(df_returns, notional_weights=[], include_fi=False,new_strat=False, freq='1M', weighted = False,include_bmk=False,
+                     df_bmk = dm.pd.DataFrame(), bmk_dict={}):
     """
     Returns a dictionary of dataframes containing:
     1. Return Statistics
@@ -58,10 +60,10 @@ def get_analysis(df_returns, notional_weights=[], include_fi=False, new_strat=Fa
         df_weighted_returns = get_weighted_data(df_returns,notional_weights,include_fi,new_strat)
         
         # Create pandas DataFrame for return statistics
-        df_return_stats = get_return_stats(df_weighted_returns, freq)
+        df_return_stats = get_return_stats(df_weighted_returns, freq, include_fi=include_fi, include_bmk=include_bmk,df_bmk = df_bmk, bmk_dict=bmk_dict)
     else:
         # Create pandas DataFrame for return statistics
-        df_return_stats = get_return_stats(df_returns, freq)
+        df_return_stats = get_return_stats(df_returns, freq, include_fi=include_fi, include_bmk=include_bmk,df_bmk = df_bmk, bmk_dict=bmk_dict)
         
         
     # remove the weighted strats from the dataframe
@@ -174,7 +176,8 @@ def get_analysis_sheet_data(df_returns, notional_weights=[], include_fi=False, n
     
     return {'df_list': df_list,'title_list': title_list}
 
-def get_alts_data(df_returns, df_mvs=pd.DataFrame(), notional_weights=[], include_fi=True, new_strat=False,freq='1M', weighted=False):
+def get_alts_data(df_returns, df_mvs=pd.DataFrame(),freq='1M', include_fi=True,include_bmk=False,
+                     df_bmk = dm.pd.DataFrame(), bmk_dict={}):
     """
     Returns data for analysis excel sheet into a dictionary
 
@@ -207,30 +210,110 @@ def get_alts_data(df_returns, df_mvs=pd.DataFrame(), notional_weights=[], includ
     #create list of df_returns column names
     col_list = list(df_returns.columns)
     
-    #convert freq to string
-    freq_string = dm.switch_freq_string(freq)
-    
-    #get notional weights for weighted strategy returns if not accurate
-    if weighted:
-        notional_weights = util.check_notional(df_returns, notional_weights)
-    
     #compute correlations
-    corr_dict = get_corr_analysis(df_returns, notional_weights, include_fi, weighted)
+    corr_dict = get_corr_analysis(df_returns, include_fi=include_fi)
     
     #compute return stats and hedge metrics
-    analytics_dict = get_analysis(df_returns, notional_weights, include_fi, new_strat, freq,weighted)
+    analytics_dict = get_analysis(df_returns, include_fi = include_fi, freq=freq, include_bmk=include_bmk,
+                                  df_bmk = df_bmk, bmk_dict=bmk_dict)
     
     #add mctr
     if df_mvs.empty:
         return {'corr': corr_dict,'ret_stat_df': analytics_dict['return_stats']}
     else:
         wts = df_mvs.divide(df_mvs.sum(axis=1), axis='rows')
-        port_returns = df_returns[col_list[2:]]
+        jump = 2
+        port_returns = df_returns[col_list[jump:]]
         port_risk = risk.Risk(port_returns, wts.iloc[-1:])
         df_alts_stats = pd.concat([analytics_dict['return_stats'],port_risk.mctr])
         return {'corr': corr_dict,'ret_stat_df': df_alts_stats}
 
+#TODO: add drawdon statistics (for strat, co drawdowns for EQ and FI)
+def get_alts_strat_data(df_returns, freq='1M', include_fi=True):
+    """
+    Returns data for analysis excel sheet into a dictionary
 
+    Parameters
+    ----------
+    df_returns : dataframe
+        dataframe of returns
+    notional_weights : list, optional
+        notional weights of strategies. The default is [].
+    include_fi : boolean, optional
+        Include Fixed Income benchmark. The default is False.
+    new_strat : boolean, optional
+        Does analysis involve a new strategy. The default is False.
+    freq : string, optional
+        frequency. The default is '1M'.
+    weighted : boolean, optional
+        Include weighgted hedges and weighgted strats. The default is False.
+
+    Returns
+    -------
+    dict
+       dictionary containing:
+           df_list: list
+               a list of dataframes:
+                   correlations, portfolio weightings, returns_stats, hedge_metrics
+           title_list: list
+               a list containing titles of each of the dataframes
+
+    """
+    #create list of df_returns column names
+    col_list = list(df_returns.columns)
+    port_name = col_list[len(col_list)-2]
+    bmk_name = col_list[len(col_list)-1]
+    
+    #compute return stats
+    analytics_dict = get_analysis(df_returns, include_fi = include_fi, freq=freq, include_bmk=True,
+                                  df_bmk=df_returns[[bmk_name]], bmk_dict={port_name:bmk_name})
+    
+    # #drop Bmk Name
+    analytics_dict['return_stats'].drop(['Bmk Name'], inplace=True)
+    
+    return analytics_dict['return_stats']
+    
+
+def get_fi_data(df_returns, notional_weights=[], include_fi=False, new_strat=False,freq='1M', weighted=False):
+    """
+    Returns data for analysis excel sheet into a dictionary
+
+    Parameters
+    ----------
+    df_returns : dataframe
+        dataframe of returns
+    notional_weights : list, optional
+        notional weights of strategies. The default is [].
+    include_fi : boolean, optional
+        Include Fixed Income benchmark. The default is False.
+    new_strat : boolean, optional
+        Does analysis involve a new strategy. The default is False.
+    freq : string, optional
+        frequency. The default is '1M'.
+    weighted : boolean, optional
+        Include weighgted hedges and weighgted strats. The default is False.
+
+    Returns
+    -------
+    dict
+       dictionary containing:
+           df_list: list
+               a list of dataframes:
+                   correlations, portfolio weightings, returns_stats, hedge_metrics
+           title_list: list
+               a list containing titles of each of the dataframes
+
+    """
+    #get notional weights for weighted strategy returns if not accurate
+    if weighted:
+        df_weighted_returns = get_weighted_data(df_returns,notional_weights,include_fi,new_strat)
+        
+        # Create pandas DataFrame for return statistics
+        return rs.get_return_stats_fi(df_weighted_returns, freq)
+    else:
+        # Create pandas DataFrame for return statistics
+        return rs.get_return_stats_fi(df_returns, freq)
+    
 #TODO: Ask powis if this makes sense bc notional only when weighted so do we need to have  2 seperate normal_dict
 def get_normal_sheet_data(df_returns, notional_weights=[], freq='1W', drop_bmk=True, weighted=False):
 
