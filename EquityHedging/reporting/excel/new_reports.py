@@ -80,9 +80,9 @@ class setReport():
 
 class getReturnsReport(setReport):
     def __init__(self, report_name, data_dict, data_file=True):
-       """
+        """
         Generates excel file containing historical returns for different frequencies
-
+        
         Parameters
         ----------
         report_name : string
@@ -91,7 +91,7 @@ class getReturnsReport(setReport):
             Dictionary containing returns of different frequencies.
         data_file : boolean, optional
             Boolean to determine if excel file belongs in data folder or reports folder. The default is True.
-
+        
         Returns
         -------
         None. An excel report called [report_name].xlsx is created
@@ -104,7 +104,7 @@ class getReturnsReport(setReport):
         
     def generate_report(self):
         #loop through dictionary to create returns spreadsheets
-        for key in self.returns_dict:
+        for key in self.data_dict:
             print("Writing {} Historical Returns sheet...".format(key))
             if len(key) > 31:
                 diff = len(key) - 31
@@ -112,6 +112,42 @@ class getReturnsReport(setReport):
                 
             else:
                 new_sheets.setHistReturnSheet(self.writer, self.data_dict[key],key)
+                
+class getMVReport(setReport):
+    def __init__(self, report_name, data_dict, data_file=True):
+        """
+        Generates excel file containing historical returns for different frequencies
+        
+        Parameters
+        ----------
+        report_name : string
+            Name of report.
+        data_dict : dict
+            Dictionary containing returns of different frequencies.
+        data_file : boolean, optional
+            Boolean to determine if excel file belongs in data folder or reports folder. The default is True.
+        
+        Returns
+        -------
+        None. An excel report called [report_name].xlsx is created
+        """
+        setReport.__init__(self, report_name, data_file)
+        self.data_dict = data_dict
+        self.generate_report()
+        print_report_info(self.report_name, self.file_path)
+        self.writer.save()
+        
+    def generate_report(self):
+        #loop through dictionary to create returns spreadsheets
+        for key in self.data_dict:
+            print("Writing {} Historical MV sheet...".format(key))
+            if len(key) > 31:
+                diff = len(key) - 31
+                new_sheets.setMVSheet(self.writer, self.data_dict[key],key[:-diff])
+                
+            else:
+                new_sheets.setMVSheet(self.writer, self.data_dict[key],key)
+                
 
 class getRetMVReport(getReturnsReport):
     def __init__(self, report_name, data_dict, data_file=True):
