@@ -49,6 +49,8 @@ while True:
     except ValueError:
         print ('Sorry,the input is not valid. Please make sure the formats are correct and the start date is in the specified range.')
 
+target = 'MONTHLY'
+rol_year=3
 inputs = {'DAILY':[252],'WEEKLY':[52],'MONTHLY':[12],'QUARTERLY':[4]}
 inputsdf = pd.DataFrame(inputs)
 
@@ -499,31 +501,32 @@ headers = ['Market Value as of 7/29/16','Time Frame','No. of Observations','Port
            'Adj. R-squared (single factor)','Alpha (single factor)','Alpha_pValue (single factor)','Alpha_tStat (single factor)','Beta (single factor)','Beta_pValue (single factor)','Beta_tStat (single factor)']
 
 
-table = pd.DataFrame([selection['marketValue'],period,pd.DataFrame.count(port),port_tr,bmrk_tr,excess_tr,
-                   port_mean_ann,bmrk_mean_ann,excess_mean_ann,
-                   port_std_ann, bmrk_std_ann,excess_std_ann,
-                   te,
-                   port_semi,bmrk_semi,excess_semi,
-                   port_semi2,bmrk_semi2,excess_semi2,
-                   port_mdd,bmrk_mdd,excess_mdd,
-                   port_skew,bmrk_skew,excess_skew,
-                   port_kurt,bmrk_kurt,excess_kurt,
-                   port_var,bmrk_var,excess_var,port_var_dollar,var_of_total,
-                   beta,beta_up,beta_d,
-                   port_sr,bmrk_sr,excess_sr,
-                   ir,
-                   tre,tre_adj,
-                   port_sor,bmrk_sor,excess_sor,
-                   port_sor2,bmrk_sor2,excess_sor2,
-                   port_log_sr,bmrk_log_sr,excess_log_sr,
-                   log_ir,
-                   log_tre,log_tre_adj,
-                   port_log_sor,bmrk_log_sor,excess_log_sor,
-                   port_log_sor2,bmrk_log_sor2,excess_log_sor2,
-                   capture_up,capture_d,marginal_risk,contribution_to_risk,percent_contribution_to_risk,
-                   summary['Adj. R-squared'],summary['Alpha'], summary['Alpha_pValue'],summary['Alpha_tStat'],summary['Beta'],
-                   summary['Beta_pValue'],summary['Beta_tStat']])
-                   
+table = pd.DataFrame([selection['marketValue'],period,pd.DataFrame.count(port),
+                      port_tr,bmrk_tr,excess_tr,
+                       port_mean_ann,bmrk_mean_ann,excess_mean_ann,
+                       port_std_ann, bmrk_std_ann,excess_std_ann,
+                       te,
+                       port_semi,bmrk_semi,excess_semi,
+                       port_semi2,bmrk_semi2,excess_semi2,
+                       port_mdd,bmrk_mdd,excess_mdd,
+                       port_skew,bmrk_skew,excess_skew,
+                       port_kurt,bmrk_kurt,excess_kurt,
+                       port_var,bmrk_var,excess_var,port_var_dollar,var_of_total,
+                       beta,beta_up,beta_d,
+                       port_sr,bmrk_sr,excess_sr,
+                       ir,
+                       tre,tre_adj,
+                       port_sor,bmrk_sor,excess_sor,
+                       port_sor2,bmrk_sor2,excess_sor2,
+                       port_log_sr,bmrk_log_sr,excess_log_sr,
+                       log_ir,
+                       log_tre,log_tre_adj,
+                       port_log_sor,bmrk_log_sor,excess_log_sor,
+                       port_log_sor2,bmrk_log_sor2,excess_log_sor2,
+                       capture_up,capture_d,marginal_risk,contribution_to_risk,percent_contribution_to_risk,
+                       summary['Adj. R-squared'],summary['Alpha'], summary['Alpha_pValue'],summary['Alpha_tStat'],summary['Beta'],
+                       summary['Beta_pValue'],summary['Beta_tStat']])
+                       
 table = pd.DataFrame.transpose(table)
 table.columns = headers
 
