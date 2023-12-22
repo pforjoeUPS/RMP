@@ -12,6 +12,8 @@ import pandas as pd
 
 CWD = os.getcwd()
 RETURNS_DATA_FP = CWD +'\\EquityHedging\\data\\returns_data\\'
+NEW_STRAT_DATA_FP = CWD +'\\EquityHedging\\data\\new_strats\\'
+
 BMK_DATA_FP = RETURNS_DATA_FP+'bmk_returns.xlsx'
 HF_BMK_DATA_FP = RETURNS_DATA_FP+'hf_bmks.xlsx'
 UPSGT_DATA_FP = RETURNS_DATA_FP+'upsgt_returns.xlsx'
@@ -27,8 +29,8 @@ LIQ_ALTS_MGR_DICT = {'Global Macro': ['1907 Penso Class A','Bridgewater Alpha', 
                                         'Acadian Commodity AR','Blueshift', 'Duality', 'Elliott']
                      }
 EQ_HEDGE_DATA_FP = RETURNS_DATA_FP+'eq_hedge_returns.xlsx'
-EQ_HEDGE_STRAT_DICT = {'99%/90% Put Spread':0.0, 'Down Var':1.0, 'Vortex':0.0, 'VOLA 3':1.25,'Dynamic Put Spread':1.0,
-                       'VRR 2':0.75,'VRR Trend': 0.25, 'GW Dispersion':1.0, 'Corr Hedge':0.25,'Def Var':1.0,'Commodity Basket':1.0}
+EQ_HEDGE_STRAT_DICT = {'Down Var':1.0, 'VOLA 3':1.25,'Dynamic Put Spread':1.0,
+                       'VRR Portfolio':1.0, 'GW Dispersion':1.0, 'Corr Hedge':0.25,'Def Var':1.0,'Commodity Basket':1.0}
 FREQ_LIST = ['1D', '1W', '1M', '1Q', '1Y']
 
 class mktHandler():
@@ -150,15 +152,27 @@ class liqAltsPortHandler(liqAltsBmkHandler):
         mgr_list.append(sub_port)
         return mgr_list
 
-#TODO: add notional weights
-#TODO: #Add new strat
+
+#add comments/explanations for functions
 class eqHedgeHandler(mktHandler):
-    def __init__(self, equity_bmk = 'SPTR',include_fi = False, all_data=False, strat_drop_list=['99%/90% Put Spread', 'Vortex']):
+    def __init__(self, equity_bmk = 'SPTR',include_fi = False, all_data=False, strat_drop_list=[], update_strat_list=[]):
         super().__init__(equity_bmk, include_fi, all_data)
         self.strat_drop_list = strat_drop_list
+        self.update_strat_list = update_strat_list
         self.returns = dm.merge_dicts(self.mkt_returns, self.get_returns())
+        self.notional_dict = self.get_notional_weights()
         
     def get_returns(self):
+        """
+        Returns a dictionary of dataframes with returns data
+        in different frequencies
+        
+        Parameters:
+
+        Returns:
+        dictionary
+        
+        """
         returns_dict = {}
         for freq in FREQ_LIST:
             freq_string = dm.switch_freq_string(freq)
@@ -166,8 +180,99 @@ class eqHedgeHandler(mktHandler):
             if not self.all_data:
                 temp_ret['VOLA 3'] = temp_ret['Dynamic VOLA']
                 temp_ret['Def Var'] = temp_ret['Def Var (Fri)']*.4 + temp_ret['Def Var (Mon)']*.3+temp_ret['Def Var (Wed)']*.3
+                
+                #Check with documents to know exact weights for VRR Portfolio*?
+                temp_ret['VRR Portfolio'] = temp_ret['VRR 2']*0.75 + temp_ret['VRR Trend']*0.25
+                
                 temp_ret = temp_ret[list(EQ_HEDGE_STRAT_DICT.keys())]
             if self.strat_drop_list:
                 temp_ret.drop(self.strat_drop_list, axis=1, inplace=True)
             returns_dict[freq_string] = temp_ret.copy()
         return returns_dict
+    
+    def get_new_strategy_returns_data(self, filename, sheet_name, strategy_list):
+        """
+        Returns a dataframe of stratgy returns
+        
+        Parameters:
+        filename -- string
+        sheet_name -- string
+        strategy_list -- list
+        
+        Returns:
+        dataframe
+        
+        """
+        df_strategy = pd.read_excel(NEW_STRAT_DATA_FP+filename, sheet_name=sheet_name, index_col=0)
+        df_strategy = dm.get_real_cols(df_strategy)
+        if strategy_list:
+            df_strategy.columns = strategy_list
+        try:
+            df_strategy.index = pd.to_datetime(df_strategy.index)
+        except TypeError:
+            pass
+        df_strategy = df_strategy.resample('1D').ffill()
+        new_strategy_returns = df_strategy.copy()
+        if 'Index' in sheet_name:
+            new_strategy_returns = df_strategy.pct_change(1)
+        new_strategy_returns.dropna(inplace=True)
+        return new_strategy_returns
+    
+    def add_new_strat(self, filename, sheet_name, strategy_list, notional_list):
+        """
+        Updates returns data with new strategy returns data
+        Updates notional weights dictionary with new strategy notional weight
+        
+        Parameters:
+        filename -- string
+        sheet_name -- string
+        strategy_list -- list
+        notional_list -- list
+        
+        Returns:
+        
+        """
+        new_strat = self.get_new_strategy_returns_data(filename, sheet_name, strategy_list)
+        new_strat_dict = dm.get_data_dict(new_strat, data_type='index')
+        self.returns = dm.merge_dicts(self.returns, new_strat_dict)
+        self.notional_dict.update(self.get_update_notional_dict(strategy_list, notional_list))
+
+    def get_update_notional_dict(self, strategy_list, notional_list):
+        """
+        Updates notional dictionary with strategy(key) and notional(value)
+
+        Parameters:
+        update_location -- string
+        strategy_list -- list
+        notional_list -- list
+        
+        Returns:
+        
+        """
+        notional_list = [float(x) for x in notional_list]
+        update_notional_dict = (dict(zip(strategy_list, notional_list)))
+        return update_notional_dict
+    
+    def get_notional_weights(self):
+        """
+        Returns a dictionary of strategy(key) and notional(value) 
+            Drops strategies
+            Updates strategy notionals
+        
+        Parameters:
+        
+        Returns:
+        dictionary
+        
+        """
+        notional_dict = EQ_HEDGE_STRAT_DICT.copy()
+        for key in self.strat_drop_list:
+            notional_dict.pop(key)
+            
+        if self.update_strat_list:
+            update_notional_list = [float(input('notional value (Billions) for ' + strat + ':')) for strat in self.update_strat_list]
+            notional_dict.update(self.get_update_notional_dict(self.update_strat_list, update_notional_list))
+            
+        return notional_dict
+
+    

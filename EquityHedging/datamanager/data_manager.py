@@ -21,7 +21,7 @@ RETURNS_DATA_FP = DATA_FP +'returns_data\\'
 EQUITY_HEDGING_RETURNS_DATA = RETURNS_DATA_FP + 'eq_hedge_returns.xlsx'
 # RETURNS_DATA_FP = CWD +'\\EquityHedging\\data\\'
 # EQUITY_HEDGING_RETURNS_DATA = DATA_FP + 'ups_equity_hedge\\returns_data.xlsx'
-NEW_DATA = RETURNS_DATA_FP + 'new_strats\\'
+NEW_DATA = DATA_FP + 'new_strats\\'
 # UPDATE_DATA = RETURNS_DATA_FP + 'update_strats\\'
 UPDATE_DATA = DATA_FP + 'update_data\\'
 EQUITY_HEDGE_DATA = DATA_FP + 'ups_equity_hedge\\'
@@ -441,6 +441,7 @@ def get_prices_df(df_returns):
             df_prices[col][i] = (df_returns[col][i] + 1) * df_prices[col][i-1]
     return df_prices
 
+#TODO: Copy this to eqHedgeHandler()
 def get_new_strategy_returns_data(report_name, sheet_name, strategy_list=[]):
     """
     dataframe of stratgy returns
