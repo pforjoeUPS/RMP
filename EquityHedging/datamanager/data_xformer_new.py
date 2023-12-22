@@ -164,11 +164,12 @@ class dataXformer():
         if self.format_data:
             #transform data to dictionary of return dataframes if Freq is Daily
             if self.freq == '1D':
-                return get_data_dict(self.data_import)
+                data_type = 'index' if self.index_data else 'return'
+                return get_data_dict(self.data_import,data_type, self.drop_na)
             else:
                 #transform data to return dataframe if index_data is True
                 if self.index_data:
-                    return format_data(self.data_import,self.freq)
+                    return format_data(self.data_import,self.freq,self.drop_na)
                 else:
                     #resample data
                     return resample_data(self.data_import,self.freq)
@@ -207,7 +208,7 @@ class nexenDataXformer(dataXformer):
 
 class bbgDataXformer(dataXformer):
     def __init__(self, filepath, sheet_name='data', data_source='bbg', freq='1M', col_list=[]
-                 , index_data = True, format_data = True):
+                 , drop_na = True, index_data = True, format_data = True):
         """
         Converts bbg excel file into a bbgDataXformer object
 
@@ -234,11 +235,11 @@ class bbgDataXformer(dataXformer):
 
         """
         dataXformer.__init__(self,filepath,sheet_name,data_source,freq, col_list
-                             ,index_data=index_data, format_data=format_data)
+                             , drop_na = drop_na,index_data=index_data, format_data=format_data)
      
     def import_data(self):
         #pull data from bbgDataImporter object
-        return di.bbgDataImporter(self.filepath,self.sheet_name, col_list=self.col_list).data
+        return di.bbgDataImporter(self.filepath,self.sheet_name, col_list=self.col_list, drop_na=self.drop_na).data
    
 class innocapDataXformer(dataXformer):
     def __init__(self, filepath,sheet_name=0, data_source='innocap', freq='1M',

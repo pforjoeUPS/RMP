@@ -15,19 +15,21 @@ RETURNS_DATA_FP = CWD +'\\EquityHedging\\data\\returns_data\\'
 UPDATE_DATA_FP = CWD +'\\EquityHedging\\data\\update_data\\'
 BMK_COL_LIST = ['SPTR', 'SX5T', 'M1WD', 'MIMUAWON', 'Long Corp', 'STRIPS',
                     'HFRX Macro/CTA', 'HFRX Absolute Return', 'SG Trend']
-HF_COL_LIST = ['HFRX Macro/CTA', 'SG Trend','HFRX Absolute Return','DM Equity',
-               'EM Equity','Gov Bonds','Agg Bonds','EM Bonds','High Yield','BCOM',
-               'S&P GSCI TR','Equity Volatility','EM FX','FX Carry','Commo Carry',
-               'CTAs','HFRX Systematic Macro','HFRX Rel Val Arb','HFRX Global',
-               'HFRX Eq Hedge','HFRX Event driven','HFRX Convert Arb','HFRX EM',
-               'HFRX Commodities','HFRX RV']
+HF_COL_LIST = ['Macro', 'SG Trend', 'Absolute Return', 'DM Equity',
+               'EM Equity', 'Gov Bonds', 'Agg Bonds', 'EM Bonds', 'High Yield',
+               'Commodities (BCOM)', 'Commodities (GSCI)', 'Equity Volatility', 
+               'EM FX', 'FX Carry', 'USD Spot','CTAs', 'Systematic Macro', 
+               'Relative Value Arbitrage', 'Hedge Funds', 'Equity L/S', 'Event driven',
+               'Convertible Arbitrage', 'HFRX EM','HFRX Commodities', 'Relative Value',
+               'Macro Discretionary', 'Managed Futures', 'Manged Futures 15 vol', 'Managed Futures 18 vol']
 FREQ_LIST = ['Daily', 'Weekly', 'Monthly', 'Quarterly', 'Yearly']
+
 
 #TODO: Refactor 
 
 def update_nexen_liq_alts_data(filename='Monthly Returns Liquid Alts.xls'):
     returns_dict = dtx.nexenDataXformer(UPDATE_DATA_FP+filename).data_xform
-    rp.getRetMVReport('nexen_liq_alts_data-new', returns_dict, True)
+    rp.getRetMVReport('nexen_liq_alts_data', returns_dict, True)
 
 def update_innocap_liq_alts_data(filename='1907_hf_data.xlsx'):
     innocap_dict = dtx.innocapDataXformer(UPDATE_DATA_FP+filename).data_xform
@@ -42,22 +44,22 @@ def update_innocap_liq_alts_data(filename='1907_hf_data.xlsx'):
     
     rp.getRetMVReport('innocap_liq_alts_data-new', returns_dict, True)
     
-def update_liq_alts_bmk_data(filename='liq_alts_bmk_data.xlsx'):
-    returns_dict = dtx.bbgDataXformer(UPDATE_DATA_FP+filename,sheet_name='bbg_d',freq='1D', col_list=HF_COL_LIST).data_xform
+def update_liq_alts_bmk_data(filename='bmk_data.xlsx'):
+    returns_dict = dtx.bbgDataXformer(UPDATE_DATA_FP+filename,freq='1D', col_list=BMK_COL_LIST).data_xform
     for key in returns_dict:
         returns_dict[key] = returns_dict[key][['HFRX Macro/CTA', 'HFRX Absolute Return', 'SG Trend']]
-    rp.getReturnsReport('liq_alts_bmks-new', check_returns(returns_dict), True)
+    rp.getReturnsReport('liq_alts_bmks', check_returns(returns_dict), True)
     
 def update_hf_bmk_data(filename='liq_alts_bmk_data.xlsx'):
     returns_dict = dtx.bbgDataXformer(UPDATE_DATA_FP+filename,sheet_name='bbg_d',freq='1D', col_list=HF_COL_LIST).data_xform
-    rp.getReturnsReport('hf_bmks-new', check_returns(returns_dict), True)
+    rp.getReturnsReport('hf_bmks', check_returns(returns_dict), True)
 
 def update_bmk_data(filename='bmk_data.xlsx'):
     bbg_dict = dtx.bbgDataXformer(UPDATE_DATA_FP+filename,freq='1D', col_list=BMK_COL_LIST).data_xform
     returns_dict = get_return_data('bmk_returns.xlsx', FREQ_LIST, True)
     bbg_dict = dm.match_dict_columns(returns_dict, bbg_dict)
     returns_dict = update_data(returns_dict, bbg_dict)
-    rp.getReturnsReport('bmk_returns-new', returns_dict, True)
+    rp.getReturnsReport('bmk_returns', returns_dict, True)
 
 def update_asset_class_data(filename='Historical Asset Class Returns.xls'):
     returns_dict = dtx.nexenDataXformer(UPDATE_DATA_FP+filename).data_xform

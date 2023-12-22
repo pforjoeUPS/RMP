@@ -62,7 +62,7 @@ def merge_dicts(main_dict, new_dict, drop_na=False, fillzeros=False):
             pass
     return merged_dict
 
-def merge_data_frames(df_main, df_new,drop_na=True,fillzeros=False):
+def merge_data_frames(df_main, df_new,drop_na=True,fillzeros=False, how='outer'):
     """
     Merge df_new to df_main and drop na values
     
@@ -74,7 +74,7 @@ def merge_data_frames(df_main, df_new,drop_na=True,fillzeros=False):
     dataframe
     """
     
-    df = pd.merge(df_main, df_new, left_index=True, right_index=True, how='outer')
+    df = pd.merge(df_main, df_new, left_index=True, right_index=True, how=how)
     if fillzeros:
         df = df.fillna(0)
     if drop_na:
@@ -364,7 +364,7 @@ def get_data_dict(data, data_type='index', dropna=True):
         data_dict[freq_string] = format_data(data, switch_string_freq(freq_string),dropna)
     return data_dict
 
-def get_prices_df(df_returns):
+def get_prices_df(df_returns, multiplier = 100):
     """"
     Converts returns dataframe to index level dataframe
 
@@ -375,11 +375,11 @@ def get_prices_df(df_returns):
     index price level - dataframe
     """
     
-    df_index = 100*(1 + df_returns).cumprod()
+    df_index = multiplier*(1 + df_returns).cumprod()
     
-    return update_df_index(df_index)
+    return update_df_index(df_index, multiplier)
 
-def update_df_index(df_index):
+def update_df_index(df_index, multiplier=100):
     
     #insert extra row at top for first month of 100
     data = []
@@ -388,22 +388,21 @@ def update_df_index(df_index):
     
     #fill columns with 100 for row 1
     for col in df_prices.columns:
-        df_prices[col][0] = 100
+        df_prices[col][0] = multiplier
 
     #update index to prior month    
     df_prices.index.names = ['Dates']
     df_prices.reset_index(inplace=True)
-    df_prices['Dates'][0] = df_index.index[0] - pd.DateOffset(months=1)
+    pd.set_option('mode.chained_assignment', None)
+    df_prices.loc[:,('Dates')][0] = df_index.index[0] - pd.DateOffset(months=1)
     df_prices.set_index('Dates', inplace=True)
     
     return df_prices
 
-def get_price_series(return_series):
-    price_series = return_series.copy()
-    price_series[0] = return_series[0] + 1
-    for i in range(1, len(return_series)):
-        price_series[i] = (return_series[i] + 1) * price_series[i-1]
-    return price_series
+def get_price_series(return_series ,multiplier = 100):
+    df_index = multiplier*(1 + return_series).cumprod()
+    
+    return update_df_index(df_index, multiplier)[0]
     
 def get_new_strategy_returns_data(report_name, sheet_name, strategy_list=[]):
     """
@@ -609,23 +608,27 @@ def create_update_dict():
     #return a dictionary
     return new_data_dict
 
+#TODO: Move to analytics
 def compound_ret_from_monthly(strat_monthly_returns, strategy):
     monthly_ret = strat_monthly_returns.copy()
     monthly_ret["Year"] = monthly_ret.index.get_level_values('year')
     
     years = np.unique(monthly_ret["Year"])
     yr_ret = []
+    itd_ret = []
     for i in range(0, len(years)):
         #isolate monthly returns for single year
         monthly_ret_by_yr = monthly_ret.loc[monthly_ret.Year == years[i]][strategy]
         #calculate compound return
         comp_ret = prod(1 + monthly_ret_by_yr) - 1
         yr_ret.append(comp_ret)
+        itd_ret.append(np.prod((np.array(yr_ret) +1).tolist())-1)
         
-    yr_ret = pd.DataFrame( yr_ret, columns = ["YTD"], index = list(years)) 
-    return yr_ret
+    ret_dict = {"YTD": yr_ret, "ITD": itd_ret}
+    ret_df = pd.DataFrame( ret_dict, index = list(years))
+    return ret_df
     
-#TODO: Add ITD
+#TODO: Move to analytics
 def month_ret_table(returns_df, strategy):
     '''
 
@@ -643,6 +646,7 @@ def month_ret_table(returns_df, strategy):
     '''
     #pull monthly returns from dictionary 
     month_ret = pd.DataFrame(returns_df[strategy])
+    month_ret.dropna(inplace=True)
     
     #create monthly return data frame with index of years 
     month_ret['year'] = month_ret.index.year
@@ -650,7 +654,7 @@ def month_ret_table(returns_df, strategy):
     
     #change monthly returns into a table with x axis as months and y axis as years
     strat_monthly_returns = month_ret.groupby(['year', 'month']).sum()
-    yr_ret = compound_ret_from_monthly(strat_monthly_returns, strategy)
+    yr_itd_ret = compound_ret_from_monthly(strat_monthly_returns, strategy)
        
     month_table = strat_monthly_returns.unstack()
     
@@ -661,7 +665,7 @@ def month_ret_table(returns_df, strategy):
     month_table = month_table[["Jan", "Feb", "Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]]
     
     #Join yearly returns to the monthly returns table
-    table = pd.concat([month_table, yr_ret],  axis=1)
+    table = pd.concat([month_table, yr_itd_ret],  axis=1)
     table.index.names = [strategy]
 
     return table
@@ -883,11 +887,13 @@ def get_new_strat_data(filename, sheet_name='data', freq='1M', index_data = Fals
 def get_period_dict(df_returns, freq='1M'):
     obs = len(df_returns)
     m = switch_freq_int(freq)
-    if obs <= 3*m:
+    if obs <= m:
         return {'Full': df_returns}
+    elif obs <= 3*m:
+        return {'Full': df_returns, '1 Year':df_returns.iloc[obs-m:,]}
     elif obs <= 5*m:
-        return {'Full': df_returns, '3 Year':df_returns.iloc[obs-3*m:,]}
+        return {'Full': df_returns, '3 Year':df_returns.iloc[obs-3*m:,], '1 Year':df_returns.iloc[obs-m:,]}
     elif obs <= 10*m:
-        return {'Full': df_returns, '5 Year':df_returns.iloc[obs-5*m:,], '3 Year':df_returns.iloc[obs-3*m:,]}
+        return {'Full': df_returns, '5 Year':df_returns.iloc[obs-5*m:,], '3 Year':df_returns.iloc[obs-3*m:,], '1 Year':df_returns.iloc[obs-m:,]}
     else:
-        return {'Full': df_returns, '10 Year':df_returns.iloc[obs-10*m:,], '5 Year':df_returns.iloc[obs-5*m:,], '3 Year':df_returns.iloc[obs-3*m:,]}
+        return {'Full': df_returns, '10 Year':df_returns.iloc[obs-10*m:,], '5 Year':df_returns.iloc[obs-5*m:,], '3 Year':df_returns.iloc[obs-3*m:,], '1 Year':df_returns.iloc[obs-m:,]}
