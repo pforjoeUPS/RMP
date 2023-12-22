@@ -9,7 +9,7 @@ import numpy as np
 from ..datamanager import data_manager as dm
 from .returns_stats import get_ann_vol
 
-def get_peak_return(df_prices, col, look_back_days, day):
+def get_peak_return(price_series, look_back_days, day):
     """
     Returns peak return for a specific day during look back period
 
@@ -31,10 +31,10 @@ def get_peak_return(df_prices, col, look_back_days, day):
     """
     
     # get index level for specific day
-    day_index_level = df_prices[col][day]
+    day_index_level = price_series[day]
 
     # get minimum index level within the look back days period
-    min_index_level = df_prices.loc[df_prices.index[day-look_back_days]:df_prices.index[day-1], col].min()
+    min_index_level = price_series.loc[price_series.index[day-look_back_days]:price_series.index[day-1]].min()
 
     #compute peak return
     return day_index_level/min_index_level
@@ -109,7 +109,7 @@ def get_retrace_index_info(peak_return, day_index_level, index_series, retrace_p
 #     retrace_date = index_series.index[index_series < retrace_index][0]
 #     return retrace_date
 
-def get_max_index_level_from_range(df_prices, col, look_back_days, look_fwd_days, day):
+def get_max_index_level_from_range(price_series, look_back_days, look_fwd_days, day):
     """
     Return the max index level from a range in a dataframe
 
@@ -139,15 +139,15 @@ def get_max_index_level_from_range(df_prices, col, look_back_days, look_fwd_days
     if start < 0:
         start = day
         
-    if end > len(df_prices):
-        end = len(df_prices)
+    if end > len(price_series):
+        end = len(price_series)
     index_list = []
     for i in range(start, end):
-        index_list.append(df_prices[col][i])
+        index_list.append(price_series[i])
     
     return np.array(index_list).max()
 
-def get_decay_days(df_returns, col, freq="1M", retrace_pct=.50, sd =1.28, look_back_days=60, look_fwd_days=60):
+def get_decay_days(return_series, freq="1M", retrace_pct=.50, sd =1.28, look_back_days=60, look_fwd_days=60):
     """
     Returns avg number of days it takes for strategy to retrace by retrace_level
     
@@ -176,10 +176,10 @@ def get_decay_days(df_returns, col, freq="1M", retrace_pct=.50, sd =1.28, look_b
     """
     
     #compute threshold based off sd figure
-    threshold = sd*get_ann_vol(df_returns[col], freq)
+    threshold = sd*get_ann_vol(return_series, freq)
     
     #convert return dataframe to index dataframe
-    df_prices = dm.get_prices_df(df_returns)
+    price_series = dm.get_price_series(return_series,1)
     
     #convert look back and look fwd days to frequency type
     if freq != "1D":
@@ -194,44 +194,44 @@ def get_decay_days(df_returns, col, freq="1M", retrace_pct=.50, sd =1.28, look_b
     
     day = look_back_days
 
-    while day < len(df_prices):
+    while day < len(price_series):
         jump = 1
         
         #get peak_return over look_back_days
-        peak_return = get_peak_return(df_prices, col, look_back_days, day)
+        peak_return = get_peak_return(price_series, look_back_days, day)
         
         #check if peak_return is greater than threshold return
         if  peak_return > (1 + threshold):
             
             #compute max index level from look_back & look_fwd range
-            max_index_level = get_max_index_level_from_range(df_prices, col, look_back_days, look_fwd_days, day)
-            max_day = np.where(df_prices[col]==max_index_level)[0][0]
+            max_index_level = get_max_index_level_from_range(price_series, look_back_days, look_fwd_days, day)
+            max_day = np.where(price_series==max_index_level)[0][0]
             if max_day - day > one_year:
-                max_index_level = df_prices.loc[df_prices.index[day-look_back_days]:df_prices.index[day + look_fwd_days - 1],col].max()
-                max_day = np.where(df_prices[col]==max_index_level)[0][0]
+                max_index_level = price_series.loc[price_series.index[day-look_back_days]:price_series.index[day + look_fwd_days - 1]].max()
+                max_day = np.where(price_series==max_index_level)[0][0]
             
             if max_day >= day:    
                 #make default retrace date the last date
-                retrace_date = df_prices.index[len(df_prices)-1]
+                retrace_date = price_series.index[len(price_series)-1]
                 temp_day = max_day
                 try:
                     #find retrace date
-                    temp_series = df_prices[col][max_day:len(df_prices)]
-                    max_return = get_peak_return(df_prices, col, look_back_days, max_day)
+                    temp_series = price_series[max_day:len(price_series)]
+                    max_return = get_peak_return(price_series, look_back_days, max_day)
                     retrace_info = get_retrace_index_info(max_return, max_index_level, temp_series,retrace_pct)
                     retrace_date = retrace_info['date']
                     
                 except IndexError:
                 	#if error make jump go to last date
-                    jump = len(df_prices) - 1
+                    jump = len(price_series) - 1
                 	
                 #find decay day number and add to decay_sum and increment decay_freq
-                max_index_date = df_prices.index[max_day]
+                max_index_date = price_series.index[max_day]
                 decay_days = (retrace_date - max_index_date).days
                 
                 #check if decay days > 365
                 if decay_days > 365:
-                    decay_days=365
+                    decay_days = 365
                     jump = one_year
                     temp_day = day
                 
