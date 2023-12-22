@@ -7,10 +7,11 @@ Created on Thu Apr 22 00:02:00 2021
 
 import pandas as pd
 import numpy as np
-from ..datamanager.data_manager import get_notional_weights
+from ..datamanager import data_manager as dm
 from sklearn.preprocessing import MinMaxScaler
 
-def get_pos_neg_df(return_series, pos=True):
+
+def get_pos_neg_df(return_series, pos=True, target=0):
     """
     Return dataframe with positive/negative returns of col_name as a condition
     
@@ -31,10 +32,7 @@ def get_pos_neg_df(return_series, pos=True):
     ret = return_series.copy()
     
     #filter index for positive/negative returns
-    if pos:
-        ret_index = ret.index[ret > 0]
-    else:
-        ret_index = ret.index[ret <= 0]
+    ret_index = ret.index[ret >= target] if pos else ret.index[ret < target]
     
     #create new series
     return ret.loc[ret_index]
@@ -202,7 +200,7 @@ def check_notional(df_returns, notional_weights=[]):
     #get notional weights for weighted strategy returns if not accurate
     if len(col_list) != len(notional_weights):
         notional_weights = []
-        notional_weights = get_notional_weights(df_returns)
+        notional_weights = dm.get_notional_weights(df_returns)
     
     return notional_weights
 
