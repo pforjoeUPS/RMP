@@ -34,7 +34,7 @@ def get_filepath_path(report_name, data_file=False):
     """
     
     cwd = os.getcwd()
-    
+
     fp = '\\EquityHedging\\data\\returns_data\\' if data_file else '\\EquityHedging\\reports\\'
     file_name = report_name +'.xlsx'
     return cwd + fp + file_name
@@ -92,9 +92,12 @@ def get_equity_hedge_report(report_name, returns_dict, notional_weights=[],
         return_sheet = freq + ' Historical Returns'
         
         #create sheets
+        
         sheets.set_analysis_sheet(writer,analysis_data, corr_sheet)
+        #new_sheets.AnalysisSheet(writer,analysis_data, corr_sheet)
         sheets.set_hist_return_sheet(writer,df_weighted_returns, return_sheet)
-    
+        #new_sheets.setHistReturnSheet(writer,df_weighted_returns, return_sheet)
+        
     #get historical selloffs data if selloffs == True
     if selloffs:
         print("Computing Historical SellOffs...")
@@ -117,7 +120,9 @@ def get_equity_hedge_report(report_name, returns_dict, notional_weights=[],
             #create sheets
             sheets.set_hist_sheet(writer, hist_df)
             sheets.set_hist_return_sheet(writer, daily_returns)
-        except KeyError():
+            #new_sheets.setHistSheet(writer,hist_df)
+            #new_sheets.setHistReturnSheet(writer, daily_returns)
+        except KeyError:
             print('Skipping Historical SellOffs, no daily data in returns dictionary')
             pass
     
@@ -134,11 +139,12 @@ def get_equity_hedge_report(report_name, returns_dict, notional_weights=[],
     #     #Create Sheet
     #     sheets.set_normal_sheet(writer, normal_data)
         
-    quintile_df = summary.get_grouped_data(returns_dict, notional_weights, weighted = True, group = 'Quintile')
-    decile_df = summary.get_grouped_data(returns_dict, notional_weights, weighted = True, group = 'Decile')
-    
-    sheets.set_grouped_data_sheet(writer, quintile_df, decile_df)
-    
+    grouped_data_dict = summary.get_grouped_data(returns_dict, notional_weights, weighted = True)
+    # quintile_df = summary.get_grouped_data(returns_dict, notional_weights, weighted = True, group = 'Quintile')
+    # decile_df = summary.get_grouped_data(returns_dict, notional_weights, weighted = True, group = 'Decile')
+
+    sheets.set_grouped_data_sheet(writer, grouped_data_dict)
+    #new_sheets.setGroupedDataSheet(writer, grouped_data_dict)
     print_report_info(report_name, file_path)
     writer.save()
 
@@ -385,9 +391,16 @@ def get_corr_rank_report(report_name, df_returns, buckets, notional_weights=[],i
     
     corr_pack = get_corr_rank_data(df_returns, buckets, notional_weights,include_fi)
     dates = dm.get_min_max_dates(df_returns)
+    corr_data_dict = {'df_list':[], 'title_list':[]}
+    
+    #unpack corr_pack
+    for i in corr_pack:
+        corr_data_dict['df_list'].append(corr_pack[str(i)][0])
+        corr_data_dict['title_list'].append(corr_pack[str(i)][1])
+        
     
     #create excel report
-    sheets.set_corr_rank_sheet(writer,corr_pack,dates)
+    sheets.set_corr_rank_sheet(writer,corr_data_dict,dates)
     sheets.set_hist_return_sheet(writer,df_returns, 'Returns')
     
     print_report_info(report_name, file_path)
@@ -519,19 +532,20 @@ def generate_hs_report(report_name, returns_dict, notional_weights=[], weighted=
 
 def get_returns_report(report_name, returns_dict, data_file = False):
     """
-    Generates historical returns spreadsheet containing returns for different frequencies
+    Generates excel file containing historical returns for different frequencies
 
     Parameters
     ----------
     report_name : string
         Name of report.
-    returns_dict : dict
-        dictionary of returns containing different frequencies.
-    
+    data_dict : dict
+        Dictionary containing returns of different frequencies.
+    data_file : boolean, optional
+        Boolean to determine if excel file belongs in data folder or reports folder. The default is True.
+
     Returns
     -------
-    None. An excel report called [report_name].xlsx is created 
-
+    None. An excel report called [report_name].xlsx is created
     """
     #get file path and create excel writer
     file_path = get_filepath_path(report_name, data_file)

@@ -418,7 +418,7 @@ def get_percentile(returns_df , bucket_format=util.bucket , group='Quintile', bu
 #TODO: Add frequency (Monthly, Weekly)  
 def get_grouped_data(returns_df, notional_weights=[], weighted=False, group='Quintile', strat='equity'):
     """
-    Returns a dataframe containing average returns of each strategy grouped 
+    Returns a dictionary dataframe containing average returns of each strategy grouped 
     into quintiles based on the equity returns ranking.
     
     Parameters
@@ -442,14 +442,19 @@ def get_grouped_data(returns_df, notional_weights=[], weighted=False, group='Qui
     if weighted == True:
         util.check_notional(df, notional_weights)
         df = util.get_weighted_hedges(df, notional_weights)
-            
-    if group == 'Quintile':       
-        quintile = get_percentile(df, strat=strat)
-        return quintile
     
-    elif group == 'Decile':
-        decile = get_percentile(df, util.decile_bucket , group, 10,strat)
-        return decile
+    quintile = get_percentile(df, strat=strat)
+    decile = get_percentile(df, util.decile_bucket , group, 10,strat)
+    
+    return {'df_list': [quintile, decile],'title_list': ['Quintile', 'Decile']}
+    
+    # if group == 'Quintile':       
+    #     quintile = get_percentile(df, strat=strat)
+    #     return quintile
+    
+    # elif group == 'Decile':
+    #     decile = get_percentile(df, util.decile_bucket , group, 10,strat)
+    #     return decile
     
 def get_corr_data(returns_dict, freq_list=['Monthly', 'Weekly'], weighted=[False], notional_weights=[], include_fi = False):
     """
@@ -887,3 +892,4 @@ def get_norm_premia_metrics(df_returns, notional_weights=[], freq='1W', drop_bmk
     
     #create dict with hedge met and normalized data
     return {'Premia Metrics': df_pm, 'Normalized Data': df_norm_pm}
+

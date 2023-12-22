@@ -9,6 +9,8 @@ import pandas as pd
 import numpy as np
 from ..datamanager import data_manager as dm
 from sklearn.preprocessing import MinMaxScaler
+# from openpyxl import load_workbook
+
 
 
 def get_pos_neg_df(return_series, pos=True, target=0):
@@ -91,36 +93,6 @@ def get_strat_weights(notional_weights, include_fi=False):
         strat_weights[1] = 0
     return strat_weights
 
-# def get_weighted_strats_df(df_returns, notional_weights):
-#     """
-#     Return dataframe of weighted startegy returns, with and without newest strategy
-
-#     Parameters:
-#     returns_df -- dataframe
-#     notional weights -- list
-    
-#     Returns:
-#     df_weighted_strats -- dataframe
-#     """
-    
-#     #Get weighted strategies (weighted_strats) with and 
-#     #without new strategy (weighted_strats_old)
-#     pct_weights = [weight / notional_weights[0] for weight in notional_weights]
-#     pct_weights
-#     pct_weights.append(0)
-#     pct_weights
-    
-#     pct_weights_old = pct_weights.copy()
-#     pct_weights_old[len(pct_weights_old)-2]=0
-#     pct_weights_old
-    
-#     df_weighted_strats = df_returns.dot(tuple(pct_weights)).to_frame()
-#     df_weighted_strats.columns = ['Weighted Strats']
-#     col_names = [col for col in df_returns]
-#     wgt_strat_wo_name = 'Weighted Strats w/o ' + col_names[len(col_names)-2]
-#     df_weighted_strats[wgt_strat_wo_name] = df_returns.dot(tuple(pct_weights_old)).to_frame()
-#     return df_weighted_strats
-
 def get_pct_weights(notional_weights, include_fi=False):
     """
     Return percentage weights based off of notional weights
@@ -165,7 +137,9 @@ def get_df_weights(notional_weights, col_list, include_fi=False):
     index_list = ['Notional Weights (Billions)',
                   'Percentage Weights',
                   'Strategy Weights']
-
+    
+ 
+    
     #compute percentage and strategy weights
     pct_weights = get_pct_weights(notional_weights, include_fi)
     strat_weights = get_strat_weights(notional_weights, include_fi)
@@ -320,7 +294,7 @@ def decile_bucket(x):
     else:
         return 'Top'
 
-   
+ 
 def get_normalized_data(df):
     '''
 
@@ -341,8 +315,6 @@ def get_normalized_data(df):
     df_normal = pd.DataFrame(scaler.fit_transform(df), columns = df.columns, index = df.index )
 
     return df_normal
-
-
 
 def convert_dict_to_df(dict,index = []):
     '''
@@ -409,3 +381,27 @@ def change_to_neg(df):
                 df_reverse[col_name][x] = -(df_reverse[col_name][x])
             
     return df_reverse
+
+# def get_sheetnames_xlsx(filepath):
+#     wb = load_workbook(filepath, read_only=True, keep_links=False)
+#     return wb.sheetnames
+
+def append_dict_dfs(dictionary):
+    '''
+    
+
+    Parameters
+    ----------
+    dictionary : dictionary
+
+    Returns
+    -------
+    Dataframe that appends all dataframes within dictionary into one. 
+
+    '''
+    df = pd.DataFrame()
+    for i in list(dictionary.keys()):
+        temp_df = dictionary[i]
+        df = df.append(temp_df)
+            
+    return df

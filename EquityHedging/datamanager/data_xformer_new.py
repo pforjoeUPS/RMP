@@ -6,17 +6,12 @@ Created on Fri Jul 14 2023
 """
 
 import pandas as pd
+import copy
 from .import data_importer as di
 from .import data_manager as dm
 
 def copy_data(data):
-    if type(data) == dict:
-        dict_copy = {}
-        for key in data:
-            dict_copy[key] = data[key].copy()
-        return dict_copy
-    else:
-        return data.copy()
+    return copy.deepcopy(data) if type(data) == dict else data.copy()
     
 def resample_data(df, freq="1M"):
     data = df.copy()
@@ -46,7 +41,8 @@ def format_data(df_index, freq="1M", dropna=True, drop_zero=False):
         data = data.loc[(data!=0).any(1)]
     return data
 
-def get_data_dict(data, data_type='index', dropna=True, drop_zero=True):
+#TODO: update to be able to create dictionary regardless of frequency
+def get_data_dict(data, index_data=True, dropna=True, drop_zero=True):
     """
     Converts daily data into a dictionary of dataframes containing returns 
     data of different frequencies
@@ -60,7 +56,7 @@ def get_data_dict(data, data_type='index', dropna=True, drop_zero=True):
     """
     freq_list = ['Daily', 'Weekly', 'Monthly', 'Quarterly', 'Yearly']
     data_dict = {}
-    if data_type != 'index':
+    if not index_data:
         try:
             data.index = pd.to_datetime(data.index)
         except TypeError:
@@ -111,6 +107,7 @@ def get_price_series(return_series):
         price_series[i] = (return_series[i] + 1) * price_series[i-1]
     return price_series
 
+
 class dataXformer():
     def __init__(self, filepath, sheet_name=0, data_source='custom', freq='1M', col_list=[]
                  , drop_na = True, index_data = False, format_data = False):
@@ -158,18 +155,17 @@ class dataXformer():
     def import_data(self):
         #pull data from dataImporter object
         return di.dataImporter(self.filepath, self.sheet_name, data_source=self.data_source, drop_na=self.drop_na,
-                                           index_data=self.index_data).data
+                                           index_data=self.index_data).data_import
     #return dataframe or dictionary of dataframes
     def xform_data(self):
         if self.format_data:
             #transform data to dictionary of return dataframes if Freq is Daily
             if self.freq == '1D':
-                data_type = 'index' if self.index_data else 'return'
-                return get_data_dict(self.data_import,data_type, self.drop_na)
+                return get_data_dict(self.data_import, self.index_data)
             else:
                 #transform data to return dataframe if index_data is True
                 if self.index_data:
-                    return format_data(self.data_import,self.freq,self.drop_na)
+                    return format_data(self.data_import,self.freq)
                 else:
                     #resample data
                     return resample_data(self.data_import,self.freq)
@@ -191,11 +187,11 @@ class nexenDataXformer(dataXformer):
 
         """
         
-        dataXformer.__init__(self,filepath,data_source)
+        super().__init__(filepath,data_source)
         
     def import_data(self):
         #pull data from nexenDataImporter object
-        return di.nexenDataImporter(self.filepath).data
+        return di.nexenDataImporter(self.filepath).data_import
     
     #return dictionary of dataframes (returns and market values)
     def xform_data(self):
@@ -208,7 +204,7 @@ class nexenDataXformer(dataXformer):
 
 class bbgDataXformer(dataXformer):
     def __init__(self, filepath, sheet_name='data', data_source='bbg', freq='1M', col_list=[]
-                 , drop_na = True, index_data = True, format_data = True):
+                 , index_data = True, format_data = True):
         """
         Converts bbg excel file into a bbgDataXformer object
 
@@ -234,12 +230,12 @@ class bbgDataXformer(dataXformer):
         bbgDataXformer object
 
         """
-        dataXformer.__init__(self,filepath,sheet_name,data_source,freq, col_list
-                             , drop_na = drop_na,index_data=index_data, format_data=format_data)
+        super().__init__(filepath,sheet_name,data_source,freq, col_list
+                             ,index_data=index_data, format_data=format_data)
      
     def import_data(self):
         #pull data from bbgDataImporter object
-        return di.bbgDataImporter(self.filepath,self.sheet_name, col_list=self.col_list, drop_na=self.drop_na).data
+        return di.bbgDataImporter(self.filepath,self.sheet_name, col_list=self.col_list).data_import
    
 class innocapDataXformer(dataXformer):
     def __init__(self, filepath,sheet_name=0, data_source='innocap', freq='1M',
@@ -266,11 +262,11 @@ class innocapDataXformer(dataXformer):
 
         """
         
-        dataXformer.__init__(self,filepath, sheet_name,data_source, freq,col_list)
+        super().__init__(filepath, sheet_name,data_source, freq,col_list)
         
     def import_data(self):
         #pull data from innocapDataImporter object
-        return di.innocapDataImporter(self.filepath, col_list=self.col_list).data
+        return di.innocapDataImporter(self.filepath, col_list=self.col_list).data_import
     
     #return dictionary of dataframes (returns and market values)
     def xform_data(self):
@@ -308,7 +304,7 @@ class innocapExpDataXformer(innocapDataXformer):
 
         """
         
-        innocapDataXformer.__init__(self,filepath,sheet_name,data_source,freq, col_list)
+        super().__init__(filepath,sheet_name,data_source,freq, col_list)
         
     #return dictionary of dataframes (managers asset class exposures)
     def xform_data(self):
@@ -319,4 +315,116 @@ class innocapExpDataXformer(innocapDataXformer):
             exposure_dict[name] = name_df.pivot_table(values='10 Yr Equiv Net % Notional', index='Dates', columns='Asset Class')
             exposure_dict[name] = resample_data(exposure_dict[name], self.freq)
         return exposure_dict
-               
+
+
+class vrrDataXformer(dataXformer):
+    def __init__(self, filepath, sheet_name = ["VRR","VRR 2","VRR Trend"],  data_source='custom',drop_na = False):
+        """
+        Converts excel file into a vrrDataXformer object
+
+        Parameters
+        ----------
+        filepath : string
+            Valid string path.
+        data_source : string, optional
+            source of excel file. The default is 'custom'.
+        Returns
+        -------
+        vrrDataXformer object
+
+        """
+        super().__init__(filepath,sheet_name, data_source)
+    
+
+    def import_data(self):
+        #create dictionary with vrr, vrr2, and vrr trend data frames
+        return di.dataImporter(self.filepath, self.sheet_name, drop_na = self.drop_na).data_import
+    
+
+    def add_bps(self, vrr_returns_dict,add_back=[.0025, .005,.005]):
+        '''
+        Adds bps back to the returns for the vrr strategy
+
+        Parameters
+        ----------
+        vrr_dict : dictionary
+            DESCRIPTION.
+        add_back : float
+            DESCRIPTION. The default is .0025.
+
+        Returns
+        -------
+        temp_dict : dictionary
+            dictionary of VRR returns with bips added to it
+
+        '''
+        #create empty dictionary
+        temp_dict = {}
+        
+
+        #iterate through keys of a dictionary
+        for key in vrr_returns_dict:
+            
+            #set dataframe equal to dictionary's key
+            temp_df = vrr_returns_dict[key].copy()
+            
+            #set variable equaly to the frequency of key
+            freq = dm.switch_string_freq(key)
+            
+            #set annual fees for each frew
+            bps = [value/(dm.switch_freq_int(freq)) for value in add_back]
+            
+            #add to dataframe
+            temp_df += bps
+            
+            #add value to the temp dictionary
+            temp_dict[key] = temp_df
+        return temp_dict
+
+
+    def xform_data(self):     
+    
+        vrr_returns_dict = get_data_dict(pd.concat(self.data_import.values(), axis=1))
+
+        return self.add_bps(vrr_returns_dict)
+    
+
+
+# class putSpreadDataXformer(dataXformer):
+#     def __init__(self, filepath, data_source='put_spread'):
+#         """
+#         Converts excel file into a putSpreadDataXformer object
+
+#         Parameters
+#         ----------
+#         filepath : string
+#             Valid string path.
+#         data_source : string, optional
+#             source of excel file. The default is 'put_spread'.
+#         Returns
+#         -------
+#         putSpreadDataXformer object
+
+#         """
+        
+#         super().__init__(filepath,data_source)
+        
+#     def import_data(self):
+#         return di.putspreadDataImporter(self.filepath).data_import   
+    
+#     def xform_data(self):
+
+#         #only keep 'Put Spread' column
+#         data = self.data_import[['Put Spread']]
+        
+#         #rename column 
+#         data.columns = ['99%/90% Put Spread']
+        
+#         #get price dataframe
+#         data = get_prices_df(data)
+        
+#         #get put spread data dict
+#         data_dict = get_data_dict(data, index_data = True)
+
+#         return data_dict
+         

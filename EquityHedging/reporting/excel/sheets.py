@@ -642,14 +642,16 @@ def set_normal_sheet(writer, data_dict, sheet_name='Hedgging Framework Metrics',
     
     return 0
 
-def set_grouped_data_sheet(writer, quintile_df, decile_df, sheet_name = 'Grouped Data', spaces = 3):
+def set_grouped_data_sheet(writer, data_dict, sheet_name = 'Grouped Data', spaces = 3):
     
     #create writer and workbook
     workbook = writer.book
     
     #pull out lists from data_dict
-    df_list = [quintile_df, decile_df]
-    title_list = ['Quintile', 'Decile']
+    df_list = data_dict['df_list']
+    title_list = data_dict['title_list']
+    # df_list = [quintile_df, decile_df]
+    # title_list = ['Quintile', 'Decile']
      
     #format background color of worksheet to white
     cell_format = formats.set_worksheet_format(workbook)
@@ -1034,7 +1036,6 @@ def set_ratio_sheet(writer,df_returns,sheet_name='Sortino', freeze=True):
     
     #currency format
     number_fmt = formats.set_number_format(workbook,num_format='0.00')
-    
     #date format
     date_fmt = formats.set_number_format(workbook, num_format='mm/dd/yyyy')
         
