@@ -5,274 +5,216 @@ Created on Mon Jul 25 21:23:33 2022
 @author: NVG9HXP
 """
 
-import numpy as np
 from ..datamanager import data_manager as dm
 from EquityHedging.analytics import  util
+from .import  returns_stats as rs
+from .import  rolling_stats as roll
+from .import  drawdowns as dd
+from .import  corr_stats as cs
 
+import pandas as pd
+from itertools import compress
+# global 
 
-RETURNS_STATS_INDEX = ['Annualized Ret','Annualized Vol','Ret/Vol', 
-                       'Max DD','Ret/Max DD',
-                       'Max 1M DD','Max 1M DD Date', 'Ret/Max 1M DD',
-                       'Max 3M DD','Max 3M DD Date','Ret/Max 3M DD',
-                       'Skew','Avg Pos Ret/Avg Neg Ret',
-                       'Downside Deviation','Sortino Ratio']
+ACTIVE_COL_DICT = {'bmk_name':'Bmk Name',' bmk_beta':'Bmk Beta','excess_ret':'Excess Return (Ann)',
+                   'te':'Tracking Error (TE)', 'dwnside_te':'Downside TE','te_dwnside_te':'TE to Downside TE Ratio', 'ir':'Informatio Ratio (IR)', 'ir_asym':'Asymmetric IR'}
 
-def get_ann_return(return_series, freq='1M'):
-    """
-    Return annualized return for a return series.
+PORT_COL_DICT = {'ann_ret':'Annualized Return', 'median_ret':'Median Period Return','avg_ret':'Avg. Period Return',
+                 'avg_pos_ret':'Avg. Period Up Return', 'avg_neg_ret':'Avg. Period Down Return', 'avg_pos_neg_ret':'Avg Pos Return/Avg Neg Return', 
+                 'best_period':'Best Period','worst_period': 'Worst Period', 'pct_pos_periods':'% Positive Periods',
+                 'pct_neg_periods':'% Negative Periods', 'ann_vol':'Annualized Volatility','up_dev':'Upside Deviation',
+                 'down_dev':'Downside Deviation','up_down_dev':'Upside to Downside Deviation Ratio','vol_down_dev':'Vol to Downside Deviation Ratio', 
+                 'skew':'Skewness','kurt':'Kurtosis','max_dd':'Max DD', 'ret_vol':'Return/Volatility', 'sortino':'Sortino Ratio', 'ret_dd':'Return/Max DD'}
 
-    Parameters
-    ----------
-    return_series : series
-        returns series.
-    freq : string, optional
-        frequency. The default is '1M'.
+MKT_COL_DICT = {'asset_id':{'Equity': 'EQ', 'Fixed Income':'FI','Commodities':'CM', 'FX':'FX'}, 
+                'analytics': {'alpha':'Alpha', 'beta':'Beta', 'up_beta':'Upside Beta', 'dwn_beta':'Downside Beta',
+                              'corr': 'Correlation', 'up_corr':'Upside Correlation', 'dwn_corr':'Downside Correlation'}
+                }
 
-    Returns
-    -------
-    double
-        Annualized return.
-
-    """
-    #compute the annualized return
-    d = len(return_series)
-    return return_series.add(1).prod()**(dm.switch_freq_int(freq)/d)-1
-
-def get_ann_vol(return_series, freq='1M'):
-    """
-    Return annualized volatility for a return series.
-
-    Parameters
-    ----------
-    return_series : series
-        returns series.
-    freq : string, optional
-        frequency. The default is '1M'.
-
-    Returns
-    -------
-    double
-        Annualized volatility.
-
-    """
-    #compute the annualized volatility
-    return np.std(return_series, ddof=1)*np.sqrt(dm.switch_freq_int(freq))
-
-def get_return_stats(df_returns, freq='1M'):
-    """
-    Return a dict of return analytics
-
-    Parameters
-    ----------
-    df_returns : dataframe
-        returns dataframe.
-    freq : string, optional
-        frequency. The default is '1M'.
-
-    Returns
-    -------
-    df_returns_stats : dataframe
-
-    """
+def get_time_frame(returns_df):
+    start = []
+    end = []
+    for i in range (len(returns_df.columns)):
+        sta = returns_df.iloc[:,i].first_valid_index()
+        en = returns_df.iloc[:,i].last_valid_index()
+        start.append(sta)
+        end.append(en)
     
-    #generate return stats for each strategy
-    ret_stats_dict = {}
-    for col in df_returns.columns:
-        rs = returnStats(df_returns[col])
-        
-        ret_stats_dict[col] = [rs.ann_ret, rs.ann_vol, rs.ret_vol, rs.max_dd, rs.ret_dd,
-                               rs.max_1m_dd, rs.max_1m_dd_date, rs.ret_1m_dd,
-                               rs.max_3m_dd, rs.max_3m_dd_date, rs.ret_3m_dd,
-                               rs.skew, rs.avg_pos_neg, rs.down_dev, rs.sortino]
-        
-    #Converts ret_stats_dict to a data grame
-    df_ret_stats = util.convert_dict_to_df(ret_stats_dict, RETURNS_STATS_INDEX)
-    return df_ret_stats
-    
-class returnStats():
-    
-    def __init__(self,return_series, freq='1M', rfr = 0.0, target = 0.0):
-        """
-        
+    period = []
+    for i in range (len(start)):
+        per = start[i].strftime('%m/%d/%Y')+'-'+end[i].strftime('%m/%d/%Y')
+        period.append(per)
+    period = pd.Series(period,index=returns_df.columns)
+    return period
 
-        Parameters
-        ----------
-        return_series : TYPE
-            DESCRIPTION.
-        freq : TYPE, optional
-            DESCRIPTION. The default is '1M'.
-        rfr : TYPE, optional
-            DESCRIPTION. The default is 0.0.
-        target : TYPE, optional
-            DESCRIPTION. The default is 0.0.
+def add_mkt_data(mkt_df,mkt_key, asset_class):
+    return mkt_df[[mkt_key[asset_class]]]
 
-        Returns
-        -------
-        None.
-
-        """
-        self.return_series = return_series
-        self.price_series = dm.get_price_series(self.return_series)
+class returnsAnalytic():
+    def __init__(self,returns_df, freq='1M', rfr = 0.0, target = 0.0,
+                 include_bmk = False, bmk_df = dm.pd.DataFrame(), bmk_dict={},
+                 include_eq = True,include_fi=False,mkt_df=pd.DataFrame(), mkt_key={}):
+        
+        self.returns_df = returns_df
+        self.period = get_time_frame(self.returns_df)
         self.freq = freq
         self.freq_int = dm.switch_freq_int(self.freq)
+        self.freq_string = dm.switch_freq_string(self.freq)
         self.rfr = rfr
         self.target = target
+        self.include_bmk = include_bmk
+        self.bmk_df = bmk_df
+        self.bmk_dict = bmk_dict
+        self.include_eq = include_eq
+        self.include_fi = include_fi
+        self.mkt_bool_dict = self.get_mkt_bool_data()
+        self.mkt_key = mkt_key
+        self.mkt_ret_data = self.get_mkt_ret_data(mkt_df)
         
-        self.ann_ret = get_ann_return(self.return_series, self.freq)
-        self.ann_vol = self.get_ann_vol(self.return_series, self.freq)
-        self.ret_vol = self.ann_ret / self.ann_vol
-        self.max_dd = self.get_max_dd()
-        self.ret_dd = self.ann_ret / abs(self.max_dd)
-        self.max_1m_dd = self.get_max_dd_freq()['max_dd']
-        self.max_1m_dd_date = self.get_max_dd_freq()['index']
-        self.ret_1m_dd = self.ann_ret / abs(self.max_1m_dd)
-        self.max_3m_dd = self.get_max_dd_freq(True)['max_dd']
-        self.max_3m_dd_date = self.get_max_dd_freq(True)['index']
-        self.ret_3m_dd = self.ann_ret / abs(self.max_3m_dd)
-        self.skew = self.return_series.skew()
-        self.avg_pos_neg = self.get_avg_pos_neg()
-        self.down_dev = self.get_up_down_dev()
-        self.up_dev = self.get_up_down_dev(True)
-        self.sortino = (self.ann_ret - self.rfr) / self.down_dev
+        self.dd_data = self.get_dd_data()
+        self.corr_data = self.get_corr_data()
+        self.mkt_stats_data = None if self.mkt_ret_data.empty else self.get_mkt_stats()
+        self.returns_stats_data = self.get_returns_stats()
+        self.roll_data = None
         
-    def get_ann_return(self):
-        """
-        Return annualized return for a return series.
+    def get_roll_stats(self, years):
+        self.roll_stats_data = roll.get_rolling_data(self.returns_df, years, self.freq, self.rfr,
+                                                     self.include_bmk, self.bmk_df, self.bmk_dict,
+                                                     any(self.mkt_bool_dict.values()), self.mkt_ret_data)
+        
+    def get_mkt_bool_data(self):
+        return {'Equity':self.include_eq, 'Fixed Income':self.include_fi}
     
-        Parameters
-        ----------
-        return_series : series
-            returns series.
-        
-        Returns
-        -------
-        double
-            Annualized return.
+    def get_mkt_ret_data(self, mkt_df):
+        mkt_ret_df = pd.DataFrame(index=mkt_df.index)
+        for asset_class in self.mkt_bool_dict:
+            if self.mkt_bool_dict[asset_class]:
+                try:
+                    mkt_ret_df = dm.merge_data_frames(mkt_ret_df, add_mkt_data(mkt_df, self.mkt_key, asset_class))
+                except KeyError:
+                    self.mkt_bool_dict[asset_class] = False
+                    pass
+        mkt_ret_df.columns = list(compress(list(self.mkt_bool_dict.keys()), list(self.mkt_bool_dict.values())))
+        return mkt_ret_df
     
-        """
-        #compute the annualized return
-        d = len(self.return_series)
-        return self.return_series.add(1).prod()**(self.freq_int/d)-1
+    def get_dd_data(self):
+        print('Computing Drawdown analytics...')
+        if self.mkt_ret_data.empty:
+            return {'dd_matrix':dd.get_dd_matrix(self.returns_df),
+                    'co_dd_dict': dd.get_co_drawdown_data(self.returns_df),
+                    'dd_dict': dd.get_drawdown_data(self.returns_df, recovery=True)
+                    }
+        else:
+            return {'dd_matrix':dd.get_dd_matrix(dm.merge_data_frames(self.mkt_ret_data,self.returns_df, False)),
+                    'mkt_co_dd_dict': dd.get_co_drawdown_data(self.mkt_ret_data, self.returns_df),
+                    'co_dd_dict': dd.get_co_drawdown_data(self.returns_df),
+                    'dd_dict': dd.get_drawdown_data(self.returns_df, recovery=True)
+                    }
+        
+    def get_corr_data(self):
+        print('Computing Correlation analytics...')
+        corr_dict = cs.get_corr_analysis1(self.returns_df)
+        if not self.mkt_ret_data.empty:
+            corr_df = dm.merge_data_frames(self.mkt_ret_data, self.returns_df)
+            for asset_class in self.mkt_bool_dict:
+                if self.mkt_bool_dict[asset_class]:
+                    corr_dict[asset_class] = cs.get_conditional_corr(corr_df, asset_class)
+        return corr_dict
+    
+    def get_mkt_index_list(self):
+        mkt_list = []
+        for asset_class in self.mkt_bool_dict:
+            mkt_list = mkt_list + [MKT_COL_DICT['asset_id'][asset_class] + ' ' + value for value in list(MKT_COL_DICT['analytics'].values())]
+        return mkt_list
+    
+    def get_mkt_stats(self):
+        print('Computing Market analytics...')
+        mkt_stats_dict = {}
+        for strat in self.returns_df:
+            return_series = self.returns_df[strat]
+            mkt_ret_df = dm.merge_data_frames(self.mkt_ret_data, return_series)
+            
+            mkt_analytics = {}
+            for asset_class in self.mkt_bool_dict:
+                if self.mkt_bool_dict[asset_class]:
+                    mkt_analytics[asset_class] = rs.get_mkt_analytics(mkt_ret_df, self.mkt_key[asset_class], strat, self.freq, self.rfr)
+                else:
+                    mkt_analytics[asset_class] = rs.get_mkt_analytics(mkt_ret_df, self.mkt_key[asset_class], strat, empty=True)
+            
+            mkt_stats_dict[strat] = rs.get_mkt_analytics_list(mkt_analytics)
+            
+        df_mkt_stats = util.convert_dict_to_df(mkt_stats_dict, self.get_mkt_index_list())
+        
+        for asset_class in self.mkt_bool_dict:
+            if not self.mkt_bool_dict[asset_class]:
+                try:
+                    droplist = [asset_class + ' ' + value for value in list(MKT_COL_DICT['analytics'].values())]
+                    df_mkt_stats.drop(droplist, inplace = True)
+                except KeyError:
+                    pass
+        return df_mkt_stats
+    
+    def get_returns_stats(self, drop_active=False):
+        print('Computing Returns analytics...')
+        returns_stats_dict = {}
+        for strat in self.returns_df:
+            return_series = self.returns_df[strat]
+            time_frame = self.period[strat]
+            obs = len(return_series)
+            
+            port_analytics = rs.get_port_analytics(return_series, self.freq)
+        
+            if self.include_bmk:
+                try:
+                    bmk_series = self.bmk_df[self.bmk_dict[strat]]
+                    active_analytics = rs.get_active_analytics(return_series, bmk_series, self.freq)
+                except KeyError:
+                    active_analytics = rs.get_active_analytics(return_series, empty=True)
+            else:
+                active_analytics = rs.get_active_analytics(return_series, empty=True)
+            
+            returns_stats_dict[strat] = [*list(active_analytics.values())[0:1], *[time_frame, obs], *list(port_analytics.values()),
+                                         *list(active_analytics.values())[1:]]
+            
+        df_returns_stats = util.convert_dict_to_df(returns_stats_dict, 
+                                                   [*list(ACTIVE_COL_DICT.values())[0:1], *['Time Frame',f'No. of {self.freq_string} Observations'], 
+                                                    *list(PORT_COL_DICT.values()), *list(ACTIVE_COL_DICT.values())[1:]])
+        
+        if not self.include_bmk:
+            df_returns_stats.drop(list(ACTIVE_COL_DICT.values()), inplace = True)
+        if drop_active:
+            try:
+                df_returns_stats.drop(list(ACTIVE_COL_DICT.values()), inplace = True)
+            except KeyError:
+                pass
+        return df_returns_stats
 
-    def get_ann_vol(self):
-        """
-        Return annualized volatility for a return series.
-    
-        Parameters
-        ----------
-        self.return_series : series
-            returns series.
-        Returns
-        -------
-        double
-            Annualized volatility.
-    
-        """
-        #compute the annualized volatility
-        return np.std(self.return_series, ddof=1)*np.sqrt(self.freq_int)
-    
-    def get_max_dd(self):
-        """
-        Return maximum draw down (Max DD) for a price series.
-    
-        Parameters
-        ----------
+
+class liquidAltsAnalytic(returnsAnalytic):
+    def __init__(self,returns_df, freq='1M',rfr = 0.0, target = 0.0,
+                 include_bmk = False, bmk_df = dm.pd.DataFrame(), bmk_dict={},
+                 include_eq = True,include_fi=False, include_cm=False, include_fx=False,
+                 mkt_df=pd.DataFrame(), mkt_key={}):
         
-        Returns
-        -------
-        double
-            Max DD.
-    
-        """
+        self.include_cm = include_cm
+        self.include_fx = include_fx
         
-        #we are going to use the length of the series as the window
-        window = len(self.price_series)
+        super().__init__(returns_df, freq, rfr, target, include_bmk, bmk_df, bmk_dict, 
+                         include_eq, include_fi, mkt_df, mkt_key)
         
-        #calculate the max drawdown in the past window periods for each period in the series.
-        roll_max = self.price_series.rolling(window, min_periods=1).max()
-        drawdown = self.price_series/roll_max - 1.0
-        
-        return drawdown.min()
-    
-    def get_max_dd_freq(self, max_3m_dd=False):
-        """
-        Return dictionary (value and date) of either Max 1M DD or Max 3M DD
-    
-        Parameters
-        ----------
-        max_3m_dd : boolean, optional
-            Compute Max 3M DD. The default is False.
-    
-        Returns
-        -------
-        dictionary
-        """
-        ret_series = self.price_series.copy()
-        ret_series = ret_series.resample(self.freq).ffill()
-        
-        #compute 3M or 1M returns
-        if max_3m_dd:
-            periods = round((3/12) * self.freq_int)
-            ret_series = ret_series.pct_change(periods)
-        else:
-            periods = round((1/12) * self.freq_int)
-            ret_series = ret_series.pct_change(periods)
-        ret_series.dropna(inplace=True)
-        
-        #compute Max 1M/3M DD
-        max_dd_freq = min(ret_series)
-        
-        #get Max 1M/3M DD date
-        index_list = ret_series.index[ret_series==max_dd_freq].tolist()
-        
-        #return dictionary
-        return {'max_dd': max_dd_freq, 'index': index_list[0]}
-    
-    def get_avg_pos_neg(self):
-        """
-        Return Average positve returns/ Average negative returns
-        of a strategy
-    
-        Returns
-        -------
-        double
-        
-        """
-        
-        #filter positive and negative returns
-        pos_ret = util.get_pos_neg_df(self.return_series,True)
-        neg_ret = util.get_pos_neg_df(self.return_series,False)
-        
-        #compute means
-        avg_pos = pos_ret.mean()
-        avg_neg = neg_ret.mean()
-        
-        return avg_pos/abs(avg_neg)
-    
-    def get_up_down_dev(self, up = False):
-        """
-        Compute annualized upside/downside std dev
-    
-        Parameters
-        ----------
-        up : boolean, optional
-            The default is False.
-    
-        Returns
-        -------
-        double
-            upside/downside std deviation.
-    
-        """
-        #create a upside/downside return series
-        if up:
-            upside_returns = self.return_series.loc[self.return_series >= self.target]
-            return get_ann_vol(upside_returns, self.freq)
-        else:
-            downside_returns = self.return_series.loc[self.return_series < self.target]
-            return np.std(downside_returns, ddof=1)*np.sqrt(self.freq_int)
-        
-    def get_cum_ret(self):
-        return self.return_series.add(1).prod(axis=0) - 1
-    
-    
+    def get_mkt_bool_data(self):
+        return {'Equity':self.include_eq, 'Fixed Income':self.include_fi,
+                'Commodities':self.include_cm, 'FX':self.include_fx}
+
+class eqHedgeAnalytic(returnsAnalytic):
+    def __init__(self,returns_df, freq='1M',rfr = 0.0, target = 0.0,
+                 include_bmk = False, bmk_df = dm.pd.DataFrame(), bmk_dict={},
+                 include_eq = True,include_fi=False, 
+                 mkt_df=pd.DataFrame(), mkt_key={}):
+              
+        super().__init__(returns_df, freq, rfr, target, include_bmk, bmk_df, bmk_dict, 
+                         include_eq, include_fi, mkt_df, mkt_key)
+        self.hedge_metrics_data = self.get_hedge_metrics()
+
+    def get_hedge_metrics(self):
+        pass
