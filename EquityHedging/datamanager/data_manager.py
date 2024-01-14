@@ -26,8 +26,8 @@ QIS_UNIVERSE = CWD + '\\Cluster Analysis\\data\\'
 
 NEW_DATA_COL_LIST = ['SPTR', 'SX5T','M1WD', 'Long Corp', 'STRIPS', 'Down Var',
  'Vortex', 'VOLA I', 'VOLA II','Dynamic VOLA','Dynamic Put Spread',
-                    'GW Dispersion', 'Corr Hedge','Def Var (Mon)', 'Def Var (Fri)', 'Def Var (Wed)', 
-                    'Commodity Basket','ESPRSO','EVolCon']
+                    'GW Dispersion', 'Corr Hedge','Def Var (Mon)', 'Def Var (Fri)', 'Def Var (Wed)', 'Def Var II (Mon)', 'Def Var II (Fri)', 'Def Var II (Wed)',
+                    'Commodity Basket','ESPRSO','EVolCon','Moments']
 
 def merge_dicts(main_dict, new_dict, fillzeros = False):
 
@@ -50,7 +50,7 @@ def merge_dicts(main_dict, new_dict, fillzeros = False):
         if key == 'Daily':
             merged_dict[key] = merge_data_frames(df_main, df_new, True)
         else:
-            merged_dict[key] = merge_data_frames(df_main, df_new)
+            merged_dict[key] = merge_data_frames(df_main, df_new, fillzeros)
     return merged_dict
 
 def merge_data_frames(df_main, df_new,fillzeros=False):
@@ -300,22 +300,23 @@ def create_copy_with_fi(df_returns, equity = 'SPTR', freq='1M', include_fi=False
     
     strategy_returns['VOLA 3'] = strategy_returns['Dynamic VOLA']
     strategy_returns['Def Var']=strategy_returns['Def Var (Fri)']*.4 + strategy_returns['Def Var (Mon)']*.3+strategy_returns['Def Var (Wed)']*.3
-        
+    strategy_returns['Def Var II']=strategy_returns['Def Var II (Fri)']*.4 + strategy_returns['Def Var II (Mon)']*.3+strategy_returns['Def Var II (Wed)']*.3
+    
     if freq == '1W' or freq == '1M':
         if include_fi:
             strategy_returns['FI Benchmark'] = (strategy_returns['Long Corp'] + strategy_returns['STRIPS'])/2
             strategy_returns = strategy_returns[[equity, 'FI Benchmark', 
 
                                                  'Down Var', 'Vortex', 'VOLA 3','Dynamic Put Spread',
-                                                  'VRR 2', 'VRR Trend', 'GW Dispersion', 'Corr Hedge','Def Var','Commodity Basket','ESPRSO','EVolCon']]
+                                                  'VRR 2', 'VRR Trend', 'GW Dispersion', 'Corr Hedge','Def Var','Def Var II','Commodity Basket','ESPRSO','EVolCon','Moments']]
         else:
             strategy_returns = strategy_returns[[equity,
                                                  'Down Var', 'Vortex', 'VOLA 3','Dynamic Put Spread',
-                                                 'VRR 2', 'VRR Trend', 'GW Dispersion', 'Corr Hedge','Def Var','Commodity Basket','ESPRSO','EVolCon']]
+                                                 'VRR 2', 'VRR Trend', 'GW Dispersion', 'Corr Hedge','Def Var','Def Var II','Commodity Basket','ESPRSO','EVolCon','Moments']]
     else:
         strategy_returns = strategy_returns[[equity, 'Down Var', 'Vortex',
                                              'VOLA 3','Dynamic Put Spread', 'VRR 2', 'VRR Trend', 
-                                             'GW Dispersion', 'Corr Hedge','Def Var','Commodity Basket','ESPRSO','EVolCon']]
+                                             'GW Dispersion', 'Corr Hedge','Def Var','Def Var II','Commodity Basket','ESPRSO','EVolCon','Moments']]
 
     return strategy_returns
 
