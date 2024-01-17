@@ -100,7 +100,7 @@ class getReturnsReport(setReport):
         self.data_dict = data_dict
         self.generate_report()
         print_report_info(self.report_name, self.file_path)
-        self.writer.save()
+        self.writer.close()
         
     def generate_report(self):
         #loop through dictionary to create returns spreadsheets
