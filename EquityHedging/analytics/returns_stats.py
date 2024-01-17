@@ -102,9 +102,9 @@ def get_max_dd_freq(price_series, freq='1M', max_3m_dd=False):
     dictionary
     """
     
-    #convert price series into returns
-    return_series = price_series.copy()
-    return_series = return_series.resample(freq).ffill()
+    #convert resample price series
+    dd_price_series = price_series.copy()
+    dd_price_series = dd_price_series.resample(freq).ffill()
     
     #get int frequency
     int_freq = dm.switch_freq_int(freq)
@@ -112,10 +112,10 @@ def get_max_dd_freq(price_series, freq='1M', max_3m_dd=False):
     #compute 3M or 1M returns
     if max_3m_dd:
         periods = round((3/12) * int_freq)
-        return_series = return_series.pct_change(periods)
+        return_series = dd_price_series.pct_change(periods)
     else:
         periods = round((1/12) * int_freq)
-        return_series = return_series.pct_change(periods)
+        return_series = dd_price_series.pct_change(periods)
     return_series.dropna(inplace=True)
     
     #compute Max 1M/3M DD
