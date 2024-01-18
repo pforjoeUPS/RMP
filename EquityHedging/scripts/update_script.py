@@ -16,12 +16,13 @@ du.update_asset_class_data()
 du.update_eq_hedge_returns()
 
 from EquityHedging.datamanager import data_updater_new as du
-du.nexenDataUpdater().update_report()
-du.innocapLiquidAltsDataUpdater().update_report()
-du.hfBmkDataUpdater().update_report()
-du.bmkDataUpdater().update_report()
+du.nexenDataUpdater().update_report() #nexen_liq_alts_data-new.xlsx
+du.innocapLiquidAltsDataUpdater().update_report() #innocap_liq_alts_data-new.xlsx
+du.hfBmkDataUpdater().update_report() #hf_bmks-new.xlsx
+du.bmkDataUpdater().update_report() #bmk_returns-new.xlsx
 du.liqAltsBmkDataUpdater().update_report()
-du.assetClassDataUpdater().update_report()
+du.gtPortDataUpdater().update_report()
+du.gtBmkDataUpdater().update_report()
 du.equityHedgeReturnsUpdater().update_report()
 du.liquidAltsReturnsUpdater().update_report()
 
