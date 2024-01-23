@@ -11,7 +11,7 @@ import pandas as pd
 
 from . import new_sheets
 from ...analytics import drawdowns as dd
-from ...analytics import returns_analytics as rsa
+from ...analytics import returns_analytics as ra
 from ...analytics import summary
 from ...analytics import summary_new
 from ...analytics import util_new
