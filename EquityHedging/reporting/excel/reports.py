@@ -30,14 +30,16 @@ def get_report_path(report_name):
         File path
 
     """
-    
+
     cwd = os.getcwd()
     reports_fp = '\\EquityHedging\\reports\\'
-    file_name = report_name +'.xlsx'
+    file_name = report_name + '.xlsx'
     return cwd + reports_fp + file_name
-    
+
+
 def get_equity_hedge_report(report_name, returns_dict, notional_weights=[],
-                            include_fi=False, new_strat=False, weighted=False, selloffs=False):
+                            include_fi=False, new_strat=False, weighted=False, selloffs=False, grouped=False,
+                            monthly_ret_table=True):
     """
     Generate equity hedge analysis report
     
@@ -63,40 +65,40 @@ def get_equity_hedge_report(report_name, returns_dict, notional_weights=[],
     None. An excel report called [report_name].xlsx is created 
 
     """
-    
-    #get file path and create excel writer
+
+    # get file path and create excel writer
     file_path = get_report_path(report_name)
-    writer = pd.ExcelWriter(file_path,engine='xlsxwriter')
-    
-    #create list of frequencies we want to create the report for
+    writer = pd.ExcelWriter(file_path, engine='xlsxwriter')
+
+    # create list of frequencies we want to create the report for
     freq_list = ['Monthly', 'Weekly']
-    
-    #check length of notional weights is accurate
+
+    # check length of notional weights is accurate
     notional_weights = util.check_notional(returns_dict['Monthly'], notional_weights)
-    
-    #loop through frequencies
+
+    # loop through frequencies
     for freq in freq_list:
         print("Computing {} Analytics...".format(freq))
-        
-        #get analytics
+
+        # get analytics
         analysis_data = summary.get_analysis_sheet_data(returns_dict[freq], notional_weights,
-                                                          include_fi,new_strat,
-                                                          dm.switch_string_freq(freq), weighted)
-        df_weighted_returns = summary.get_weighted_data(returns_dict[freq],notional_weights,
-                                                          include_fi,new_strat)
-        
-        corr_sheet =  freq + ' Analysis'
+                                                        include_fi, new_strat,
+                                                        dm.switch_string_freq(freq), weighted)
+        df_weighted_returns = summary.get_weighted_data(returns_dict[freq], notional_weights,
+                                                        include_fi, new_strat)
+
+        corr_sheet = freq + ' Analysis'
         return_sheet = freq + ' Historical Returns'
-        
-        #create sheets
-        sheets.set_analysis_sheet(writer,analysis_data, corr_sheet)
-        sheets.set_hist_return_sheet(writer,df_weighted_returns, return_sheet)
-    
-    #get historical selloffs data if selloffs == True
+
+        # create sheets
+        sheets.set_analysis_sheet(writer, analysis_data, corr_sheet)
+        sheets.set_hist_return_sheet(writer, df_weighted_returns, return_sheet)
+
+    # get historical selloffs data if selloffs == True
     if selloffs:
         print("Computing Historical SellOffs...")
-        
-        #get daily returns
+
+        # get daily returns
         try:
             daily_returns = returns_dict['Daily'].copy()
             hs_notional_weights = notional_weights.copy()
@@ -108,69 +110,78 @@ def get_equity_hedge_report(report_name, returns_dict, notional_weights=[],
                 if len(col_list) != len(hs_notional_weights):
                     hs_notional_weights.pop(1)
                     
-            #compute historical selloffs
-            hist_df = summary.get_hist_sim_table(daily_returns, hs_notional_weights, weighted)
-            
-            #create sheets
+            # compute historical selloffs
+            hist_df = summary.get_hist_sim_table(daily_returns, notional_weights, weighted)
+
+            # create sheets
             sheets.set_hist_sheet(writer, hist_df)
             sheets.set_hist_return_sheet(writer, daily_returns)
         except KeyError():
             print('Skipping Historical SellOffs, no daily data in returns dictionary')
             pass
-    
-    #Get Normalized Hedge Metrics 
+
+    # Get Normalized Hedge Metrics
     # if 'Weekly' in returns_dict.keys():
     #     print("Computing Normalized Hedge Metrics...")
-        
+
     #     #get weekly returns
     #     weekly_returns = returns_dict['Weekly'].copy()
-        
+
     #     #Compute hedge metrics and normalize them
     #     normal_data = summary.get_normal_sheet_data(weekly_returns, notional_weights, drop_bmk=True, weighted=False)
-       
+
     #     #Create Sheet
     #     sheets.set_normal_sheet(writer, normal_data)
-        
-    quintile_df = summary.get_grouped_data(returns_dict, notional_weights, weighted = True, group = 'Quintile')
-    decile_df = summary.get_grouped_data(returns_dict, notional_weights, weighted = True, group = 'Decile')
-    
-    sheets.set_grouped_data_sheet(writer, quintile_df, decile_df)
-    
+
+    if grouped:
+        quintile_df = summary.get_grouped_data(returns_dict, notional_weights, weighted=True, group='Quintile')
+        decile_df = summary.get_grouped_data(returns_dict, notional_weights, weighted=True, group='Decile')
+
+        sheets.set_grouped_data_sheet(writer, quintile_df, decile_df)
+
+    if monthly_ret_table:
+        table_dict = summary.all_strat_month_ret_table(returns_dict['Monthly'], notional_weights, include_fi, new_strat,
+                                                                               weighted)
+        sheets.set_monthly_ret_table_sheet(writer, table_dict)
+
     print_report_info(report_name, file_path)
     writer.save()
 
-def get_corr_rank_report(report_name, df_returns, buckets, notional_weights=[],include_fi=False):
+
+def get_corr_rank_report(report_name, df_returns, buckets, notional_weights=[], include_fi=False):
     """
     """
-    
+
     file_path = get_report_path(report_name)
-    writer = pd.ExcelWriter(file_path,engine='xlsxwriter')
-    
-    corr_pack = get_corr_rank_data(df_returns, buckets, notional_weights,include_fi)
+    writer = pd.ExcelWriter(file_path, engine='xlsxwriter')
+
+    corr_pack = get_corr_rank_data(df_returns, buckets, notional_weights, include_fi)
     dates = dm.get_min_max_dates(df_returns)
-    
-    #create excel report
-    sheets.set_corr_rank_sheet(writer,corr_pack,dates)
-    sheets.set_hist_return_sheet(writer,df_returns, 'Returns')
-    
+
+    # create excel report
+    sheets.set_corr_rank_sheet(writer, corr_pack, dates)
+    sheets.set_hist_return_sheet(writer, df_returns, 'Returns')
+
     print_report_info(report_name, file_path)
     writer.save()
+
 
 def get_rolling_cum_ret_report(report_name, df_returns, freq, notional_weights):
     """
     """
-    
+
     file_path = get_report_path(report_name)
     writer = pd.ExcelWriter(file_path, engine='xlsxwriter')
-    
-    rolling_cum_dict = summary.get_rolling_cum_data(df_returns, freq,notional_weights)
-    
+
+    rolling_cum_dict = summary.get_rolling_cum_data(df_returns, freq, notional_weights)
+
     sheets.set_hist_return_sheet(writer, rolling_cum_dict['3M'], 'Rolling Cum Returns_3 Months')
     sheets.set_hist_return_sheet(writer, rolling_cum_dict['6M'], 'Rolling Cum Returns_6 Months')
     sheets.set_hist_return_sheet(writer, rolling_cum_dict['1Y'], 'Rolling Cum Returns_1 Year')
-    
+
     print_report_info(report_name, file_path)
     writer.save()
+
 
 def generate_strat_report(report_name, returns_dict, selloffs=False):
     """
@@ -190,62 +201,63 @@ def generate_strat_report(report_name, returns_dict, selloffs=False):
     None. An excel report called [report_name].xlsx is created 
 
     """
-    
-    #get file path and create excel writer
+
+    # get file path and create excel writer
     file_path = get_report_path(report_name)
-    writer = pd.ExcelWriter(file_path,engine='xlsxwriter')
-    
-    #create list of frequencies we want to create the report for
+    writer = pd.ExcelWriter(file_path, engine='xlsxwriter')
+
+    # create list of frequencies we want to create the report for
     freq_list = ['Monthly', 'Weekly']
-    
-    #loop through frequencies
+
+    # loop through frequencies
     for freq in freq_list:
         print("Computing {} Analytics...".format(freq))
-        
-        #get analytics
-        analysis_data = summary.get_analysis_sheet_data(returns_dict[freq], 
+
+        # get analytics
+        analysis_data = summary.get_analysis_sheet_data(returns_dict[freq],
                                                         freq=dm.switch_string_freq(freq))
 
-        corr_sheet =  freq + ' Analysis'
+        corr_sheet = freq + ' Analysis'
         return_sheet = freq + ' Historical Returns'
         spaces = 3
-        
-        #create sheets
-        sheets.set_analysis_sheet(writer,analysis_data, corr_sheet, spaces)
-        sheets.set_hist_return_sheet(writer,returns_dict[freq], return_sheet)
+
+        # create sheets
+        sheets.set_analysis_sheet(writer, analysis_data, corr_sheet, spaces)
+        sheets.set_hist_return_sheet(writer, returns_dict[freq], return_sheet)
 
     if selloffs:
         print("Computing Historical SellOffs...")
-        
-        #get daily returns
+
+        # get daily returns
         try:
             daily_returns = returns_dict['Daily'].copy()
-        
-            #compute historical selloffs
+
+            # compute historical selloffs
             hist_df = summary.get_hist_sim_table(daily_returns)
-            
-            #create sheets
+
+            # create sheets
             sheets.set_hist_sheet(writer, hist_df)
             sheets.set_hist_return_sheet(writer, daily_returns)
         except KeyError():
             print('Skipping Historical SellOffs, no daily data in returns dictionary')
             pass
-    
-    #Get Normalized Hedge Metrics 
+
+    # Get Normalized Hedge Metrics
     # if 'Weekly' in returns_dict.keys():
     #     print("Computing Normalized Hedge Metrics...")
-        
+
     #     #get weekly returns
     #     weekly_returns = returns_dict['Weekly'].copy()
-        
+
     #     #Compute hedge metrics and normalize them
     #     normal_data = summary.get_normal_sheet_data(weekly_returns)
-       
+
     #     #Create Sheet
     #     sheets.set_normal_sheet(writer, normal_data)
-    
+
     print_report_info(report_name, file_path)
     writer.save()
+
 
 def generate_hs_report(report_name, returns_dict, notional_weights=[], weighted=False):
     """
@@ -267,28 +279,29 @@ def generate_hs_report(report_name, returns_dict, notional_weights=[], weighted=
     None. An excel report called [report_name].xlsx is created 
 
     """
-    
-    #get file path and create excel writer
+
+    # get file path and create excel writer
     file_path = get_report_path(report_name)
     writer = pd.ExcelWriter(file_path, engine='xlsxwriter')
 
     print("Computing Historical SellOffs...")
-    
-    #get daily returns
+
+    # get daily returns
     try:
         daily_returns = returns_dict['Daily'].copy()
-    
-        #compute historical selloffs
+
+        # compute historical selloffs
         hist_df = get_hist_sim_table(daily_returns, notional_weights, weighted)
-        
-        #create sheets
+
+        # create sheets
         sheets.set_hist_sheet(writer, hist_df)
         sheets.set_hist_return_sheet(writer, daily_returns)
-            
+
         writer.save()
     except KeyError:
         print('Skipping Historical SellOffs, no daily data in returns dictionary')
         pass
+
 
 def get_returns_report(report_name, returns_dict):
     """
@@ -306,18 +319,19 @@ def get_returns_report(report_name, returns_dict):
     None. An excel report called [report_name].xlsx is created 
 
     """
-    #get file path and create excel writer
+    # get file path and create excel writer
     file_path = get_report_path(report_name)
     writer = pd.ExcelWriter(file_path, engine='xlsxwriter')
-    
-    #loop through dictionary to create returns spreadsheet
+
+    # loop through dictionary to create returns spreadsheet
     for key in returns_dict:
         print("Writing {} Historical Returns sheet...".format(key))
         sheets.set_hist_return_sheet(writer, returns_dict[key], key)
-    
-    #save file
+
+    # save file
     print_report_info(report_name, file_path)
     writer.save()
+
 
 def print_report_info(report_name, file_path):
     """
@@ -335,5 +349,5 @@ def print_report_info(report_name, file_path):
     None.
 
     """
-    folder_location = file_path.replace(report_name+'.xlsx', '')
-    print('"{}.xlsx" report generated in "{}" folder'.format(report_name,folder_location))
+    folder_location = file_path.replace(report_name + '.xlsx', '')
+    print('"{}.xlsx" report generated in "{}" folder'.format(report_name, folder_location))

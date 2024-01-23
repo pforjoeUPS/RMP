@@ -11,9 +11,6 @@ import numpy as np
 import os
 from datetime import datetime as dt
 from math import prod
-from EquityHedging.analytics import summary 
-from EquityHedging.analytics import  util
-
 
 CWD = os.getcwd()
 RETURNS_DATA_FP = CWD +'\\EquityHedging\\data\\'
@@ -637,8 +634,6 @@ def compound_ret_from_monthly(strat_monthly_returns, strategy):
         
     yr_ret = pd.DataFrame( yr_ret, columns = ["Year"], index = list(years)) 
     return yr_ret
-    
-
 
 def month_ret_table(returns_df, strategy):
     '''
@@ -679,45 +674,6 @@ def month_ret_table(returns_df, strategy):
     table.index.names = [strategy]
 
     return table
-
-    
-
-def all_strat_month_ret_table(returns_df, notional_weights = [], include_fi = False, new_strat = False, weighted = False):
-    '''
-    
-
-    Parameters
-    ----------
-    returns_df : Data Frame
-        Data Frame containing monthly returns data
-    strat_list : List
-        DESCRIPTION. The default is ['Down Var','VOLA', 'Dynamic Put Spread', 'VRR', 'GW Dispersion','Corr Hedge','Def Var'].
-
-    Returns
-    -------
-    month_table : TYPE
-        DESCRIPTION.
-
-    '''
-    #make strat list the columns of returns_df
-    
-    if weighted == True:
-        
-        #get weighted strats and weighted hedges 
-        returns_df = summary.get_weighted_data(returns_df,notional_weights,include_fi, new_strat)
-        
-    
-    #create strat list from the columns of the returns data
-    strat_list = returns_df.columns
-    
-    #create moth table dict
-    month_table_dict = {}
-    
-    #loop through each strategy in the list and get the monthly returns table
-    for strat in strat_list:
-       month_table_dict[strat] = month_ret_table(returns_df, strat)
-       #month_table_dict[strat] = month_table_dict[strat][:-1]
-    return month_table_dict
 
 
 def get_new_returns_df(new_ret_df,ret_df):
@@ -778,11 +734,11 @@ def update_returns_data():
     return returns_dict
 
 
-def get_qis_uni_dict():
-    qis_uni = {}
-    sheet_names = util.get_sheetnames_xlsx(QIS_UNIVERSE + "QIS Universe Time Series TEST.xlsx")
-    for sheet in sheet_names:
-        index_price = pd.read_excel(QIS_UNIVERSE + "QIS Universe Time Series TEST.xlsx", sheet_name = sheet, index_col=0,header = 1)
-        qis_uni[sheet] = format_data(index_price, freq = '1W')
-    return qis_uni
+# def get_qis_uni_dict():
+#     qis_uni = {}
+#     sheet_names = util.get_sheetnames_xlsx(QIS_UNIVERSE + "QIS Universe Time Series TEST.xlsx")
+#     for sheet in sheet_names:
+#         index_price = pd.read_excel(QIS_UNIVERSE + "QIS Universe Time Series TEST.xlsx", sheet_name = sheet, index_col=0,header = 1)
+#         qis_uni[sheet] = format_data(index_price, freq = '1W')
+#     return qis_uni
 

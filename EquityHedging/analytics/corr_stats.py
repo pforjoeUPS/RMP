@@ -7,7 +7,7 @@ Created on Tue Oct  1 17:59:28 2019
 
 import pandas as pd
 import numpy as np
-from EquityHedging.datamanager import data_manager as dm
+from ..datamanager import data_manager as dm
 from .import util
 
 def get_corr_analysis(df_returns, notional_weights=[], include_fi=False, weighted=False):

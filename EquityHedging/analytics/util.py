@@ -7,7 +7,7 @@ Created on Thu Apr 22 00:02:00 2021
 
 import pandas as pd
 import numpy as np
-from EquityHedging.datamanager import data_manager as dm
+from ..datamanager import data_manager as dm
 from sklearn.preprocessing import MinMaxScaler
 from openpyxl import load_workbook
 

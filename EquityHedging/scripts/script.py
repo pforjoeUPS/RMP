@@ -6,6 +6,8 @@ Created on Sat Apr 24 00:21:46 2021
 """
 import os
 
+import EquityHedging.analytics.summary
+
 os.chdir('..\..')
 
 #import libraries
@@ -83,6 +85,12 @@ if check_quint:
 check_ann = False
 if check_ann:
     annual_dollar_returns = summary.get_annual_dollar_returns(returns, notional_weights)
+
+strategy = "VOLA 3"
+monthly_ret_table = True
+if monthly_ret_table:
+    month_returns_table = dm.month_ret_table(returns['Monthly'], strategy = strategy)
+    full_month_returns_table = summary.all_strat_month_ret_table(returns['Monthly'])
 
 #run report
 equity_hedge_report = 'equity_hedge_analysis_test'

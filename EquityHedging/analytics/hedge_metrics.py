@@ -5,10 +5,10 @@ Created on Tue Oct  1 17:59:28 2019
 @author: Powis Forjoe, Maddie Choi, and Zach Wells
 """
 
-from EquityHedging.datamanager import data_manager as dm
-from EquityHedging.analytics.decay import get_decay_days
-from EquityHedging.analytics.util import get_pos_neg_df
-from EquityHedging.analytics import  util
+from ..datamanager import data_manager as dm
+from ..analytics.decay import get_decay_days
+from ..analytics.util import get_pos_neg_df
+from ..analytics import  util
 
 HEDGE_METRICS_INDEX = ['Benefit Count','Benefit Median','Benefit Mean','Benefit Cum', 
                        'Downside Reliability','Upside Reliability',
