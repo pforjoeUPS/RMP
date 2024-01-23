@@ -8,6 +8,7 @@ Created on Fri Jul 14 2023
 # import os
 import re
 import zipfile
+import xlrd
 
 import pandas as pd
 
@@ -61,8 +62,16 @@ def get_real_cols(df):
 #TODO: Add xls if possible
 def get_excel_sheet_names(file_path):
     sheets = []
-    with zipfile.ZipFile(file_path, 'r') as zip_ref: xml = zip_ref.read("xl/workbook.xml").decode("utf-8")
-    for s_tag in  re.findall("<sheet [^>]*", xml) : sheets.append(  re.search('name="[^"]*', s_tag).group(0)[6:])
+
+    if file_path.endswith('.xlsx'):
+        with zipfile.ZipFile(file_path, 'r') as zip_ref:
+            xml = zip_ref.read("xl/workbook.xml").decode("utf-8")
+        for s_tag in re.findall("<sheet [^>]*", xml):
+            sheets.append(re.search('name="[^"]*', s_tag).group(0)[6:])
+    elif file_path.endswith('.xls'):
+        workbook = xlrd.open_workbook(file_path)
+        sheets = workbook.sheet_names()
+
     return sheets
 
 

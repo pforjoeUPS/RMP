@@ -120,7 +120,7 @@ class returnsReport(setReport):
         self.writer = pd.ExcelWriter(self.file_path, engine='xlsxwriter')
         self.generate_report()
         print_report_info(self.report_name, self.file_path)
-        self.writer.save()
+        self.writer.close()
 
     def generate_report(self):
         #loop through dictionary to create returns spreadsheets

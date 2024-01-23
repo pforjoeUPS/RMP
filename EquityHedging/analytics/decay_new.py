@@ -33,7 +33,7 @@ def get_peak_return(price_series, look_back_days, day):
     """
     
     # get index level for specific day
-    day_index_level = price_series[day]
+    day_index_level = price_series.iloc[day]
 
     # get minimum index level within the look back days period
     min_index_level = price_series.loc[price_series.index[day-look_back_days]:price_series.index[day-1]].min()
@@ -145,7 +145,7 @@ def get_max_index_level_from_range(price_series, look_back_days, look_fwd_days, 
         end = len(price_series)
     index_list = []
     for i in range(start, end):
-        index_list.append(price_series[i])
+        index_list.append(price_series.iloc[i])
     
     return np.array(index_list).max()
 
