@@ -11,94 +11,65 @@ import numpy as np
 import os
 from datetime import datetime as dt
 from math import prod
-# from EquityHedging.analytics import summary 
-# from EquityHedging.analytics import util
-from openpyxl import load_workbook
-
 
 CWD = os.getcwd()
-DATA_FP = CWD +'\\EquityHedging\\data\\'
-RETURNS_DATA_FP = DATA_FP +'returns_data\\'
-EQUITY_HEDGING_RETURNS_DATA = RETURNS_DATA_FP + 'eq_hedge_returns.xlsx'
-# RETURNS_DATA_FP = CWD +'\\EquityHedging\\data\\'
-# EQUITY_HEDGING_RETURNS_DATA = DATA_FP + 'ups_equity_hedge\\returns_data.xlsx'
-NEW_DATA = DATA_FP + 'new_strats\\'
-# UPDATE_DATA = RETURNS_DATA_FP + 'update_strats\\'
-UPDATE_DATA = DATA_FP + 'update_data\\'
-EQUITY_HEDGE_DATA = DATA_FP + 'ups_equity_hedge\\'
+RETURNS_DATA_FP = CWD +'\\EquityHedging\\data\\'
+EQUITY_HEDGING_RETURNS_DATA = RETURNS_DATA_FP + 'ups_equity_hedge\\returns_data.xlsx'
+NEW_DATA = RETURNS_DATA_FP + 'new_strats\\'
+UPDATE_DATA = RETURNS_DATA_FP + 'update_strats\\'
+EQUITY_HEDGE_DATA = RETURNS_DATA_FP + 'ups_equity_hedge\\'
 
 QIS_UNIVERSE = CWD + '\\Cluster Analysis\\data\\'
 
 NEW_DATA_COL_LIST = ['SPTR', 'SX5T','M1WD', 'Long Corp', 'STRIPS', 'Down Var',
  'Vortex', 'VOLA I', 'VOLA II','Dynamic VOLA','Dynamic Put Spread',
-                    'GW Dispersion', 'Corr Hedge','Def Var (Mon)', 'Def Var (Fri)', 'Def Var (Wed)', 
-                    'Commodity Basket']
+                    'GW Dispersion', 'Corr Hedge','Def Var (Mon)', 'Def Var (Fri)', 'Def Var (Wed)', 'Def Var II (Mon)', 'Def Var II (Fri)', 'Def Var II (Wed)',
+                    'Commodity Basket','ESPRSO','EVolCon','Moments']
 
-LIQ_ALTS_MGR_DICT = {'Global Macro': ['1907 Penso Class A','Bridgewater Alpha', 'DE Shaw Oculus Fund',
-                                      'Element Capital'],
-                     'Trend Following': ['1907 ARP TF','1907 Campbell TF', '1907 Systematica TF',
-                                         'One River Trend'],
-                     'Absolute Return':['1907 ARP EM',  '1907 III CV', '1907 III Class A',
-                                        'ABC Reversion','Acadian Commodity AR',
-                                        'Blueshift', 'Duality', 'Elliott'],
-                     }
+def merge_dicts(main_dict, new_dict, fillzeros = False):
 
-def merge_dicts(main_dict, new_dict, fillzeros=False, drop_na=True):
     """
     Merge new_dict to main_dict
     
     Parameters:
     main_dict -- dictionary
     new_dict -- dictionary
-    drop_na -- bool
-    fillzeros -- bool
 
     Returns:
     dictionary
     """
     
+    # freq_list = ['Daily', 'Weekly', 'Monthly', 'Quarterly', 'Yearly']
     merged_dict = {}
     for key in main_dict:
-        try:
-            df_main = main_dict[key]
-            df_new = new_dict[key]
-            if key == 'Daily':
-                merged_dict[key] = merge_data_frames(df_main, df_new, True, drop_na)
-            else:
-                merged_dict[key] = merge_data_frames(df_main, df_new, fillzeros, drop_na)
-        except KeyError:
-            pass
+        df_main = main_dict[key]
+        df_new = new_dict[key]
+        if key == 'Daily':
+            merged_dict[key] = merge_data_frames(df_main, df_new, True)
+        else:
+            merged_dict[key] = merge_data_frames(df_main, df_new, fillzeros)
     return merged_dict
 
-def merge_data_frames(df_main, df_new,drop_na=True,fillzeros=False, how='outer'):
+def merge_data_frames(df_main, df_new,fillzeros=False):
     """
     Merge df_new to df_main and drop na values
     
     Parameters:
     df_main -- dataframe
     df_new -- dataframe
-    drop_na -- bool
-    fillzeros -- bool
 
     Returns:
     dataframe
     """
     
-    df = pd.merge(df_main, df_new, left_index=True, right_index=True, how=how)
+    df = pd.merge(df_main, df_new, left_index=True, right_index=True, how='left')
     if fillzeros:
         df = df.fillna(0)
-    if drop_na:
+    else:
         df.dropna(inplace=True)
     return df
 
-def resample_data(df, freq="1M"):
-    data = df.copy()
-    data.index = pd.to_datetime(data.index)
-    if not(freq == '1D'):
-       data = data.resample(freq).ffill()
-    return data
-
-def format_data(df_index, freq="1M", dropna=True, drop_zero=False):
+def format_data(df_index, freq="1M"):
     """
     Format dataframe, by freq, to return dataframe
     
@@ -109,14 +80,13 @@ def format_data(df_index, freq="1M", dropna=True, drop_zero=False):
     Returns:
     dataframe
     """
-    data = resample_data(df_index, freq)
+    data = df_index.copy()
+    data.index = pd.to_datetime(data.index)
+    if not(freq == '1D'):
+       data = data.resample(freq).ffill()
     data = data.pct_change(1)
-    data = data.iloc[1:,]
-    if dropna:
-        data.dropna(inplace=True)
-        
-    if drop_zero:
-        data = data.loc[(data!=0).any(1)]
+    data.dropna(inplace=True)
+    #data = data.loc[(data!=0).any(1)]
     return data
 
 def get_min_max_dates(df_returns):
@@ -291,27 +261,7 @@ def create_vrr_portfolio(returns, weights):
         returns_dict[freq].drop(['VRR 2'],inplace=True,axis=1)
     return returns_dict
 
-def drop_nas(data):
-    if type(data) == dict:
-        for key in data:
-            data[key].dropna(inplace=True)
-    else:
-        data.dropna(inplace=True)
-    return data
 
-def check_col_len(df, col_list):
-    if len(col_list) != len(df.columns):
-        return list(df.columns)
-    else:
-        return col_list
-
-def rename_columns(data, col_list):
-    if type(data) == dict:
-        for key in data:
-            data[key].columns = check_col_len(data[key], col_list)
-    else:
-        data.columns = check_col_len(data, col_list)
-    return data
         
 def get_notional_weights(df_returns):
     """
@@ -347,21 +297,23 @@ def create_copy_with_fi(df_returns, equity = 'SPTR', freq='1M', include_fi=False
     
     strategy_returns['VOLA 3'] = strategy_returns['Dynamic VOLA']
     strategy_returns['Def Var']=strategy_returns['Def Var (Fri)']*.4 + strategy_returns['Def Var (Mon)']*.3+strategy_returns['Def Var (Wed)']*.3
-        
+    strategy_returns['Def Var II']=strategy_returns['Def Var II (Fri)']*.4 + strategy_returns['Def Var II (Mon)']*.3+strategy_returns['Def Var II (Wed)']*.3
+    
     if freq == '1W' or freq == '1M':
         if include_fi:
             strategy_returns['FI Benchmark'] = (strategy_returns['Long Corp'] + strategy_returns['STRIPS'])/2
-            strategy_returns = strategy_returns[[equity, 'FI Benchmark', '99%/90% Put Spread', 
+            strategy_returns = strategy_returns[[equity, 'FI Benchmark', 
+
                                                  'Down Var', 'Vortex', 'VOLA 3','Dynamic Put Spread',
-                                                  'VRR 2', 'VRR Trend', 'GW Dispersion', 'Corr Hedge','Def Var','Commodity Basket']]
+                                                  'VRR 2', 'VRR Trend', 'GW Dispersion', 'Corr Hedge','Def Var','Def Var II','Commodity Basket','ESPRSO','EVolCon','Moments']]
         else:
-            strategy_returns = strategy_returns[[equity, '99%/90% Put Spread', 
+            strategy_returns = strategy_returns[[equity,
                                                  'Down Var', 'Vortex', 'VOLA 3','Dynamic Put Spread',
-                                                 'VRR 2', 'VRR Trend', 'GW Dispersion', 'Corr Hedge','Def Var','Commodity Basket']]
+                                                 'VRR 2', 'VRR Trend', 'GW Dispersion', 'Corr Hedge','Def Var','Def Var II','Commodity Basket','ESPRSO','EVolCon','Moments']]
     else:
-        strategy_returns = strategy_returns[[equity, '99%/90% Put Spread', 'Down Var', 'Vortex',
+        strategy_returns = strategy_returns[[equity, 'Down Var', 'Vortex',
                                              'VOLA 3','Dynamic Put Spread', 'VRR 2', 'VRR Trend', 
-                                             'GW Dispersion', 'Corr Hedge','Def Var','Commodity Basket']]
+                                             'GW Dispersion', 'Corr Hedge','Def Var','Def Var II','Commodity Basket','ESPRSO','EVolCon','Moments']]
 
     return strategy_returns
 
@@ -413,7 +365,7 @@ def get_equity_hedge_returns(equity='SPTR', include_fi=False, strat_drop_list=[]
     
     return returns_dict
 
-def get_data_dict(data, data_type='index', dropna=True):
+def get_data_dict(data, data_type='index'):
     """
     Converts daily data into a dictionary of dataframes containing returns 
     data of different frequencies
@@ -434,10 +386,10 @@ def get_data_dict(data, data_type='index', dropna=True):
             pass
         data = get_prices_df(data)
     for freq_string in freq_list:
-        data_dict[freq_string] = format_data(data, switch_string_freq(freq_string),dropna)
+        data_dict[freq_string] = format_data(data, switch_string_freq(freq_string))
     return data_dict
 
-def get_prices_df(df_returns, multiplier = 100):
+def get_prices_df(df_returns):
     """"
     Converts returns dataframe to index level dataframe
 
@@ -448,35 +400,16 @@ def get_prices_df(df_returns, multiplier = 100):
     index price level - dataframe
     """
     
-    df_index = multiplier*(1 + df_returns).cumprod()
+    df_prices = df_returns.copy()
     
-    return update_df_index(df_index, multiplier)
-
-def update_df_index(df_index, multiplier=100):
+    for col in df_returns.columns:
+        df_prices[col][0] = df_returns[col][0] + 1
     
-    #insert extra row at top for first month of 100
-    data = []
-    data.insert(0,{})
-    df_prices = pd.concat([pd.DataFrame(data), df_index])
-    
-    #fill columns with 100 for row 1
-    for col in df_prices.columns:
-        df_prices[col][0] = multiplier
-
-    #update index to prior month    
-    df_prices.index.names = ['Dates']
-    df_prices.reset_index(inplace=True)
-    pd.set_option('mode.chained_assignment', None)
-    df_prices.loc[:,('Dates')][0] = df_index.index[0] - pd.DateOffset(months=1)
-    df_prices.set_index('Dates', inplace=True)
-    
+    for i in range(1, len(df_returns)):
+        for col in df_returns.columns:
+            df_prices[col][i] = (df_returns[col][i] + 1) * df_prices[col][i-1]
     return df_prices
 
-def get_price_series(return_series ,multiplier = 100):
-    df_index = multiplier*(1 + return_series).cumprod()
-    
-    return update_df_index(df_index, multiplier)[0]
-    
 def get_new_strategy_returns_data(report_name, sheet_name, strategy_list=[]):
     """
     dataframe of stratgy returns
@@ -579,7 +512,7 @@ def add_bps(vrr_dict, strat_name, add_back=.0025):
         temp_dict[key] = temp_df
     return temp_dict
 
-def merge_dicts_list(dict_list, drop_na = False):
+def merge_dicts_list(dict_list, fillzeros = True):
     '''
     merge main dictionary with a dictionary list
 
@@ -599,7 +532,7 @@ def merge_dicts_list(dict_list, drop_na = False):
     for dicts in dict_list:
         
         #merge each dictionary in the list of dictionaries to the main
-        main_dict = merge_dicts(main_dict,dicts,drop_na)
+        main_dict = merge_dicts(main_dict,dicts, fillzeros = fillzeros )
     return main_dict
 
 def match_dict_columns(main_dict, new_dict):
@@ -666,15 +599,15 @@ def create_update_dict():
     vrr_trend_dict = get_data_to_update(['VRR Trend'], 'vrr_tracks_data.xlsx', sheet_name='VRR Trend')
     
     #add back 25 bps
+
     vrr_dict = add_bps(vrr_dict,'VRR')
     vrr2_dict = add_bps(vrr2_dict,'VRR 2', add_back= 0.005)
     vrr_trend_dict =add_bps(vrr_trend_dict, 'VRR Trend', add_back= 0.005)
-     
-    #get put spread data
-    put_spread_dict = get_data_to_update(['99 Rep', 'Short Put', '99%/90% Put Spread'], 'put_spread_data.xlsx', 'Daily', put_spread = True)
     
+ 
     #merge vrr and put spread dicts to the new_data dict
-    new_data_dict = merge_dicts_list([new_ups_data_dict, put_spread_dict, vrr_dict,vrr2_dict,vrr_trend_dict], fillzeros=False)
+
+    new_data_dict = merge_dicts_list([new_ups_data_dict, vrr_dict,vrr2_dict,vrr_trend_dict], fillzeros=False)
 
     #get data from returns_data.xlsx into dictionary
     returns_dict = get_equity_hedge_returns(all_data=True)
@@ -685,27 +618,23 @@ def create_update_dict():
     #return a dictionary
     return new_data_dict
 
-#TODO: Move to analytics
+
 def compound_ret_from_monthly(strat_monthly_returns, strategy):
     monthly_ret = strat_monthly_returns.copy()
     monthly_ret["Year"] = monthly_ret.index.get_level_values('year')
     
     years = np.unique(monthly_ret["Year"])
     yr_ret = []
-    itd_ret = []
     for i in range(0, len(years)):
         #isolate monthly returns for single year
         monthly_ret_by_yr = monthly_ret.loc[monthly_ret.Year == years[i]][strategy]
         #calculate compound return
         comp_ret = prod(1 + monthly_ret_by_yr) - 1
         yr_ret.append(comp_ret)
-        itd_ret.append(np.prod((np.array(yr_ret) +1).tolist())-1)
         
-    ret_dict = {"YTD": yr_ret, "ITD": itd_ret}
-    ret_df = pd.DataFrame( ret_dict, index = list(years))
-    return ret_df
-    
-#TODO: Move to analytics
+    yr_ret = pd.DataFrame( yr_ret, columns = ["Year"], index = list(years)) 
+    return yr_ret
+
 def month_ret_table(returns_df, strategy):
     '''
 
@@ -723,7 +652,6 @@ def month_ret_table(returns_df, strategy):
     '''
     #pull monthly returns from dictionary 
     month_ret = pd.DataFrame(returns_df[strategy])
-    month_ret.dropna(inplace=True)
     
     #create monthly return data frame with index of years 
     month_ret['year'] = month_ret.index.year
@@ -731,7 +659,7 @@ def month_ret_table(returns_df, strategy):
     
     #change monthly returns into a table with x axis as months and y axis as years
     strat_monthly_returns = month_ret.groupby(['year', 'month']).sum()
-    yr_itd_ret = compound_ret_from_monthly(strat_monthly_returns, strategy)
+    yr_ret = compound_ret_from_monthly(strat_monthly_returns, strategy)
        
     month_table = strat_monthly_returns.unstack()
     
@@ -742,7 +670,7 @@ def month_ret_table(returns_df, strategy):
     month_table = month_table[["Jan", "Feb", "Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]]
     
     #Join yearly returns to the monthly returns table
-    table = pd.concat([month_table, yr_itd_ret],  axis=1)
+    table = pd.concat([month_table, yr_ret],  axis=1)
     table.index.names = [strategy]
 
     return table
@@ -751,7 +679,6 @@ def month_ret_table(returns_df, strategy):
 def get_new_returns_df(new_ret_df,ret_df):
     #reset both data frames index to make current index (dates) into a column
     new_ret_df.index.names = ['Date']
-    ret_df.index.names = ['Date']
     new_ret_df.reset_index(inplace = True)
     ret_df.reset_index(inplace=True)
    
@@ -780,18 +707,19 @@ def check_returns(returns_dict):
         
     return returns_dict    
 
-def update_returns_data(main_dict, new_dict):
+
+def update_returns_data():
     
     #get data from returns_data.xlsx into dictionary
-    # returns_dict = get_equity_hedge_returns(all_data=True)
+    returns_dict = get_equity_hedge_returns(all_data=True)
 
     #create dictionary that contains updated returns
-    # new_data_dict = create_update_dict()
+    new_data_dict = create_update_dict()
 
-    for key in main_dict:
+    for key in returns_dict:
         #create returns data frame
-        new_ret_df = new_dict[key].copy()
-        ret_df = main_dict[key].copy()
+        new_ret_df = new_data_dict[key].copy()
+        ret_df = returns_dict[key].copy()
         
         #update current year returns 
         if key == 'Yearly':
@@ -799,216 +727,18 @@ def update_returns_data(main_dict, new_dict):
                 ret_df = ret_df[:-1]
         #get new returns df       
         new_ret_df = get_new_returns_df(new_ret_df, ret_df)
-        main_dict[key] = pd.concat([ret_df,new_ret_df])
+        returns_dict[key] = ret_df.append(new_ret_df)
     
-    main_dict = check_returns(main_dict)
-    return main_dict
+    returns_dict = check_returns(returns_dict)
 
-def update_eq_hedge_returns():
-    #get data from returns_data.xlsx into dictionary
-    returns_dict = get_equity_hedge_returns(all_data=True)
-
-    #create dictionary that contains updated returns
-    new_data_dict = create_update_dict()
-    
-    return update_returns_data(returns_dict, new_data_dict)
+    return returns_dict
 
 
-def drop_nas(data):
-    if type(data) == dict:
-        for key in data:
-            data[key].drop.dropna(inplace=True)
-    else:
-        data.dropna(inplace=True)
-    return data
+# def get_qis_uni_dict():
+#     qis_uni = {}
+#     sheet_names = util.get_sheetnames_xlsx(QIS_UNIVERSE + "QIS Universe Time Series TEST.xlsx")
+#     for sheet in sheet_names:
+#         index_price = pd.read_excel(QIS_UNIVERSE + "QIS Universe Time Series TEST.xlsx", sheet_name = sheet, index_col=0,header = 1)
+#         qis_uni[sheet] = format_data(index_price, freq = '1W')
+#     return qis_uni
 
-def check_col_len(df, col_list):
-    if len(col_list) != len(df.columns):
-        return list(df.columns)
-    else:
-        return col_list
-
-def rename_columns(data, col_list):
-    if type(data) == dict:
-        for key in data:
-            data[key].columns = check_col_len(data[key], col_list)
-    else:
-        data.columns = check_col_len(data, col_list)
-    return data
-
-
-def transform_nexen_data(filename = 'liq_alts\\Historical Asset Class Returns.xls', return_data = True, fillna = False):
-    nexen_df = pd.read_excel(DATA_FP + filename)
-    nexen_df = nexen_df[['Account Name\n', 'Account Id\n', 'Return Type\n', 'As Of Date\n',
-                           'Market Value\n', 'Account Monthly Return\n']]
-    nexen_df.columns = ['Name', 'Account Id', 'Return Type', 'Date', 'Market Value', 'Return']
-    if return_data:
-        nexen_df = nexen_df.pivot_table(values='Return', index='Date', columns='Name')
-        nexen_df /=100
-    else:
-        nexen_df = nexen_df.pivot_table(values='Market Value', index='Date', columns='Name')
-    if fillna:
-        nexen_df = nexen_df.fillna(0)
-    return nexen_df
-
-def transform_nexen_data_1(filepath, fillna = False):
-    nexen_df = pd.read_excel(filepath)
-    nexen_df = nexen_df[['Account Name\n', 'Account Id\n', 'Return Type\n', 'As Of Date\n',
-                           'Market Value\n', 'Account Monthly Return\n']]
-    nexen_df.columns = ['Name', 'Account Id', 'Return Type', 'Date', 'Market Value', 'Return']
-    returns_df = nexen_df.pivot_table(values='Return', index='Date', columns='Name')
-    returns_df /=100
-    mv_df = nexen_df.pivot_table(values='Market Value', index='Date', columns='Name')
-    if fillna:
-        return {'returns': returns_df.fillna(0), 'mv': mv_df.fillna(0)}
-    else:
-        return {'returns': returns_df, 'mv': mv_df}
-
-    
-def transform_bbg_data(filepath, sheet_name='data', col_list=[]):
-    bbg_df = pd.read_excel(filepath, sheet_name=sheet_name, 
-                           index_col=0,skiprows=[0,1,2,4,5,6])
-    bbg_df.index.names = ['Dates']
-    if col_list:
-        bbg_df.columns = col_list
-    return bbg_df
-
-def get_liq_alts_bmks(equity = 'M1WD',include_fi=True):
-    bmks_index = transform_bbg_data(DATA_FP+'liq_alts\\liq_alts_bmks.xlsx')
-    bmks_index = bmks_index[['HFRXM Index','NEIXCTAT Index', 'HFRXAR Index']]
-    bmks_index.columns = ['HFRX Macro/CTA Index', 'SG Trend Index', 'HFRX Absolute Return Index']
-    bmks_ret = format_data(bmks_index)
-    bmks_ret['Liquid Alts Bmk'] = 0.5*bmks_ret['HFRX Macro/CTA Index'] + 0.3*bmks_ret['HFRX Absolute Return Index'] + 0.2*bmks_ret['SG Trend Index']
-    beta_m =  get_equity_hedge_returns(equity=equity, include_fi=include_fi)
-    return merge_data_frames(beta_m['Monthly'][[equity, 'FI Benchmark']],bmks_ret, drop_na=False)
-
-def get_liq_alts_dict(filename = 'liq_alts\\Monthly Returns Liquid Alts.xls'):
-    liq_alts_ret = transform_nexen_data(filename)
-    liq_alts_mv = transform_nexen_data(filename, False)
-    liq_alts_dict = {}
-    total_ret = pd.DataFrame(index = liq_alts_ret.index)
-    total_mv = pd.DataFrame(index = liq_alts_mv.index)
-    for key in LIQ_ALTS_MGR_DICT:
-        temp_dict = {}
-        temp_ret = liq_alts_ret[LIQ_ALTS_MGR_DICT[key]].copy()
-        temp_mv = liq_alts_mv[LIQ_ALTS_MGR_DICT[key]].copy()
-        temp_dict = get_agg_data(temp_ret, temp_mv, key)
-        if key == 'Trend Following':
-            temp_dict = {'returns': liq_alts_ret[get_sub_mgrs(key)], 
-                              'mv':liq_alts_mv[get_sub_mgrs(key)]}
-        total_ret = merge_data_frames(total_ret, temp_ret[[key]])
-        total_mv = merge_data_frames(total_mv, temp_mv[[key]])
-        liq_alts_dict[key] = temp_dict
-    liq_alts_dict['Total Liquid Alts'] = get_agg_data(total_ret, total_mv, 'Total Liquid Alts')
-    return liq_alts_dict
-
-def get_liq_alts_returns(equity='M1WD', include_fi=True):
-    liq_alts_bmks = get_liq_alts_bmks()
-    liq_alts_port = get_liq_alts_port(get_liq_alts_dict())
-    return merge_data_frames(liq_alts_port,liq_alts_bmks)
-    
-def get_liq_alts_port(liq_alts_dict):
-    liq_alts_port = pd.DataFrame()
-    for key in LIQ_ALTS_MGR_DICT:
-        liq_alts_port = merge_data_frames(liq_alts_port, liq_alts_dict[key]['returns'], drop_na=False)
-        
-    liq_alts_port = merge_data_frames(liq_alts_port, liq_alts_dict['Total Liquid Alts']['returns'][['Total Liquid Alts']],drop_na=False)
-    return liq_alts_port
-
-def get_sheetnames_xlsx(filepath):
-    wb = load_workbook(filepath, read_only=True, keep_links=False)
-    return wb.sheetnames
-
-def get_qis_uni_dict():
-    qis_uni = {}
-    sheet_names = get_sheetnames_xlsx(QIS_UNIVERSE + "QIS Universe Time Series TEST.xlsx")
-    for sheet in sheet_names:
-        index_price = pd.read_excel(QIS_UNIVERSE + "QIS Universe Time Series TEST.xlsx", sheet_name = sheet, index_col=0,header = 1)
-        qis_uni[sheet] = format_data(index_price, freq = '1W')
-    return qis_uni
-
-def check_notional(df_returns, notional_weights=[]):
-    """
-    Get notional weights if some weights are missing
-
-    Parameters
-    ----------
-    df_returns : dataframe
-        dataframe of returns
-    notional_weights : list, optional
-        notional weights of strategies. The default is [].
-    
-    Returns
-    -------
-    notional_weights : list
-
-    """
-    #create list of df_returns column names
-    col_list = list(df_returns.columns)
-    
-    #get notional weights for weighted strategy returns if not accurate
-    if len(col_list) != len(notional_weights):
-        notional_weights = []
-        notional_weights = get_notional_weights(df_returns)
-    
-    return notional_weights
-
-def get_agg_data(df_returns, df_mv, agg_col):
-    agg_ret = df_returns.copy()
-    agg_mv = df_mv.copy()
-    wgts = agg_mv.divide(agg_mv.sum(axis=1), axis='rows')
-    agg_ret[agg_col] = (agg_ret*wgts).sum(axis=1)
-    agg_mv[agg_col] = agg_mv.sum(axis=1)
-    return {'returns':agg_ret[[agg_col]], 'mv':agg_mv[[agg_col]]}
-    
-def get_abs_ret():
-    ar_list = ['1907 ARP EM', '1907 III CV', '1907 III Class A', 'ABC Reversion',
-                    'Acadian Commodity AR','Blueshift', 'Duality', 'Elliott']
-    liq_alts_data = get_liq_alts_dict()
-    for key in liq_alts_data:
-        liq_alts_data[key] = liq_alts_data[key][ar_list]
-    wgts = liq_alts_data['mv']/liq_alts_data['mv'].sum(axis=1)
-    liq_alts_data['returns']['Absolute Return-no RP'] = (liq_alts_data['returns']*wgts).sum(axis=1)
-    liq_alts_data['mv']['Absolute Return-no RP'] = liq_alts_data['mv'].sum(axis=1)
-    return liq_alts_data
-    
-def get_mgrs_list(full=True,sub_port= 'Global Macro'):
-    mgr_list = []
-    if full:
-        for key in LIQ_ALTS_MGR_DICT:
-            mgr_list = mgr_list + LIQ_ALTS_MGR_DICT[key]
-            mgr_list.append(key)
-    else:
-        mgr_list = mgr_list + LIQ_ALTS_MGR_DICT[sub_port]
-        mgr_list.append(sub_port)
-    return mgr_list
-
-def get_sub_mgrs(sub_port = 'Global Macro'):
-    mgr_list = []
-    mgr_list = mgr_list + LIQ_ALTS_MGR_DICT[sub_port]
-    mgr_list.append(sub_port)
-    return mgr_list
-
-def get_sub_ports():
-    return list(LIQ_ALTS_MGR_DICT.keys())
-    
-
-def get_new_strat_data(filename, sheet_name='data', freq='1M', index_data = False):
-    new_strat = pd.read_excel(DATA_FP+filename,sheet_name=sheet_name, index_col=0)
-    if index_data:
-        new_strat = format_data(new_strat,freq)
-    return new_strat
-
-def get_period_dict(df_returns, freq='1M'):
-    obs = len(df_returns)
-    m = switch_freq_int(freq)
-    if obs <= m:
-        return {'Full': df_returns}
-    elif obs <= 3*m:
-        return {'Full': df_returns, '1 Year':df_returns.iloc[obs-m:,]}
-    elif obs <= 5*m:
-        return {'Full': df_returns, '3 Year':df_returns.iloc[obs-3*m:,], '1 Year':df_returns.iloc[obs-m:,]}
-    elif obs <= 10*m:
-        return {'Full': df_returns, '5 Year':df_returns.iloc[obs-5*m:,], '3 Year':df_returns.iloc[obs-3*m:,], '1 Year':df_returns.iloc[obs-m:,]}
-    else:
-        return {'Full': df_returns, '10 Year':df_returns.iloc[obs-10*m:,], '5 Year':df_returns.iloc[obs-5*m:,], '3 Year':df_returns.iloc[obs-3*m:,], '1 Year':df_returns.iloc[obs-m:,]}

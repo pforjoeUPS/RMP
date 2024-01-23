@@ -8,19 +8,14 @@ Created on Tue Oct  1 17:59:28 2019
 import pandas as pd
 from ..datamanager import data_manager as dm
 from .hedge_metrics import get_hedge_metrics
-from .hedge_metrics import get_hedge_metrics_2
-from .import premia_metrics as pm
 from .import util
 from .returns_stats import get_return_stats
-from .import returns_stats as rs
 from .corr_stats import get_corr_analysis
 from .historical_selloffs import get_hist_sim_table
 from .rolling_cum import get_rolling_cum
-from .import risk
 
 
-def get_analysis(df_returns, notional_weights=[], include_fi=False,new_strat=False, freq='1M', weighted = False,include_bmk=False,
-                     df_bmk = dm.pd.DataFrame(), bmk_dict={}):
+def get_analysis(df_returns, notional_weights=[], include_fi=False, new_strat=False, freq='1M', weighted = False):
     """
     Returns a dictionary of dataframes containing:
     1. Return Statistics
@@ -60,10 +55,10 @@ def get_analysis(df_returns, notional_weights=[], include_fi=False,new_strat=Fal
         df_weighted_returns = get_weighted_data(df_returns,notional_weights,include_fi,new_strat)
         
         # Create pandas DataFrame for return statistics
-        df_return_stats = get_return_stats(df_weighted_returns, freq, include_fi=include_fi, include_bmk=include_bmk,df_bmk = df_bmk, bmk_dict=bmk_dict)
+        df_return_stats = get_return_stats(df_weighted_returns, freq)
     else:
         # Create pandas DataFrame for return statistics
-        df_return_stats = get_return_stats(df_returns, freq, include_fi=include_fi, include_bmk=include_bmk,df_bmk = df_bmk, bmk_dict=bmk_dict)
+        df_return_stats = get_return_stats(df_returns, freq)
         
         
     # remove the weighted strats from the dataframe
@@ -85,19 +80,15 @@ def get_analysis(df_returns, notional_weights=[], include_fi=False,new_strat=Fal
         hedge_returns.drop([col_list[1]],axis=1,inplace=True)
     
     # Create pandas DataFrame for hedge metrics
-    try:
-        df_hedge_metrics = get_hedge_metrics(hedge_returns,freq)
+    df_hedge_metrics = get_hedge_metrics(hedge_returns,freq)
     
-        #remove equity col
-        df_hedge_metrics.drop([col_list[0]],axis=1,inplace=True)
-        
-        #remove decay metrics if frequency is 1M, 1Q, 1Y
-        if dm.switch_freq_int(freq) <= 12:
-            df_hedge_metrics.drop(['Decay Days (50% retrace)','Decay Days (25% retrace)',
-                                 'Decay Days (10% retrace)'],inplace=True)
-    except IndexError:
-        df_hedge_metrics = dm.pd.DataFrame()
+    #remove equity col
+    df_hedge_metrics.drop([col_list[0]],axis=1,inplace=True)
     
+    #remove decay metrics if frequency is 1M, 1Q, 1Y
+    if dm.switch_freq_int(freq) <= 12:
+        df_hedge_metrics.drop(['Decay Days (50% retrace)','Decay Days (25% retrace)',
+                             'Decay Days (10% retrace)'],inplace=True)
         
     return {'return_stats':df_return_stats, 'hedge_metrics':df_hedge_metrics}
 
@@ -155,165 +146,16 @@ def get_analysis_sheet_data(df_returns, notional_weights=[], include_fi=False, n
         weightings_title = 'Portfolio Weightings'
     
     #store analytics and respective titles in lists
-    df_list, title_list = [], []
-    if include_fi:
-        df_list = [corr_dict["full"][0], corr_dict["equity_down"][0], 
-               corr_dict["equity_up"][0],corr_dict["fi_down"][0], 
-               corr_dict["fi_up"][0], df_weights, analytics_dict['return_stats'],analytics_dict['hedge_metrics']]
-        title_list = [corr_dict["full"][1], corr_dict["equity_down"][1], 
-                   corr_dict["equity_up"][1],corr_dict["fi_down"][1], 
-                   corr_dict["fi_up"][1], weightings_title,
-                   'Return Statistics ({} Returns)'.format(freq_string),
-                   'Hedging Framework Metrics ({} Returns)'.format(freq_string)]
-    else:
-        df_list = [corr_dict["full"][0], corr_dict["equity_down"][0], 
+    df_list = [corr_dict["full"][0], corr_dict["equity_down"][0], 
                corr_dict["equity_up"][0], df_weights, analytics_dict['return_stats'],analytics_dict['hedge_metrics']]
     
-        title_list = [corr_dict["full"][1], corr_dict["equity_down"][1], 
-                   corr_dict["equity_up"][1], weightings_title,
-                   'Return Statistics ({} Returns)'.format(freq_string),
-                   'Hedging Framework Metrics ({} Returns)'.format(freq_string)]
+    title_list = [corr_dict["full"][1], corr_dict["equity_down"][1], 
+               corr_dict["equity_up"][1], weightings_title,
+               'Return Statistics ({} Returns)'.format(freq_string),
+               'Hedging Framework Metrics ({} Returns)'.format(freq_string)]
     
     return {'df_list': df_list,'title_list': title_list}
 
-def get_alts_data(df_returns, df_mvs=pd.DataFrame(),freq='1M', include_fi=True,include_bmk=False,
-                     df_bmk = dm.pd.DataFrame(), bmk_dict={}):
-    """
-    Returns data for analysis excel sheet into a dictionary
-
-    Parameters
-    ----------
-    df_returns : dataframe
-        dataframe of returns
-    notional_weights : list, optional
-        notional weights of strategies. The default is [].
-    include_fi : boolean, optional
-        Include Fixed Income benchmark. The default is False.
-    new_strat : boolean, optional
-        Does analysis involve a new strategy. The default is False.
-    freq : string, optional
-        frequency. The default is '1M'.
-    weighted : boolean, optional
-        Include weighgted hedges and weighgted strats. The default is False.
-
-    Returns
-    -------
-    dict
-       dictionary containing:
-           df_list: list
-               a list of dataframes:
-                   correlations, portfolio weightings, returns_stats, hedge_metrics
-           title_list: list
-               a list containing titles of each of the dataframes
-
-    """
-    #create list of df_returns column names
-    col_list = list(df_returns.columns)
-    
-    #compute correlations
-    corr_dict = get_corr_analysis(df_returns, include_fi=include_fi)
-    
-    #compute return stats and hedge metrics
-    analytics_dict = get_analysis(df_returns, include_fi = include_fi, freq=freq, include_bmk=include_bmk,
-                                  df_bmk = df_bmk, bmk_dict=bmk_dict)
-    
-    #add mctr
-    if df_mvs.empty:
-        return {'corr': corr_dict,'ret_stat_df': analytics_dict['return_stats']}
-    else:
-        wts = df_mvs.divide(df_mvs.sum(axis=1), axis='rows')
-        jump = 2
-        port_returns = df_returns[col_list[jump:]]
-        port_risk = risk.Risk(port_returns, wts.iloc[-1:])
-        df_alts_stats = pd.concat([analytics_dict['return_stats'],port_risk.mctr])
-        return {'corr': corr_dict,'ret_stat_df': df_alts_stats}
-
-#TODO: add drawdon statistics (for strat, co drawdowns for EQ and FI)
-def get_alts_strat_data(df_returns, freq='1M', include_fi=True):
-    """
-    Returns data for analysis excel sheet into a dictionary
-
-    Parameters
-    ----------
-    df_returns : dataframe
-        dataframe of returns
-    notional_weights : list, optional
-        notional weights of strategies. The default is [].
-    include_fi : boolean, optional
-        Include Fixed Income benchmark. The default is False.
-    new_strat : boolean, optional
-        Does analysis involve a new strategy. The default is False.
-    freq : string, optional
-        frequency. The default is '1M'.
-    weighted : boolean, optional
-        Include weighgted hedges and weighgted strats. The default is False.
-
-    Returns
-    -------
-    dict
-       dictionary containing:
-           df_list: list
-               a list of dataframes:
-                   correlations, portfolio weightings, returns_stats, hedge_metrics
-           title_list: list
-               a list containing titles of each of the dataframes
-
-    """
-    #create list of df_returns column names
-    col_list = list(df_returns.columns)
-    port_name = col_list[len(col_list)-2]
-    bmk_name = col_list[len(col_list)-1]
-    
-    #compute return stats
-    analytics_dict = get_analysis(df_returns, include_fi = include_fi, freq=freq, include_bmk=True,
-                                  df_bmk=df_returns[[bmk_name]], bmk_dict={port_name:bmk_name})
-    
-    # #drop Bmk Name
-    analytics_dict['return_stats'].drop(['Bmk Name'], inplace=True)
-    
-    return analytics_dict['return_stats']
-    
-
-def get_fi_data(df_returns, notional_weights=[], include_fi=False, new_strat=False,freq='1M', weighted=False):
-    """
-    Returns data for analysis excel sheet into a dictionary
-
-    Parameters
-    ----------
-    df_returns : dataframe
-        dataframe of returns
-    notional_weights : list, optional
-        notional weights of strategies. The default is [].
-    include_fi : boolean, optional
-        Include Fixed Income benchmark. The default is False.
-    new_strat : boolean, optional
-        Does analysis involve a new strategy. The default is False.
-    freq : string, optional
-        frequency. The default is '1M'.
-    weighted : boolean, optional
-        Include weighgted hedges and weighgted strats. The default is False.
-
-    Returns
-    -------
-    dict
-       dictionary containing:
-           df_list: list
-               a list of dataframes:
-                   correlations, portfolio weightings, returns_stats, hedge_metrics
-           title_list: list
-               a list containing titles of each of the dataframes
-
-    """
-    #get notional weights for weighted strategy returns if not accurate
-    if weighted:
-        df_weighted_returns = get_weighted_data(df_returns,notional_weights,include_fi,new_strat)
-        
-        # Create pandas DataFrame for return statistics
-        return rs.get_return_stats_fi(df_weighted_returns, freq)
-    else:
-        # Create pandas DataFrame for return statistics
-        return rs.get_return_stats_fi(df_returns, freq)
-    
 #TODO: Ask powis if this makes sense bc notional only when weighted so do we need to have  2 seperate normal_dict
 def get_normal_sheet_data(df_returns, notional_weights=[], freq='1W', drop_bmk=True, weighted=False):
 
@@ -416,9 +258,9 @@ def get_percentile(returns_df , bucket_format=util.bucket , group='Quintile', bu
     return groups
 
 #TODO: Add frequency (Monthly, Weekly)  
-def get_grouped_data(returns_df, notional_weights=[], weighted=False, group='Quintile', strat='equity'):
+def get_grouped_data(returns_dict, notional_weights=[], weighted=False, group='Quintile', strat='equity'):
     """
-    Returns a dictionary dataframe containing average returns of each strategy grouped 
+    Returns a dataframe containing average returns of each strategy grouped 
     into quintiles based on the equity returns ranking.
     
     Parameters
@@ -437,24 +279,19 @@ def get_grouped_data(returns_df, notional_weights=[], weighted=False, group='Qui
 
     """
     
-    df = returns_df.copy()
+    df = returns_dict['Monthly'].copy()
     
     if weighted == True:
         util.check_notional(df, notional_weights)
         df = util.get_weighted_hedges(df, notional_weights)
+            
+    if group == 'Quintile':       
+        quintile = get_percentile(df, strat=strat)
+        return quintile
     
-    quintile = get_percentile(df, strat=strat)
-    decile = get_percentile(df, util.decile_bucket , group, 10,strat)
-    
-    return {'df_list': [quintile, decile],'title_list': ['Quintile', 'Decile']}
-    
-    # if group == 'Quintile':       
-    #     quintile = get_percentile(df, strat=strat)
-    #     return quintile
-    
-    # elif group == 'Decile':
-    #     decile = get_percentile(df, util.decile_bucket , group, 10,strat)
-    #     return decile
+    elif group == 'Decile':
+        decile = get_percentile(df, util.decile_bucket , group, 10,strat)
+        return decile
     
 def get_corr_data(returns_dict, freq_list=['Monthly', 'Weekly'], weighted=[False], notional_weights=[], include_fi = False):
     """
@@ -754,59 +591,10 @@ def get_norm_hedge_metrics(df_returns, notional_weights=[], freq='1W', drop_bmk=
     #create dict with hedge met and normalized data
     return {'Hedge Metrics': df_hm, 'Normalized Data': df_norm_hm}
 
-def get_norm_hedge_metrics_2(df_returns, notional_weights=[], freq='1W', drop_bmk=True, weighted=False, more_metrics=False):
-    """
-    Returns dictionary with hedge metrics and normalized scores
-
-    Parameters
-    ----------
-    df_returns : dataframe
-    drop_bmk : boolean, optional
-        drop benchmark or not. The default is False.
-    notional_weights : list, optional
-        List with notional weights for each strategy. The default is [].
-    weighted : boolean, optional
-        The default is False.
-
-    Returns
-    -------
-    dictionary
-    
-    """
-    
-    if weighted:
-         df_returns = util.get_weighted_hedges(df_returns, notional_weights)
-         
-    #calculates hedgemetrics 
-    df_hm = get_hedge_metrics_2(df_returns, freq, full_list=False)
-    
-    #drop the first column (aka the benchmark) if drop_bmk=True
-    if drop_bmk:
-        df_hm.drop(df_hm.columns[0], axis = 1,inplace=True)
-
-    df_hm = df_hm.transpose()
-    
-    col_to_reverse = ['Downside Reliability','Tail Reliability','Non Tail Reliability']
-    
-    #converts down reliability metrics from negative to positive in order to correctly rank them
-    if more_metrics:
-        df_norm_hm = df_hm.copy()
-        for col in col_to_reverse:
-            df_norm_hm = util.reverse_signs_in_col(df_norm_hm,col)
-    else:
-        df_norm_hm = util.reverse_signs_in_col(df_hm,'Downside Reliability')
-        df_norm_hm.drop(['Average Return','Tail Reliability','Non Tail Reliability'], axis=1, inplace=True)
-        df_hm.drop(['Average Return','Tail Reliability','Non Tail Reliability'], axis=1, inplace=True)
-    
-    #normalizes the data
-    df_norm_hm = util.get_normalized_data(df_norm_hm)
-    
-    #create dict with hedge met and normalized data
-    return {'Hedge Metrics': df_hm, 'Normalized Data': df_norm_hm}
 
 def all_strat_month_ret_table(returns_df, notional_weights = [], include_fi = False, new_strat = False, weighted = False):
     '''
-    
+
 
     Parameters
     ----------
@@ -822,74 +610,21 @@ def all_strat_month_ret_table(returns_df, notional_weights = [], include_fi = Fa
 
     '''
     #make strat list the columns of returns_df
-    
+
     if weighted == True:
-        
-        #get weighted strats and weighted hedges 
+
+        #get weighted strats and weighted hedges
         returns_df = get_weighted_data(returns_df,notional_weights,include_fi, new_strat)
-        
-    
+
+
     #create strat list from the columns of the returns data
     strat_list = returns_df.columns
-    
+
     #create moth table dict
     month_table_dict = {}
-    
+
     #loop through each strategy in the list and get the monthly returns table
     for strat in strat_list:
        month_table_dict[strat] = dm.month_ret_table(returns_df, strat)
        #month_table_dict[strat] = month_table_dict[strat][:-1]
     return month_table_dict
-
-
-
-def get_norm_premia_metrics(df_returns, notional_weights=[], freq='1W', drop_bmk=True, weighted=False, more_metrics=False):
-    """
-    Returns dictionary with hedge metrics and normalized scores
-
-    Parameters
-    ----------
-    df_returns : dataframe
-    drop_bmk : boolean, optional
-        drop benchmark or not. The default is False.
-    notional_weights : list, optional
-        List with notional weights for each strategy. The default is [].
-    weighted : boolean, optional
-        The default is False.
-
-    Returns
-    -------
-    dictionary
-    
-    """
-    
-    if weighted:
-         df_returns = util.get_weighted_hedges(df_returns, notional_weights)
-         
-    #calculates hedgemetrics 
-    df_pm = pm.get_premia_metrics(df_returns, freq, full_list=False)
-    
-    #drop the first column (aka the benchmark) if drop_bmk=True
-    if drop_bmk:
-        df_pm.drop(df_pm.columns[0], axis = 1,inplace=True)
-        df_pm.drop(df_pm.columns[0], axis = 1,inplace=True)
-        
-    df_pm = df_pm.transpose()
-    df_premia = df_pm.copy()
-    df_premia_corr = df_pm.copy()
-    df_premia_corr = df_premia_corr[['Correlation to Equity','Correlation to Rates']]
-    df_premia = df_premia[['Benefit', 'Convexity', 'Cost', 'Recovery']]
-    
-    df_premia_corr = util.change_to_neg(df_premia_corr)
-    df_norm_premia_corr = util.get_normalized_data(df_premia_corr)
-    
-    # df_premia = util.reverse_signs_in_col(df_premia,'Recovery')
-    df_norm_premia = util.get_normalized_data(df_premia)
-    
-    df_norm_pm = dm.merge_data_frames(df_norm_premia, df_norm_premia_corr)
-    df_norm_pm = df_norm_pm[pm.get_premia_index_list(False)]
-    
-    
-    #create dict with hedge met and normalized data
-    return {'Premia Metrics': df_pm, 'Normalized Data': df_norm_pm}
-
