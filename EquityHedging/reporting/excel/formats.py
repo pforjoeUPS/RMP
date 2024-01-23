@@ -47,3 +47,20 @@ def set_number_format(workbook,num_format, bold=False):
 
     num_format = workbook.add_format({'num_format': num_format, 'bold':bold})
     return num_format
+
+
+def set_index_format(workbook):
+    """
+    Format sheet
+
+    Parameters:
+    workbook
+    """
+
+    index_format = workbook.add_format()
+    index_format.set_font_name('Calibri')
+    index_format.set_font_size(11)
+    index_format.set_bg_color('#FFFFFF')
+    index_format.set_align('left')
+    index_format.set_align('top')
+    return index_format
