@@ -6,7 +6,9 @@ Created on Thu Aug 18 22:07:33 2022
 """
 
 from numpy.linalg import multi_dot
+
 from ..datamanager.data_manager import switch_freq_int
+
 
 class Risk():
     def __init__(self, returns, wts, freq='1M'):

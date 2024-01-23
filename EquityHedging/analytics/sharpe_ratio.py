@@ -9,7 +9,9 @@ import numpy as np
 import pandas as pd
 from scipy import stats
 from scipy.stats import gmean
+
 from ..datamanager import data_manager as dm
+
 
 class Sratio():
     #Class attribute

@@ -6,8 +6,10 @@ Created on Tue Apr 20 21:54:16 2021
 """
 
 import numpy as np
-from ..datamanager import data_manager as dm
+
 from .returns_stats import get_ann_vol
+from ..datamanager import data_manager as dm
+
 
 def get_index_list(price_series, start, end):
     """
@@ -406,118 +408,118 @@ def compute_decay_pct(df_returns,col, freq='1W', look_fwd_days=60, look_fwd_days
         #compute mean of decay list
         return np.mean(decay_list)
     
-sptr_dict = dm.get_equity_hedge_returns(only_equity=True)
-sptr_w = dm.get_prices_df(sptr_dict['Weekly'])
-price_series = sptr_w['SPTR']
-look_fwd_days = 60
-freq='1W'
-look_fwd_days_2 = 120
-dd_range = 260
+# sptr_dict = dm.get_equity_hedge_returns(only_equity=True)
+# sptr_w = dm.get_prices_df(sptr_dict['Weekly'])
+# price_series = sptr_w['SPTR']
+# look_fwd_days = 60
+# freq='1W'
+# look_fwd_days_2 = 120
+# dd_range = 260
 
-look_fwd_days = dm.convert_to_freq2(look_fwd_days,"1D",freq)
-look_fwd_days_2 = dm.convert_to_freq2(look_fwd_days_2,"1D",freq)
+# look_fwd_days = dm.convert_to_freq2(look_fwd_days,"1D",freq)
+# look_fwd_days_2 = dm.convert_to_freq2(look_fwd_days_2,"1D",freq)
 
-dd_list=[]
-start = look_fwd_days
-end = len(price_series)
+# dd_list=[]
+# start = look_fwd_days
+# end = len(price_series)
 
 
 
-max_index = start
-# i=start
+# max_index = start
+# # i=start
 
-while start < end:
-    max_index = get_max_index(price_series, start, end, look_fwd_days_2)
+# while start < end:
+#     max_index = get_max_index(price_series, start, end, look_fwd_days_2)
                 
-    start = max_index
+#     start = max_index
     
-    min_index = get_min_index(price_series, start, end, look_fwd_days_2)
+#     min_index = get_min_index(price_series, start, end, look_fwd_days_2)
     
-    if min_index < end:
-        temp_dd = {'start':max_index, 'end':min_index}
-        dd_list.append(temp_dd)
+#     if min_index < end:
+#         temp_dd = {'start':max_index, 'end':min_index}
+#         dd_list.append(temp_dd)
                 
-    start = min_index + look_fwd_days 
+#     start = min_index + look_fwd_days 
 
 
 
 
 
-while start < end:
-    peak = price_series[start]
+# while start < end:
+#     peak = price_series[start]
                 
-    for i in range(start, end):
-        temp_max = price_series[i]
-        if temp_max > peak:
-            peak = temp_max
-            # max_index=i
-            try:
-                if peak == get_index_list(price_series, i, i+look_fwd_days_2).max():
-                    max_index=i
-                    break
-            except IndexError:
-                    max_index=i    
-                    break
+#     for i in range(start, end):
+#         temp_max = price_series[i]
+#         if temp_max > peak:
+#             peak = temp_max
+#             # max_index=i
+#             try:
+#                 if peak == get_index_list(price_series, i, i+look_fwd_days_2).max():
+#                     max_index=i
+#                     break
+#             except IndexError:
+#                     max_index=i    
+#                     break
         
-    min_index = max_index
+#     min_index = max_index
     
-    trough = price_series[min_index]
+#     trough = price_series[min_index]
     
-    for i in range(max_index, end):
-        temp_min = price_series[i]
-        if temp_min < trough:
-            trough = temp_min
-            try:
-                if trough == get_index_list(price_series, i, i+look_fwd_days_2).min():
-                    min_index = i        
-                    temp_dd = {'start':max_index, 'end':min_index}
-                    dd_list.append(temp_dd)
-                    break
-            except IndexError:
-                    min_index=end
-                    break
+#     for i in range(max_index, end):
+#         temp_min = price_series[i]
+#         if temp_min < trough:
+#             trough = temp_min
+#             try:
+#                 if trough == get_index_list(price_series, i, i+look_fwd_days_2).min():
+#                     min_index = i        
+#                     temp_dd = {'start':max_index, 'end':min_index}
+#                     dd_list.append(temp_dd)
+#                     break
+#             except IndexError:
+#                     min_index=end
+#                     break
                 
-    # print(price_series.index[max_index])
-    # print(price_series.index[min_index])
-    # temp_dd = {'start':max_index, 'end':min_index}
-    # dd_list.append(temp_dd)
+#     # print(price_series.index[max_index])
+#     # print(price_series.index[min_index])
+#     # temp_dd = {'start':max_index, 'end':min_index}
+#     # dd_list.append(temp_dd)
     
-    start = min_index + look_fwd_days 
+#     start = min_index + look_fwd_days 
 
-dd_range = 260
+# dd_range = 260
 
-dd_range = dm.convert_to_freq2(dd_range,"1D",freq)
+# dd_range = dm.convert_to_freq2(dd_range,"1D",freq)
 
 
-start = dd_list[5]['end']
-end = dd_range + dd_list[5]['end']
+# start = dd_list[5]['end']
+# end = dd_range + dd_list[5]['end']
 
-max_index_list=[]
-max_index = price_series[start]
-for i in range(start, end):
-    temp_max = price_series[i]
-    if temp_max > max_index:
-        max_index = temp_max
-    max_index_list.append(max_index)
+# max_index_list=[]
+# max_index = price_series[start]
+# for i in range(start, end):
+#     temp_max = price_series[i]
+#     if temp_max > max_index:
+#         max_index = temp_max
+#     max_index_list.append(max_index)
 
-min_index_list = []
-trough=price_series[dd_list[5]['end']]
-peak=price_series[dd_list[5]['start']]
+# min_index_list = []
+# trough=price_series[dd_list[5]['end']]
+# peak=price_series[dd_list[5]['start']]
 
-for index in max_index_list:
-    temp_min = max(trough,index)
-    if temp_min < peak:
-        min_index_list.append(temp_min)
-    else:
-        min_index_list.append(peak)
+# for index in max_index_list:
+#     temp_min = max(trough,index)
+#     if temp_min < peak:
+#         min_index_list.append(temp_min)
+#     else:
+#         min_index_list.append(peak)
 
-days = [20,60,120,240]
+# days = [20,60,120,240]
 
-retrace_list = []
-for day in days:
-    day = dm.convert_to_freq2(day, '1D', freq)
-    retrace_list.append(compute_retrace(peak, trough, min_index_list, day))
-np.mean(retrace_list)
+# retrace_list = []
+# for day in days:
+#     day = dm.convert_to_freq2(day, '1D', freq)
+#     retrace_list.append(compute_retrace(peak, trough, min_index_list, day))
+# np.mean(retrace_list)
 
 
 

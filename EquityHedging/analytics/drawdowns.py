@@ -5,15 +5,19 @@ Created on Sat Dec  3 23:27:30 2022
 @author: Phill Moran, Powis Forjoe
 """
 
-#TODO: Make it Start, Trough, End, DD, Lenght, Recovery
+# TODO: Make it Start, Trough, End, DD, Length, Recovery
+# TODO: change to return series
 import pandas as pd
-from ..datamanager import data_manager as dm
-from .historical_selloffs import compute_event_ret
+
+from .historical_selloffs_new import compute_event_ret
+from ..datamanager import data_manager_new as dm
+
 try:
-    #try importing cufflinks
+    # try importing cufflinks
     import cufflinks as cf
     import plotly.graph_objs as go
-    #set as offline
+
+    # set as offline
     cf.go_offline()
     cuff = True
 except:
@@ -24,27 +28,36 @@ except:
     except:
         print('No Plotly integration for Pandas')
 
-def run_drawdown(returns):
+
+def run_drawdown(return_series):
     """
     Parameters
     ----------
-    returns: Pandas DataFrame
-        dataframe with returns as values and index is dates
+    returns: Pandas Series
+        Series with returns as values and index is dates
     
     Returns
     -------
-    drawdown: Pandas DataFrame
-        Dataframe with index values of dates and values of drawdown from
+    drawdown: Pandas Series
+        Series with index values of dates and values of drawdown from
         running maximum
     
     """
-    cum = (1+returns).cumprod()
-    runmax = cum.cummax()
-    drawdown = (cum / runmax) - 1
+
+    price_series = dm.get_price_series(return_series)
+    window = len(price_series)
+
+    # calculate the max drawdown in the past window periods for each period in the series.
+    roll_max = price_series.rolling(window, min_periods=1).max()
+    drawdown = price_series / roll_max - 1.0
+    # cum = (1+return_series).cumprod()
+    # runmax = cum.cummax()
+    # drawdown = (cum / runmax) - 1
     # self._df_plot(drawdown, 'Drawdown',None,None)
     return drawdown
-    
-def get_worst_drawdowns(returns, num_worst=5, recovery=False):
+
+
+def get_worst_drawdowns(return_series, num_worst=5, recovery=False):
     """
 
     Parameters
@@ -61,37 +74,38 @@ def get_worst_drawdowns(returns, num_worst=5, recovery=False):
         ending date, and drawdown amount
 
     """
-    returns_dd = returns.copy()
-    #first get the drawdowns with all of the data
-    drawdowns = run_drawdown(returns_dd)
+    ret_dd_series = return_series.copy()
+    # first get the drawdowns with all of the data
+    drawdowns = run_drawdown(ret_dd_series)
     worst_drawdowns = []
-    #get the worst drawdown
+    # get the worst drawdown
     draw = get_drawdown_dates(drawdowns)
-    #add recovery data
+    # add recovery data
     if recovery:
-        draw = get_recovery_data(returns, draw)
-    #collect
+        draw = get_recovery_data(return_series, draw)
+    # collect
     worst_drawdowns.append(draw)
-    #set i to 1, because we will be starting from 1 for the number of
-    #drawdowns desired from num_worst
-    for i in range(1,num_worst):
+    # set i to 1, because we will be starting from 1 for the number of
+    # drawdowns desired from num_worst
+    for i in range(1, num_worst):
         try:
-            #remove data from last drawdown from the returns data
-            mask = (returns_dd.index>=draw['Peak']) & (returns_dd.index<=draw['Trough'])
-            returns_dd = returns_dd.loc[~mask]
-            drawdowns = run_drawdown(returns_dd)
+            # remove data from last drawdown from the returns data
+            mask = (ret_dd_series.index >= draw['Peak']) & (ret_dd_series.index <= draw['Trough'])
+            ret_dd_series = ret_dd_series.loc[~mask]
+            drawdowns = run_drawdown(ret_dd_series)
             draw = get_drawdown_dates(drawdowns)
-            #add recovery data
+            # add recovery data
             if recovery:
-                draw = get_recovery_data(returns, draw)
-            #collect
+                draw = get_recovery_data(return_series, draw)
+            # collect
             worst_drawdowns.append(draw)
         except:
             print("No more drawdowns...")
-    
+
     return pd.DataFrame(worst_drawdowns)
-    
-#TODO: Review
+
+
+# TODO: Review
 def get_co_drawdowns(base_return, compare_return, num_worst=5,
                      graphic='plot', return_df=True):
     """
@@ -112,26 +126,27 @@ def get_co_drawdowns(base_return, compare_return, num_worst=5,
         DESCRIPTION.
 
     """
-    #get the drawdowns of the base return item
+    # get the drawdowns of the base return item
     drawdowns = get_worst_drawdowns(base_return, num_worst=num_worst)
-    #use collect to collect the drawdowns for compare_return items
+    # use collect to collect the drawdowns for compare_return items
     compare_index = dm.get_prices_df(compare_return)
     collect = pd.DataFrame(columns=compare_index.columns, index=drawdowns.index)
-    strat_name = base_return.columns[0]
+    # strat_name = base_return.columns[0]
+    strat_name = base_return.name
     for i in drawdowns.index:
         pull = drawdowns.loc[i]
-        #get the peak date and trough date
+        # get the peak date and trough date
         peak = pull['Peak']
         trough = pull['Trough']
-        for col in compare_index.columns:
-            strat_df = dm.remove_na(compare_index,col)
+        for col in compare_index:
+            strat_df = dm.remove_na(compare_index, col)
             try:
-                collect[col][i]=compute_event_ret(strat_df, col, peak, trough)
+                collect[col][i] = compute_event_ret(strat_df, col, peak, trough)
             except KeyError:
                 # print(f'for {strat_name}, skipping {col}')
-                collect[col][i]=float("nan")
-    co_drawdowns = pd.concat([drawdowns,collect], axis=1)
-    if graphic=='plot':
+                collect[col][i] = float("nan")
+    co_drawdowns = pd.concat([drawdowns, collect], axis=1)
+    if graphic == 'plot':
         pass
         # title = 'Worst Drawdowns'
         # #make a df to be plotted
@@ -145,8 +160,9 @@ def get_co_drawdowns(base_return, compare_return, num_worst=5,
         # df_plot(df, title, 'date', 'Drawdown', kind='bar')
     if return_df:
         return co_drawdowns
-    
-#TODO: Clean comments
+
+
+# TODO: Clean comments
 def get_drawdown_dates(drawdowns):
     """
     
@@ -162,122 +178,230 @@ def get_drawdown_dates(drawdowns):
         DESCRIPTION.
 
     """
-    #get the min value
-    worst_val = drawdowns.min()[0]
-    #get the date of the drawdown trough
-    trough_date = drawdowns.idxmin()[0]
-    #get the last time the value was 0 (meaning the peak before drawdown)
+    # get the min value
+    # worst_val = drawdowns.min()[0]
+    worst_val = drawdowns.min()
+    # get the date of the drawdown trough
+    # trough_date = drawdowns.idxmin()[0]
+    trough_date = drawdowns.idxmin()
+    # get the last time the value was 0 (meaning the peak before drawdown)
     peak_date = drawdowns[drawdowns.index <= trough_date]
-    peak_date = peak_date[peak_date>=0].dropna().index[-1]
+    peak_date = peak_date[peak_date >= 0].dropna().index[-1]
     # peak_date_1 = drawdowns[drawdowns.index >= trough_date]
     # peak_date_1 = peak_date_1[peak_date_1>=0].dropna().index[1]
-    draw_dates = {'Peak':peak_date, 'Trough':trough_date, 
-                  'Drawdown':worst_val}
+    draw_dates = {'Peak': peak_date, 'Trough': trough_date,
+                  'Drawdown': worst_val}
     return draw_dates
 
-#TODO: Add docstring
+
+# TODO: Add docstring
 def get_recovery_data(returns, draw):
-    #get strat name
-    strat=returns.columns[0]
-    #get index/price data
-    ret_idx = dm.get_prices_df(returns)
-    
-    #remove data before drawdown
-    mask_rec = (ret_idx.index>=draw['Trough'])
+    # get strat name
+    # strat=returns.columns[0]
+    # strat=returns.name
+    # get index/price data
+    # ret_idx = dm.get_prices_df(returns)
+    ret_idx = dm.get_price_series(returns)
+
+    # remove data before drawdown
+    mask_rec = (ret_idx.index >= draw['Trough'])
     ret_idx_1 = ret_idx.iloc[mask_rec]
-    
-    #find end of dd date
-    peak_idx = ret_idx[ret_idx.index==draw['Peak']]
+
+    # find end of dd date
+    peak_idx = ret_idx[ret_idx.index == draw['Peak']]
     try:
-        draw['End'] = ret_idx_1[ret_idx_1[strat].gt(peak_idx[strat][0])].index[0]
+        # draw['End'] = ret_idx_1[ret_idx_1[strat].gt(peak_idx[strat][0])].index[0]
+        draw['End'] = ret_idx_1[ret_idx_1.gt(peak_idx[0])].index[0]
         end_date = draw['End']
     except IndexError:
-        #if recover not done, pick last period as end date
+        # if recover not done, pick last period as end date
         draw['End'] = float("nan")
         end_date = ret_idx_1.last_valid_index()
-    
-    
-    #get dd length
-    mask_dd = (returns.index>=draw['Peak']) & (returns.index<=end_date )
-    draw['Length'] = len(returns.iloc[mask_dd])-1
-    
-    #get recovery lenth    
-    mask_recov=(returns.index>=draw['Trough']) & (returns.index<=end_date)
-    draw['Recovery'] = len(returns.iloc[mask_recov])-1
-    
-    #reorder draw dict
-    desired_order_list = ['Peak', 'Trough', 'End','Drawdown', 'Length', 'Recovery']
+
+    # get dd length
+    mask_dd = (returns.index >= draw['Peak']) & (returns.index <= end_date)
+    draw['Length'] = len(returns.iloc[mask_dd]) - 1
+
+    # get recovery lenth
+    mask_recov = (returns.index >= draw['Trough']) & (returns.index <= end_date)
+    draw['Recovery'] = len(returns.iloc[mask_recov]) - 1
+
+    # reorder draw dict
+    desired_order_list = ['Peak', 'Trough', 'End', 'Drawdown', 'Length', 'Recovery']
     return {key: draw[key] for key in desired_order_list}
 
-#TODO: Add docstring and comments
-def get_dd_matrix(returns):
+
+# TODO: Add docstring and comments
+def get_dd_matrix(returns_df):
     dd_matrix_df = pd.DataFrame()
 
-    co_dd_dict = get_co_drawdown_data(returns, num_worst=1)
-    for strat in returns:
-        dd_matrix_df = pd.concat([dd_matrix_df,co_dd_dict[strat]])
+    co_dd_dict = get_co_drawdown_data(returns_df, num_worst=1)
+    for strat in returns_df:
+        dd_matrix_df = pd.concat([dd_matrix_df, co_dd_dict[strat]])
 
-    dd_matrix_df = dd_matrix_df.set_index(returns.columns, drop=False).rename_axis(None)
-    dd_matrix_df.rename(columns={'Peak':'Start Date','Trough':'End Date','Drawdown':'Strategy Max DD'}, inplace=True)
+    dd_matrix_df = dd_matrix_df.set_index(returns_df.columns, drop=False).rename_axis(None)
+    dd_matrix_df.rename(columns={'Peak': 'Start Date', 'Trough': 'End Date', 'Drawdown': 'Strategy Max DD'},
+                        inplace=True)
     return dd_matrix_df
 
-#TODO: Add docstring and comments
-def get_drawdown_data(returns, num_worst=5, recovery=False):
+
+# TODO: Add docstring and comments
+def get_drawdown_data(returns_df, num_worst=5, recovery=False):
     dd_dict = {}
-    for strat in returns:
-        dd_dict[strat] = get_worst_drawdowns(returns[[strat]],num_worst,recovery)
+    for strat in returns_df:
+        dd_dict[strat] = get_worst_drawdowns(returns_df[strat], num_worst, recovery)
     return dd_dict
 
-#TODO: Add docstring and comments
-def get_co_drawdown_data(returns, compare_returns=pd.DataFrame(), num_worst=5):
+
+# TODO: Add docstring and comments
+def get_co_drawdown_data(returns_df, compare_returns=pd.DataFrame(), num_worst=5):
     co_dd_dict = {}
 
-    for strat in returns:
+    for strat in returns_df:
         if compare_returns.empty:
-            co_dd_dict[strat] = get_co_drawdowns(returns[[strat]],returns.drop([strat], axis=1),num_worst)
+            co_dd_dict[strat] = get_co_drawdowns(returns_df[strat], returns_df.drop([strat], axis=1), num_worst)
         else:
-            co_dd_dict[strat] = get_co_drawdowns(returns[[strat]],compare_returns,num_worst)
+            co_dd_dict[strat] = get_co_drawdowns(returns_df[strat], compare_returns, num_worst)
     return co_dd_dict
 
 
-#TODO: Add docstring and comments
-def get_dd_data(returns, include_fi=True):
-    
-    mgr = returns.columns[2] if include_fi else returns.columns[1]
+# TODO: Add docstring and comments
+def get_dd_data(returns_df, include_fi=True):
+    mgr = returns_df.columns[2] if include_fi else returns_df.columns[1]
 
     dd_data_dict = {}
-    for strat in returns:
+    for strat in returns_df:
         if strat == mgr:
-            dd_data_dict[f'{strat} Drawdown Statistics'] = get_worst_drawdowns(returns[[strat]],recovery=True)
+            dd_data_dict[f'{strat} Drawdown Statistics'] = get_worst_drawdowns(returns_df[strat], recovery=True)
         else:
-            dd_data_dict[f'{mgr} vs {strat} Drawdowns'] = get_co_drawdowns(returns[[strat]], returns[[mgr]])
+            dd_data_dict[f'{mgr} vs {strat} Drawdowns'] = get_co_drawdowns(returns_df[strat], returns_df[[mgr]])
     return dd_data_dict
 
 
-#TODO: Add docstring and comments
+# TODO: Add docstring and comments
+# Old code from Phil...need to review and decide ask Devang
 def df_plot(df, title, xax, yax, yrange=None,
-                 rangeslider_visible=False, kind='line'):
-        """
+            rangeslider_visible=False, kind='line'):
+    """
         Parameters
         ----------
         yrange: list
             list giving y range for axis
         """
-        if kind=='line':
-            if cuff:
-                #do this if Cufflinks package is installed
-                layout = go.Layout(yaxis=dict(range=yrange), title=title)
-                df.iplot(layout=layout)
-            elif plotly_backend:
-                fig = df.plot(title=title)
-                fig.update_layout(xaxis_title=xax,
-                                  yaxis_title=yax)
-                if yrange is not None:
-                    fig.update_yaxes(range=yrange,)
-                fig.update_xaxes(rangeslider_visible=rangeslider_visible)
-                fig.show()
-            else:
-                df.plot(title=title).legend(bbox_to_anchor=(1, 1))
-        if kind=='bar':
-            if cuff:
-                df.iplot(kind='bar', )
+    if kind == 'line':
+        if cuff:
+            # do this if Cufflinks package is installed
+            layout = go.Layout(yaxis=dict(range=yrange), title=title)
+            df.iplot(layout=layout)
+        elif plotly_backend:
+            fig = df.plot(title=title)
+            fig.update_layout(xaxis_title=xax,
+                              yaxis_title=yax)
+            if yrange is not None:
+                fig.update_yaxes(range=yrange, )
+            fig.update_xaxes(rangeslider_visible=rangeslider_visible)
+            fig.show()
+        else:
+            df.plot(title=title).legend(bbox_to_anchor=(1, 1))
+    if kind == 'bar':
+        if cuff:
+            df.iplot(kind='bar', )
+
+
+# from old rs, need to refactor
+def get_drawdown_series(price_series):
+    """
+    Calculate drawdown series (from calculation of MaxDD)
+
+    Parameters
+    ----------
+    price_series : series
+        price series.
+
+    Returns
+    -------
+    Drawdown series
+
+    """
+    window = len(price_series)
+    roll_max = price_series.rolling(window, min_periods=1).max()
+    drawdown = price_series / roll_max - 1.0
+    return drawdown
+
+
+# from old rs, need to refactor
+def find_dd_date(price_series):
+    """
+    Finds the date where Max DD occurs
+
+    Parameters
+    ----------
+    price_series : series
+        price series.
+
+    Returns
+    -------
+    Date of MaxDD in dataframe
+
+    """
+    max_dd = get_max_dd(price_series)
+    drawdown = get_drawdown_series(price_series)
+    dd_date = drawdown.index[drawdown == float(max_dd)]
+
+    return dd_date
+
+
+# from old rs, need to refactor
+def find_zero_dd_date(price_series):
+    """
+    Finds the date where drawdown was at zero before Max DD
+
+    Parameters
+    ----------
+    price_series : series
+        price series.
+
+    Returns
+    -------
+    Date of where drawdown was at zero before MaxDD in dataframe
+
+    """
+    drawdown = get_drawdown_series(price_series)
+    drawdown_reverse = drawdown[::-1]
+    x = (find_dd_date(price_series)[0])
+    strat_drawdown = drawdown_reverse.loc[x:]
+
+    for dd_index, dd_value in enumerate(strat_drawdown):
+        if dd_value == 0:
+            zero_dd_date = strat_drawdown.index[dd_index]
+            break
+    return zero_dd_date
+
+
+# from old rs, need to refactor
+def get_recovery(price_series):
+    """
+    Finds the recovery timeline from where MaxDD occured and when strategy recoverd
+
+    Parameters
+    ----------
+    price_series : series
+        price series.
+
+    Returns
+    -------
+    The number of "days" it took for strategy to return back to 'recovery'
+
+    """
+    zero_dd_date = find_zero_dd_date(price_series)
+    zero_dd_date_price = price_series.loc[zero_dd_date]
+    dd_date = find_dd_date(price_series)
+    count_price_series = price_series.loc[dd_date[0]:]
+    recovery_days = 0
+
+    for price in count_price_series:
+        if price < zero_dd_date_price:
+            recovery_days += 1
+        else:
+            break
+    return recovery_days
