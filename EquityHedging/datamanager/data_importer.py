@@ -11,7 +11,7 @@ import zipfile
 
 import pandas as pd
 
-from . import data_manager as dm
+from . import data_manager_new as dm
 
 NEXEN_DATA_COL_DICT = {'Account Name\n': 'Name', 'Account Id\n': 'Account Id',
                        'Return Type\n': 'Return Type', 'As Of Date\n': 'Dates',
@@ -66,7 +66,7 @@ def get_excel_sheet_names(file_path):
     return sheets
 
 
-class dataImporter():
+class dataImporter:
     def __init__(self, filepath, sheet_name=0, index_col = 0, skip_rows = [], 
                  data_source='custom', col_dict = {}, drop_na = True, index_data = False):
         """
@@ -245,8 +245,6 @@ class nexenDataImporter(dataImporter):
                          data_source=data_source, col_dict=col_dict, drop_na=drop_na, index_data=index_data)
         
         self.data_import = self.data_import[self.col_dict.values()] if bool(self.col_dict) else self.data_import
-        
-
 
 
 # class putspreadDataImporter(dataImporter):
