@@ -114,8 +114,9 @@ class returnsReport(setReport):
         # self.writer.save()
 
     def run_report(self, report_name):
-        if report_name != self.report_name:
-            self.rename_report(report_name)
+        if isinstance(report_name, str):
+            if report_name != self.report_name:
+                self.rename_report(report_name)
         self.writer = pd.ExcelWriter(self.file_path, engine='xlsxwriter')
         self.generate_report()
         print_report_info(self.report_name, self.file_path)
@@ -198,7 +199,7 @@ class histSelloffReport(returnsReport):
         new_sheets.histReturnSheet(self.writer, self.data['returns']['Daily'], sheet_name='Daily Historical Returns').create_sheet()
 
 class equityHedgeReport(histSelloffReport):
-    def __init__(self, report_name, data_handler, new_strat=False, weighted=False, selloffs=False):
+    def __init__(self, report_name, data_handler, weighted=False, new_strat=False, selloffs=False):
 
 
         """

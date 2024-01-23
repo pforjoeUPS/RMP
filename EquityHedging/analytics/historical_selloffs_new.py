@@ -124,8 +124,8 @@ def get_hist_sim_table(df_returns, notional_weights=[], weighted=False):
     
     #computed weighted hedges
     if weighted:
-        notional_weights = util.check_notional(df_returns, notional_weights)
-        df_index = util.get_weighted_hedges(df_index, notional_weights)
+        notional_weights = util_new.check_notional(df_returns, notional_weights)
+        df_index = util_new.get_weighted_hedges(df_index, notional_weights)
     
     #create dictionary 
     hist_dict = {}
@@ -156,5 +156,5 @@ def get_hist_sim_table(df_returns, notional_weights=[], weighted=False):
         hist_dict[col] = temp_col
 
     #convert dictionary to dataframe
-    df_hist = util.convert_dict_to_df(hist_dict, periods)
+    df_hist = util_new.convert_dict_to_df(hist_dict, periods)
     return df_hist

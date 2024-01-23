@@ -4,20 +4,12 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="2ffa8bc5-3080-451f-b012-30c2fbd5c3d6" name="Changes" comment="Update modules in analytics">
-      <change afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Cluster Analysis/data/QIS Universe Time Series.xlsx" beforeDir="false" afterPath="$PROJECT_DIR$/Cluster Analysis/data/QIS Universe Time Series.xlsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Cluster Analysis/scripts/Cluster Analysis.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/Cluster Analysis/scripts/Cluster Analysis.ipynb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Cluster Analysis/scripts/SG_Clusters_QIS_Academy_30th_June_22.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/Cluster Analysis/scripts/SG_Clusters_QIS_Academy_30th_June_22.ipynb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/EquityHedging/analytics/corr_stats.py" beforeDir="false" afterPath="$PROJECT_DIR$/EquityHedging/analytics/corr_stats.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/EquityHedging/analytics/hedge_metrics.py" beforeDir="false" afterPath="$PROJECT_DIR$/EquityHedging/analytics/hedge_metrics.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/EquityHedging/analytics/returns_stats.py" beforeDir="false" afterPath="$PROJECT_DIR$/EquityHedging/analytics/returns_stats.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/EquityHedging/analytics/summary.py" beforeDir="false" afterPath="$PROJECT_DIR$/EquityHedging/analytics/summary.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/EquityHedging/analytics/util.py" beforeDir="false" afterPath="$PROJECT_DIR$/EquityHedging/analytics/util.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/EquityHedging/datamanager/data_manager.py" beforeDir="false" afterPath="$PROJECT_DIR$/EquityHedging/datamanager/data_manager.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/EquityHedging/reporting/excel/reports.py" beforeDir="false" afterPath="$PROJECT_DIR$/EquityHedging/reporting/excel/reports.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/EquityHedging/reporting/excel/sheets.py" beforeDir="false" afterPath="$PROJECT_DIR$/EquityHedging/reporting/excel/sheets.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/EquityHedging/scripts/script.py" beforeDir="false" afterPath="$PROJECT_DIR$/EquityHedging/scripts/script.py" afterDir="false" />
+    <list default="true" id="b803898b-e4fe-48e5-b312-a81e5815600b" name="Changes" comment="Update modules in analytics">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/EquityHedging/analytics/historical_selloffs_new.py" beforeDir="false" afterPath="$PROJECT_DIR$/EquityHedging/analytics/historical_selloffs_new.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/EquityHedging/analytics/returns_stats_new.py" beforeDir="false" afterPath="$PROJECT_DIR$/EquityHedging/analytics/returns_stats_new.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/EquityHedging/reporting/excel/new_reports.py" beforeDir="false" afterPath="$PROJECT_DIR$/EquityHedging/reporting/excel/new_reports.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/EquityHedging/scripts/script_new.py" beforeDir="false" afterPath="$PROJECT_DIR$/EquityHedging/scripts/script_new.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

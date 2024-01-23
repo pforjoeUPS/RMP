@@ -1,21 +1,21 @@
 # -*- coding: utf-8 -*-
 """
-Created on Sat Apr 24 00:21:46 2021
+Created on Sat Jan 24 2023
 
 @author: Powis Forjoe, Zach Wells and Maddie Choi
 """
-import os
+# import os
+#
+# os.chdir('..\..')
 
-os.chdir('..\..')
-
-#import libraries
+# import libraries
 from EquityHedging.datamanager import data_manager_new as dm
 from EquityHedging.datamanager import data_handler as dh
 from EquityHedging.datamanager import data_xformer_new as dxf
-from EquityHedging.analytics import summary_new
+from EquityHedging.analytics import returns_analytics as ra
 from EquityHedging.reporting.excel import new_reports as rp
 
-#import returns data
+# import returns data
 eq_bmk = 'S&P 500'
 include_fi = False
 weighted = True
@@ -26,7 +26,7 @@ eq_hedge_dh = dh.eqHedgeHandler(eq_bmk=eq_bmk, eq_mv=11.0,
                                 include_fi=include_fi, fi_mv=20.0,
                                 strat_drop_list=[])
 
-#Add new strat
+# Add new strat
 new_strat = True
 if new_strat:
     strategy_list = ['esprso']
@@ -40,64 +40,57 @@ eq_hedge_dh.add_strategy(new_strategy_dict, notional_list)
 
 eq_hedge_dh.get_weighted_returns(new_strat=new_strat)
 
-#get notional weights
-notional_weights = dm.get_notional_weights(returns['Monthly'])
-returns_vrr = dm.create_vrr_portfolio(returns,notional_weights)
-notional_weights[4:6] = [notional_weights[4] + notional_weights[5]]
+returns_dict = eq_hedge_dh.weighted_returns if weighted else eq_hedge_dh.returns
+eq_hedge_analytics = ra.eqHedgeReturnsDictAnalytic(returns_dict, include_fi=include_fi,
+                                                   mkt_data=eq_hedge_dh.mkt_returns, mkt_key=eq_hedge_dh.mkt_key)
 
-
-df_weights = get_df_weights(notional_weights, list(returns['Monthly'].columns), include_fi)
-
-
-#returns = eq_hedge_dh.returns
-
-
-#compute correlations
-check_corr = False
+# compute correlations
+check_corr = True
 if check_corr:
     corr_freq_list = ['Daily', 'Weekly', 'Monthly']
-    corr_dict = summary.get_corr_data(returns, corr_freq_list, weighted, notional_weights, include_fi)
-    data = corr_dict['Monthly']
-    corr_df = data[0]['full'][0]
-    plots.draw_corrplot(corr_df)
-    plots.draw_heatmap(corr_df, False)
+    eq_hedge_analytics.get_corr_stats_dict(corr_freq_list)
+    corr_dict = dxf.copy_data(eq_hedge_analytics.corr_stats_dict)
 
-#compute analytics
+# compute analytics
 # import time
 # start = time.time()
-check_analysis = False
+check_analysis = True
 if check_analysis:
     analytics_freq_list = ['Weekly', 'Monthly']
-    analytics_dict = summary.get_analytics_data(returns,analytics_freq_list,weighted,notional_weights,include_fi,new_strat)
-
+    eq_hedge_analytics.get_returns_stats_dict(analytics_freq_list)
+    eq_hedge_analytics.get_hedge_metrics_dict(analytics_freq_list)
+    analytics_dict = {'return_stats': dxf.copy_data(eq_hedge_analytics.returns_stats_dict),
+                      'hedge_metrics': dxf.copy_data(eq_hedge_analytics.hedge_metrics_dict)
+                      }
 # end = time.time()
 # print(end - start)
 
-#compute historical selloffs
-check_hs = False
+# compute historical selloffs
+check_hs = True
 if check_hs:
-    hist_dict = summary.get_hist_data(returns,notional_weights, weighted)
+    eq_hedge_analytics.get_hist_selloff()
+    hist_selloff_df = dxf.copy_data(eq_hedge_analytics.historical_selloff_data)
 
-#get quintile dataframe
-check_quint = False
-if check_quint:
-    quintile_df = summary.get_grouped_data(returns, notional_weights, True, group='Quintile')
+# get quantile dataframe
+check_quantile = True
+if check_quantile:
+    eq_hedge_analytics.get_quantile_stats()
+    quantile_dict = dxf.copy_data(eq_hedge_analytics.quantile_stats_data)
 
-#get annual dollar returns dataframe
-check_ann = False
-if check_ann:
-    annual_dollar_returns = summary.get_annual_dollar_returns(returns, notional_weights)
+# # get annual dollar returns dataframe
+# check_ann = False
+# if check_ann:
+#     annual_dollar_returns = summary.get_annual_dollar_returns(returns, notional_weights)
 
-#run report
+# run report
 report_name = 'equity_hedge_analysis_testNew'
 selloffs = True
+eq_hedge_rp = rp.equityHedgeReport(report_name=report_name, data_handler=eq_hedge_dh, weighted=weighted,
+                                   new_strat=new_strat, selloffs=selloffs)
+eq_hedge_rp.run_report(report_name=report_name)
 # start = time.time()
-rp.generateEquityHedgeReport(report_name, returns, notional_weights, include_fi, new_strat, weighted[0], selloffs)
-#rp.get_equity_hedge_report(report_name, returns,notional_weights, include_fi, new_strat, weighted[0], selloffs)
 # end = time.time()
 # print(end - start)
 
 hs_report = 'historical_selloff_test_new'
-rp.generateHSReport(hs_report, returns)
-
-eq_hedge_report = rp.equityHedgeReport1(report_name, eq_hedge_dh, new_strat, weighted, selloffs)
+hs_rp = rp.histSelloffReport(report_name=hs_report, data_handler=eq_hedge_dh, weighted=weighted, new_strat=new_strat)

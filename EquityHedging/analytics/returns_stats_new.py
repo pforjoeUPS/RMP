@@ -71,7 +71,7 @@ def get_alpha(return_series, mkt_series, freq='M', rfr=0.0):
 
 
 def get_up_down_capture_ratio(return_series, mkt_series, upside=True):
-    mkt_cap = util.get_pos_neg_df(mkt_series, pos=upside)
+    mkt_cap = util_new.get_pos_neg_df(mkt_series, pos=upside)
     ret_cap = dm.merge_data_frames(mkt_cap, return_series, True)[return_series.name]
     return get_comp_returns(ret_cap) / get_comp_returns(mkt_cap)
 
@@ -163,7 +163,7 @@ def get_avg_pos_neg(return_series, pos=True):
     """
 
     # filter positive and negative returns
-    pos_neg_series = util.get_pos_neg_df(return_series, pos)
+    pos_neg_series = util_new.get_pos_neg_df(return_series, pos)
 
     return pos_neg_series.mean()
 
@@ -194,7 +194,7 @@ def get_avg_pos_neg_ratio(return_series):
 
 
 def get_pct_pos_neg_periods(return_series, pos=True):
-    pos_neg_series = util.get_pos_neg_df(return_series, pos)
+    pos_neg_series = util_new.get_pos_neg_df(return_series, pos)
     return len(pos_neg_series) / len(return_series)
 
 
