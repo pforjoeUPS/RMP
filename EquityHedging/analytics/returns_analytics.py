@@ -367,43 +367,38 @@ class returnsDictAnalytic(returnsAnalytic):
 
     def check_freq(self, main_df, new_df):
         return dm.get_freq(main_df) == dm.get_freq(new_df)
-                    
+
+    def get_stats_dict(self, key_list, stat_type, years= None):
+        stats_dict = {}
+
+        for key in key_list:
+            if years is not None:
+                getattr(self.analytics_dict[key], f'get_{stat_type}_stats')(key, years)
+            else:
+                getattr(self.analytics_dict[key], f'get_{stat_type}_stats')(key)
+            stats_dict[key] = getattr(self.analytics_dict[key], f'{stat_type}_stats_data')
+
+        return stats_dict
+
     def get_roll_stats_dict(self, key_list, years=3):
-        self.roll_stats_dict = {}
-        for key in key_list:
-            self.analytics_dict[key].get_roll_stats(years)
-            self.roll_stats_dict[key] = self.analytics_dict[key].roll_stats_data
-    
+        self.roll_stats_dict = self.get_stats_dict(key_list, 'roll', years)
+
     def get_quantile_stats_dict(self, key_list):
-        self.quantile_stats_dict = {}
-        for key in key_list:
-            self.analytics_dict[key].get_quantile_stats()
-            self.quantile_stats_dict[key] = self.analytics_dict[key].quantile_stats_data
-            
+        self.quantile_stats_dict = self.get_stats_dict(key_list, 'quantile')
+
     def get_dd_stats_dict(self, key_list):
-        self.dd_stats_dict = {}
-        for key in key_list:
-            self.analytics_dict[key].get_dd_stats(key)
-            self.dd_stats_dict[key] = self.analytics_dict[key].dd_stats_data
-            
+        self.dd_stats_dict = self.get_stats_dict(key_list, 'dd')
+
     def get_corr_stats_dict(self, key_list):
-        self.corr_stats_dict = {}
-        for key in key_list:
-            self.analytics_dict[key].get_corr_stats(key)
-            self.corr_stats_dict[key] = self.analytics_dict[key].corr_stats_data 
-    
+        self.corr_stats_dict = self.get_stats_dict(key_list, 'corr')
+
     def get_mkt_stats_dict(self, key_list):
-        self.mkt_stats_dict = {}
-        for key in key_list:
-            self.analytics_dict[key].get_mkt_stats(key)
-            self.mkt_stats_dict[key] = self.analytics_dict[key].mkt_stats_data
-            
+        self.mkt_stats_dict = self.get_stats_dict(key_list, 'mkt')
+
     def get_returns_stats_dict(self, key_list):
-        self.returns_stats_dict = {}
-        for key in key_list:
-            self.analytics_dict[key].get_returns_stats(key)
-            self.returns_stats_dict[key] = self.analytics_dict[key].returns_stats_data
-            
+        self.returns_stats_dict = self.get_stats_dict(key_list, 'returns')
+
+
 class liqAltsReturnsDictAnalytic(returnsDictAnalytic):
     def __init__(self,returns_dict, main_key = 'Monthly', rfr=0.0, target=0.0, 
                  include_bmk=False, bmk_data={}, bmk_key={},
