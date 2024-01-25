@@ -1,0 +1,574 @@
+Index: EquityHedging/datamanager/data_manager.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+># -*- coding: utf-8 -*-\r\n\"\"\"\r\nCreated on Tue Oct  1 17:59:28 2019\r\n\r\n@author: Powis Forjoe, Maddie Choi\r\n\"\"\"\r\n\r\n\r\nimport pandas as pd\r\nimport numpy as np\r\nimport os\r\nfrom datetime import datetime as dt\r\nfrom math import prod\r\nfrom EquityHedging.analytics import summary \r\n\r\n\r\nCWD = os.getcwd()\r\nRETURNS_DATA_FP = CWD +'\\\\EquityHedging\\\\data\\\\'\r\nEQUITY_HEDGING_RETURNS_DATA = RETURNS_DATA_FP + 'ups_equity_hedge\\\\returns_data.xlsx'\r\nNEW_DATA = RETURNS_DATA_FP + 'new_strats\\\\'\r\nUPDATE_DATA = RETURNS_DATA_FP + 'update_strats\\\\'\r\nEQUITY_HEDGE_DATA = RETURNS_DATA_FP + 'ups_equity_hedge\\\\'\r\n\r\nQIS_UNIVERSE = CWD + '\\\\Cluster Analysis\\\\data\\\\'\r\n\r\nNEW_DATA_COL_LIST = ['SPTR', 'SX5T','M1WD', 'Long Corp', 'STRIPS', 'Down Var',\r\n 'Vortex', 'VOLA I', 'VOLA II','Dynamic VOLA','Dynamic Put Spread',\r\n                    'GW Dispersion', 'Corr Hedge','Def Var (Mon)', 'Def Var (Fri)', 'Def Var (Wed)', 'Commodity Basket', 'ESPRSO', 'EVolCon', 'Moments']\r\n\r\ndef merge_dicts(main_dict, new_dict, fillzeros = True):\r\n    \"\"\"\r\n    Merge new_dict to main_dict\r\n    \r\n    Parameters:\r\n    main_dict -- dictionary\r\n    new_dict -- dictionary\r\n\r\n    Returns:\r\n    dictionary\r\n    \"\"\"\r\n    \r\n    # freq_list = ['Daily', 'Weekly', 'Monthly', 'Quarterly', 'Yearly']\r\n    merged_dict = {}\r\n    for key in main_dict:\r\n        df_main = main_dict[key]\r\n        df_new = new_dict[key]\r\n        if key == 'Daily':\r\n            merged_dict[key] = merge_data_frames(df_main, df_new, fillzeros)\r\n        else:\r\n            merged_dict[key] = merge_data_frames(df_main, df_new)\r\n    return merged_dict\r\n\r\ndef merge_data_frames(df_main, df_new,fillzeros=False):\r\n    \"\"\"\r\n    Merge df_new to df_main and drop na values\r\n    \r\n    Parameters:\r\n    df_main -- dataframe\r\n    df_new -- dataframe\r\n\r\n    Returns:\r\n    dataframe\r\n    \"\"\"\r\n    \r\n    df = pd.merge(df_main, df_new, left_index=True, right_index=True, how='left')\r\n    if fillzeros:\r\n        df = df.fillna(0)\r\n    else:\r\n        df.dropna(inplace=True)\r\n    return df\r\n\r\ndef format_data(df_index, freq=\"1M\"):\r\n    \"\"\"\r\n    Format dataframe, by freq, to return dataframe\r\n    \r\n    Parameters:\r\n    df_index -- dataframe\r\n    freq -- string ('1M', '1W', '1D')\r\n    \r\n    Returns:\r\n    dataframe\r\n    \"\"\"\r\n    data = df_index.copy()\r\n    data.index = pd.to_datetime(data.index)\r\n    if not(freq == '1D'):\r\n       data = data.resample(freq).ffill()\r\n    data = data.pct_change(1)\r\n    data.dropna(inplace=True)\r\n    data = data.loc[(data!=0).any(1)]\r\n    return data\r\n\r\ndef get_min_max_dates(df_returns):\r\n    \"\"\"\r\n    Return a dict with the min and max dates of a dataframe.\r\n    \r\n    Parameters:\r\n    df_returns -- dataframe with index dates\r\n    \r\n    Returns:\r\n    dict(key (string), value(dates))\r\n    \"\"\"\r\n    #get list of date index\r\n    dates_list = list(df_returns.index.values)\r\n    dates = {}\r\n    dates['start'] = dt.utcfromtimestamp(dates_list[0].astype('O')/1e9)\r\n    dates['end'] = dt.utcfromtimestamp(dates_list[len(dates_list) - 1].astype('O')/1e9)\r\n    return dates\r\n\r\ndef compute_no_of_years(df_returns):\r\n    \"\"\"\r\n    Returns number of years in a dataframe based off the min and max dates\r\n\r\n    Parameters:\r\n    df_returns -- dataframe with returns\r\n    \r\n    Returns:\r\n    double\r\n    \"\"\"\r\n    \r\n    min_max_dates = get_min_max_dates(df_returns)\r\n    no_of_years = (min_max_dates['end'] - min_max_dates['start']).days/365\r\n    return no_of_years\r\n\r\ndef switch_freq_int(arg):\r\n    \"\"\"\r\n    Return an integer equivalent to frequency in years\r\n    \r\n    Parameters:\r\n    arg -- string ('1D', '1W', '1M')\r\n    \r\n    Returns:\r\n    int of frequency in years\r\n    \"\"\"\r\n    switcher = {\r\n            \"1D\": 252,\r\n            \"1W\": 52,\r\n            \"1M\": 12,\r\n            \"1Q\": 4,\r\n            \"1Y\": 1,\r\n    }\r\n    return switcher.get(arg, 1)\r\n\r\ndef switch_freq_string(arg):\r\n    \"\"\"\r\n    Return an string equivalent to frequency\r\n    eg: swith_freq_string('1D') returns 'Daily'\r\n    \r\n    Parameters:\r\n    arg -- string ('1D', '1W', '1M')\r\n    \r\n    Returns:\r\n    string\r\n    \"\"\"\r\n    switcher = {\r\n            \"1D\": \"Daily\",\r\n            \"1W\": \"Weekly\",\r\n            \"1M\": \"Monthly\",\r\n            \"1Q\": \"Quarterly\",\r\n            \"1Y\": \"Yearly\",\r\n    }\r\n    return switcher.get(arg, 1)\r\n\r\ndef switch_string_freq(arg):\r\n    \"\"\"\r\n    Return an string equivalent to freq\r\n    eg: swith_freq_string('Daily') returns '1D'\r\n\r\n    Parameters:\r\n    arg -- string ('1D', '1W', '1M')\r\n    \r\n    Returns:\r\n    string\r\n    \"\"\"\r\n    switcher = {\r\n            \"Daily\":\"1D\",\r\n            \"Weekly\":\"1W\",\r\n            \"Monthly\":\"1M\",\r\n            \"Quarterly\":\"1Q\",\r\n            \"Yearly\":\"1Y\",\r\n    }\r\n    return switcher.get(arg, 1)\r\n\r\ndef remove_na(df, col_name):\r\n    \"\"\"\r\n    Remove na values from column\r\n        \r\n    Parameters:\r\n    df -- dataframe\r\n    col_name -- string (column name in dataframe)\r\n    \r\n    Returns:\r\n    dataframe\r\n    \"\"\"\r\n    clean_df = pd.DataFrame(df[col_name].copy())\r\n    clean_df.dropna(inplace=True)\r\n    return clean_df\r\n\r\ndef get_freq_ratio(freq1, freq2):\r\n    \"\"\"\r\n    Returns ratio of 2 frequencies\r\n        \r\n    Parameters:\r\n    freq1 -- string\r\n    freq2 -- string\r\n    \r\n    Returns:\r\n    int\r\n    \"\"\"\r\n    \r\n    return round(switch_freq_int(freq1)/switch_freq_int(freq2))\r\n\r\ndef convert_to_freq2(arg, freq1, freq2):\r\n    \"\"\"\r\n    Converts number from freq1 to freq2\r\n    \r\n    Parameters:\r\n    arg -- int\r\n    freq1 -- string\r\n    freq2 -- string\r\n\r\n    Returns:\r\n    int\r\n    \"\"\"\r\n    \r\n    return round(arg / get_freq_ratio(freq1, freq2))\r\n\r\n\r\n\r\ndef get_returns_VRR_Portfolio(returns, notional_weights):\r\n    \"\"\"\r\n    Updates returns to combine VRR2 and VRRTrend returns into VRRPortfolio\r\n    \r\n    Parameters:\r\n    df_returns -- dataframe\r\n    weights -- list\r\n\r\n    Returns:\r\n    dataframe\r\n    \"\"\"   \r\n    #get weights for VRR2 and Trend\r\n    VRR2_weight = notional_weights[4]/(notional_weights[4]+notional_weights[5])\r\n    VRRT_weight =  notional_weights[5]/(notional_weights[4]+notional_weights[5])\r\n    \r\n    #get list of strats to keep columns in order\r\n    strats = list(returns['Monthly'].columns)\r\n    strats[4] = 'VRR Portfolio'\r\n    strats.remove('VRR Trend')\r\n    \r\n    freqs = ['Daily', 'Weekly', 'Monthly', 'Quarterly', 'Yearly']\r\n    for freq in freqs:\r\n        returns[freq]['VRR Portfolio'] = returns[freq]['VRR 2'] * VRR2_weight + returns[freq]['VRR Trend'] * VRRT_weight\r\n        returns[freq].drop(['VRR 2','VRR Trend'],inplace=True,axis=1)\r\n        returns[freq] = returns[freq][strats]\r\n    \r\n    return returns\r\n\r\n        \r\ndef get_notional_weights(df_returns):\r\n    \"\"\"\r\n    Returns list of notional values for stratgies\r\n    \r\n    Parameters:\r\n    df_returns -- dataframe\r\n    \r\n    Returns:\r\n    list\r\n    \"\"\"\r\n    weights = [float(input('notional value (Billions) for ' + col + ': ')) for col in df_returns.columns]\r\n    #df_returns = create_vrr_portfolio(df_returns, weights)\r\n    #weights.append(weights[4]+weights[5])\r\n    #del weights[4:6]\r\n    return weights\r\n\r\ndef create_copy_with_fi(df_returns, equity = 'SPTR', freq='1M', include_fi=False):\r\n    \"\"\"\r\n    Combine columns of df_returns together to get:\r\n    FI Benchmark (avg of Long Corps and STRIPS)\r\n    VOLA (avg of VOLA I and VOLA II)\r\n    Def Var (weighted avg Def Var (Fri): 60%, Def Var (Mon):20%, Def Var (Wed): 20%)\r\n    \r\n    Parameters:\r\n    df_returns -- dataframe\r\n    freq -- string\r\n    \r\n    Returns:\r\n    dataframe\r\n    \"\"\"\r\n    strategy_returns = df_returns.copy()\r\n    \r\n    strategy_returns['VOLA'] = strategy_returns['Dynamic VOLA']\r\n    strategy_returns['Def Var']=strategy_returns['Def Var (Fri)']*.4 + strategy_returns['Def Var (Mon)']*.3+strategy_returns['Def Var (Wed)']*.3\r\n        \r\n    if freq == '1W' or freq == '1M':\r\n        if include_fi:\r\n            strategy_returns['FI Benchmark'] = (strategy_returns['Long Corp'] + strategy_returns['STRIPS'])/2\r\n            strategy_returns = strategy_returns[[equity, 'FI Benchmark',\r\n                                                 'Down Var', 'Vortex', 'VOLA','Dynamic Put Spread',\r\n                                                 'VRR 2', 'VRR Trend', 'GW Dispersion', 'Corr Hedge','Def Var', 'Commodity Basket', 'ESPRSO',\r\n                                                 'EVolCon', 'Moments']]\r\n        else:\r\n            strategy_returns = strategy_returns[[equity, \r\n                                                 'Down Var', 'Vortex', 'VOLA','Dynamic Put Spread',\r\n                                                 'VRR 2', 'VRR Trend', 'GW Dispersion', 'Corr Hedge','Def Var', 'Commodity Basket', 'ESPRSO',\r\n                                                 'EVolCon', 'Moments']]\r\n    else:\r\n        strategy_returns = strategy_returns[[equity, 'Down Var', 'Vortex',\r\n                                             'VOLA','Dynamic Put Spread','VRR 2', 'VRR Trend', \r\n                                             'GW Dispersion', 'Corr Hedge','Def Var', 'Commodity Basket', 'ESPRSO',\r\n                                             'EVolCon', 'Moments']]\r\n    \r\n    return strategy_returns\r\n\r\ndef get_real_cols(df):\r\n    \"\"\"\r\n    Removes empty columns labeled 'Unnamed: ' after importing data\r\n    \r\n    Parameters:\r\n    df -- dataframe\r\n    \r\n    Returns:\r\n    dataframe\r\n    \"\"\"\r\n    real_cols = [x for x in df.columns if not x.startswith(\"Unnamed: \")]\r\n    df = df[real_cols]\r\n    return df\r\n\r\ndef get_equity_hedge_returns(equity='SPTR', include_fi=False, strat_drop_list=[],only_equity=False, all_data=False):\r\n    \"\"\"\r\n    Returns a dictionary of dataframes containing returns data of \r\n    different frequencies\r\n    \r\n    Parameters:\r\n    equity -- dataframe\r\n    include_fi --boolean\r\n    strat_drop_list -- list\r\n    only_equity -- boolean\r\n    \r\n    Returns:\r\n    dictionary\r\n    \"\"\"\r\n    returns_dict = {}\r\n    freqs = ['1D', '1W', '1M', '1Q', '1Y']\r\n    for freq in freqs:\r\n        freq_string = switch_freq_string(freq)\r\n        temp_ret = pd.read_excel(EQUITY_HEDGING_RETURNS_DATA,\r\n                                 sheet_name=freq_string,\r\n                                 index_col=0)\r\n        temp_ret = get_real_cols(temp_ret)\r\n        if all_data:\r\n            returns_dict[freq_string] = temp_ret.copy()\r\n        else:\r\n            returns_dict[freq_string] = create_copy_with_fi(temp_ret, equity, freq, include_fi)\r\n        if strat_drop_list:\r\n            returns_dict[freq_string].drop(strat_drop_list, axis=1, inplace=True)\r\n        if only_equity:\r\n            returns_dict[freq_string] = returns_dict[freq_string][[equity]]\r\n        returns_dict[freq_string].index.names = ['Date']\r\n    \r\n    return returns_dict\r\n\r\ndef get_data_dict(data, data_type='index'):\r\n    \"\"\"\r\n    Converts daily data into a dictionary of dataframes containing returns \r\n    data of different frequencies\r\n    \r\n    Parameters:\r\n    data -- df\r\n    data_type -- string\r\n    \r\n    Returns:\r\n    dictionary\r\n    \"\"\"\r\n    freq_list = ['Daily', 'Weekly', 'Monthly', 'Quarterly', 'Yearly']\r\n    data_dict = {}\r\n    if data_type != 'index':\r\n        try:\r\n            data.index = pd.to_datetime(data.index)\r\n        except TypeError:\r\n            pass\r\n        data = get_prices_df(data)\r\n    for freq_string in freq_list:\r\n        data_dict[freq_string] = format_data(data, switch_string_freq(freq_string))\r\n    return data_dict\r\n\r\ndef get_prices_df(df_returns):\r\n    \"\"\"\"\r\n    Converts returns dataframe to index level dataframe\r\n\r\n    Parameters:\r\n    df_returns -- returns dataframe\r\n\r\n    Returns:\r\n    index price level - dataframe\r\n    \"\"\"\r\n    \r\n    df_prices = df_returns.copy()\r\n    \r\n    for col in df_returns.columns:\r\n        df_prices[col][0] = df_returns[col][0] + 1\r\n    \r\n    for i in range(1, len(df_returns)):\r\n        for col in df_returns.columns:\r\n            df_prices[col][i] = (df_returns[col][i] + 1) * df_prices[col][i-1]\r\n    return df_prices\r\n\r\ndef get_new_strategy_returns_data(report_name, sheet_name, strategy_list=[]):\r\n    \"\"\"\r\n    dataframe of stratgy returns\r\n    \r\n    Parameters:\r\n    report_name -- string\r\n    sheet_name -- string\r\n    strategy_list -- list\r\n    \r\n    Returns:\r\n    dataframe\r\n    \"\"\"\r\n    df_strategy = pd.read_excel(NEW_DATA+report_name, sheet_name=sheet_name, index_col=0)\r\n    df_strategy = get_real_cols(df_strategy)\r\n    if strategy_list:\r\n        df_strategy.columns = strategy_list\r\n    try:\r\n        df_strategy.index = pd.to_datetime(df_strategy.index)\r\n    except TypeError:\r\n        pass\r\n    df_strategy = df_strategy.resample('1D').ffill()\r\n    new_strategy_returns = df_strategy.copy()\r\n    if 'Index' in sheet_name:\r\n        new_strategy_returns = df_strategy.pct_change(1)\r\n    new_strategy_returns.dropna(inplace=True)\r\n    return new_strategy_returns\r\n\r\ndef get_data_to_update(col_list, filename, sheet_name = 'data', put_spread=False):\r\n    '''\r\n    Update data to dictionary\r\n\r\n    Parameters\r\n    ----------\r\n    col_list : list\r\n        List of columns for dict\r\n    filename : string        \r\n    sheet_name : string\r\n        The default is 'data'.\r\n    put_spread : boolean\r\n        Describes whether a put spread strategy is used. The default is False.\r\n\r\n    Returns\r\n    -------\r\n    data_dict : dictionary\r\n        dictionary of the updated data.\r\n\r\n    '''\r\n    #read excel file to dataframe\r\n    data = pd.read_excel(UPDATE_DATA + filename, sheet_name= sheet_name, index_col=0)\r\n    \r\n    #rename column(s) in dataframe\r\n    data.columns = col_list\r\n    \r\n    if put_spread:\r\n        #remove the first row of dataframe\r\n        data = data.iloc[1:,]\r\n    \r\n        #add column into dataframe\r\n        data = data[['99%/90% Put Spread']]\r\n    \r\n        #add price into dataframe\r\n        data = get_prices_df(data)\r\n    \r\n    data_dict = get_data_dict(data)\r\n    return data_dict\r\n\r\ndef add_bps(vrr_dict, strat_name, add_back=.0025):\r\n    '''\r\n    Adds bips back to the returns for the vrr strategy\r\n\r\n    Parameters\r\n    ----------\r\n    vrr_dict : dictionary\r\n        DESCRIPTION.\r\n    add_back : float\r\n        DESCRIPTION. The default is .0025.\r\n\r\n    Returns\r\n    -------\r\n    temp_dict : dictionary\r\n        dictionary of VRR returns with bips added to it\r\n\r\n    '''\r\n    #create empty dictionary\r\n    temp_dict = {}\r\n    \r\n    #iterate through keys of a dictionary\r\n    for key in vrr_dict:\r\n        \r\n        #set dataframe equal to dictionary's key\r\n        temp_df = vrr_dict[key].copy()\r\n        \r\n        #set variable equaly to the frequency of key\r\n        freq = switch_string_freq(key)\r\n        \r\n        #add to dataframe\r\n        temp_df[strat_name] += add_back/(switch_freq_int(freq))\r\n        \r\n        #add value to the temp dictionary\r\n        temp_dict[key] = temp_df\r\n    return temp_dict\r\n\r\ndef merge_dicts_list(dict_list, fillzeros = True):\r\n    '''\r\n    merge main dictionary with a dictionary list\r\n\r\n    Parameters\r\n    ----------\r\n    dict_list : list\r\n\r\n    Returns\r\n    -------\r\n    main_dict : dictionary\r\n        new dictionary created upon being merged with a list\r\n\r\n    '''\r\n    main_dict = dict_list[0]\r\n    dict_list.remove(main_dict)\r\n    #iterate through dictionary \r\n    for dicts in dict_list:\r\n        \r\n        #merge each dictionary in the list of dictionaries to the main\r\n        main_dict = merge_dicts(main_dict,dicts, fillzeros = fillzeros )\r\n    return main_dict\r\n\r\ndef match_dict_columns(main_dict, new_dict):\r\n    '''\r\n    \r\n\r\n    Parameters\r\n    ----------\r\n    main_dict : dictionary\r\n    original dictionary\r\n    new_dict : dictionary\r\n    dictionary that needs to have columns matched to main_dict\r\n    Returns\r\n    -------\r\n    new_dict : dictionary\r\n        dictionary with matched columns\r\n\r\n    '''\r\n    \r\n    #iterate through keys in dictionary\r\n    for key in new_dict:\r\n        \r\n        #set column in the new dictionary equal to that of the main\r\n        new_dict[key] = new_dict[key][list(main_dict[key].columns)]\r\n    return new_dict  \r\n\r\ndef append_dict(main_dict, new_dict):\r\n    '''\r\n    update an original dictionary by adding information from a new one\r\n\r\n    Parameters\r\n    ----------\r\n    main_dict : dictionary      \r\n    new_dict : dictionary        \r\n\r\n    Returns\r\n    -------\r\n    main_dict : dictionary\r\n\r\n    '''\r\n    #iterate through keys in dictionary\r\n    for key in new_dict:\r\n        \r\n        #add value from new_dict to main_dict\r\n        main_dict[key] = main_dict[key].append(new_dict[key])\r\n    return main_dict\r\n\r\ndef create_update_dict():\r\n    '''\r\n    Create a dictionary that updates returns data\r\n\r\n    Returns\r\n    -------\r\n    new_data_dict : Dictionary\r\n        Contains the updated information after adding new returns data\r\n\r\n    '''\r\n    #Import data from bloomberg into dataframe and create dictionary with different frequencies\r\n    new_data_dict = get_data_to_update(NEW_DATA_COL_LIST, 'ups_data.xlsx')\r\n    \r\n    #incorporating swap fee\r\n    new_data_dict = add_bps(new_data_dict, 'Def Var (Mon)', add_back= -0.005)\r\n    new_data_dict = add_bps(new_data_dict, 'Def Var (Wed)', add_back= -0.005)\r\n    new_data_dict = add_bps(new_data_dict, 'Def Var (Fri)', add_back= -0.005)\r\n    new_data_dict = add_bps(new_data_dict, 'GW Dispersion', add_back= -0.002)\r\n    new_data_dict = add_bps(new_data_dict, 'Dynamic VOLA', add_back= -0.0019)\r\n\r\n    \r\n    #get vrr data\r\n    vrr_dict = get_data_to_update(['VRR'], 'vrr_tracks_data.xlsx', sheet_name='VRR')\r\n    vrr2_dict = get_data_to_update(['VRR 2'], 'vrr_tracks_data.xlsx', sheet_name='VRR2')\r\n    vrr_trend_dict = get_data_to_update(['VRR Trend'], 'vrr_tracks_data.xlsx', sheet_name='VRR Trend')\r\n    \r\n    #add back 25 bps\r\n    vrr_dict = add_bps(vrr_dict,'VRR')\r\n    vrr2_dict = add_bps(vrr2_dict,'VRR 2', add_back= 0.0005)\r\n    vrr_trend_dict =add_bps(vrr_trend_dict, 'VRR Trend', add_back= 0.0005)\r\n    \r\n    \r\n    #get put spread data\r\n    #put_spread_dict = get_data_to_update(['99 Rep', 'Short Put', '99%/90% Put Spread'], 'put_spread_data.xlsx', 'Daily', put_spread = True)\r\n    \r\n    #incorporate swap fee to putspread\r\n    new_data_dict = add_bps(new_data_dict, 'Dynamic Put Spread', add_back= -0.0015)\r\n    \r\n    #merge vrr and put spread dicts to the new_data dict\r\n\r\n    new_ups_data_dict = merge_dicts_list([new_data_dict, vrr_dict,vrr2_dict,vrr_trend_dict], fillzeros=False)\r\n\r\n    #get data from returns_data.xlsx into dictionary\r\n    returns_dict = get_equity_hedge_returns(all_data=True)\r\n    \r\n    #set columns in new_data_dict to be in the same order as returns_dict\r\n    new_data_dict = match_dict_columns(returns_dict, new_ups_data_dict)\r\n        \r\n    #return a dictionary\r\n    return new_data_dict\r\n\r\n\r\ndef compound_ret_from_monthly(strat_monthly_returns, strategy):\r\n    monthly_ret = strat_monthly_returns.copy()\r\n    monthly_ret[\"Year\"] = monthly_ret.index.get_level_values('year')\r\n    \r\n    years = np.unique(monthly_ret[\"Year\"])\r\n    yr_ret = []\r\n    for i in range(0, len(years)):\r\n        #isolate monthly returns for single year\r\n        monthly_ret_by_yr = monthly_ret.loc[monthly_ret.Year == years[i]][strategy]\r\n        #calculate compound return\r\n        comp_ret = prod(1 + monthly_ret_by_yr) - 1\r\n        yr_ret.append(comp_ret)\r\n        \r\n    yr_ret = pd.DataFrame( yr_ret, columns = [\"Year\"], index = list(years)) \r\n    return yr_ret\r\n    \r\n\r\n\r\ndef month_ret_table(returns_df, strategy):\r\n    '''\r\n\r\n    Parameters\r\n    ----------\r\n    returns_df : Data Frame\r\n        \r\n    strategy : String\r\n        Strategy name\r\n\r\n    Returns\r\n    -------\r\n    Data Frame\r\n\r\n    '''\r\n    #pull monthly returns from dictionary \r\n    month_ret = pd.DataFrame(returns_df[strategy])\r\n    \r\n    #create monthly return data frame with index of years \r\n    month_ret['year'] = month_ret.index.year\r\n    month_ret['month'] = month_ret.index.month_name().str[:3]\r\n    \r\n    #change monthly returns into a table with x axis as months and y axis as years\r\n    strat_monthly_returns = month_ret.groupby(['year', 'month']).sum()\r\n    yr_ret = compound_ret_from_monthly(strat_monthly_returns, strategy)\r\n       \r\n    month_table = strat_monthly_returns.unstack()\r\n    \r\n    #drop first row index\r\n    month_table = month_table.droplevel(level = 0, axis = 1)\r\n    \r\n    #re order columns\r\n    month_table = month_table[[\"Jan\", \"Feb\", \"Mar\",\"Apr\",\"May\",\"Jun\",\"Jul\",\"Aug\",\"Sep\",\"Oct\",\"Nov\",\"Dec\"]]\r\n    \r\n    #Join yearly returns to the monthly returns table\r\n    table = pd.concat([month_table, yr_ret],  axis=1)\r\n    table.index.names = [strategy]\r\n\r\n    return table\r\n\r\n    \r\n\r\ndef all_strat_month_ret_table(returns_df, notional_weights = [], include_fi = False, new_strat = False, weighted = False):\r\n    '''\r\n    \r\n\r\n    Parameters\r\n    ----------\r\n    returns_df : Data Frame\r\n        Data Frame containing monthly returns data\r\n    strat_list : List\r\n        DESCRIPTION. The default is ['Down Var','VOLA', 'Dynamic Put Spread', 'VRR', 'GW Dispersion','Corr Hedge','Def Var'].\r\n\r\n    Returns\r\n    -------\r\n    month_table : TYPE\r\n        DESCRIPTION.\r\n\r\n    '''\r\n    #make strat list the columns of returns_df\r\n    \r\n    if weighted == True:\r\n        \r\n        #get weighted strats and weighted hedges \r\n        returns_df = summary.get_weighted_data(returns_df,notional_weights,include_fi, new_strat)\r\n        \r\n    \r\n    #create strat list from the columns of the returns data\r\n    strat_list = returns_df.columns\r\n    \r\n    #create moth table dict\r\n    month_table_dict = {}\r\n    \r\n    #loop through each strategy in the list and get the monthly returns table\r\n    for strat in strat_list:\r\n       month_table_dict[strat] = month_ret_table(returns_df, strat)\r\n       #month_table_dict[strat] = month_table_dict[strat][:-1]\r\n    return month_table_dict\r\n\r\n\r\ndef get_new_returns_df(new_ret_df,ret_df):\r\n    #reset both data frames index to make current index (dates) into a column\r\n    new_ret_df.index.names = ['Date']\r\n    new_ret_df.reset_index(inplace = True)\r\n    ret_df.reset_index(inplace=True)\r\n   \r\n    #find difference in dates\r\n    difference = set(new_ret_df.Date).difference(ret_df.Date)\r\n    #find which dates in the new returns are not in the current returns data\r\n    difference_dates = new_ret_df['Date'].isin(difference)\r\n    \r\n    #select only dates not included in original returns df\r\n    new_ret_df = new_ret_df[difference_dates]\r\n    \r\n    #set 'Date' column as index for both data frames\r\n    new_ret_df.set_index('Date', inplace = True)\r\n    ret_df.set_index('Date', inplace = True)\r\n    \r\n    return new_ret_df\r\n\r\ndef check_returns(returns_dict):\r\n    #if the last day of the month is earlier than the last row in weekly returns then drop last row of weekly returns\r\n    if returns_dict['Monthly'].index[-1] < returns_dict['Weekly'].index[-1] :\r\n        returns_dict['Weekly'] = returns_dict['Weekly'][:-1]\r\n    \r\n    \r\n    if returns_dict['Monthly'].index[-1] < returns_dict['Quarterly'].index[-1] :\r\n        returns_dict['Quarterly'] = returns_dict['Quarterly'][:-1]\r\n        \r\n    return returns_dict    \r\n\r\n\r\ndef update_returns_data():\r\n    \r\n    #get data from returns_data.xlsx into dictionary\r\n    returns_dict = get_equity_hedge_returns(all_data=True)\r\n\r\n    #create dictionary that contains updated returns\r\n    new_data_dict = create_update_dict()\r\n\r\n    for key in returns_dict:\r\n        #create returns data frame\r\n        new_ret_df = new_data_dict[key].copy()\r\n        ret_df = returns_dict[key].copy()\r\n        \r\n        #update current year returns \r\n        if key == 'Yearly':\r\n            if ret_df.index[-1] == new_ret_df.index[-1]:\r\n                ret_df = ret_df[:-1]\r\n        #get new returns df       \r\n        new_ret_df = get_new_returns_df(new_ret_df, ret_df)\r\n        returns_dict[key] = ret_df.append(new_ret_df)\r\n    \r\n    returns_dict = check_returns(returns_dict)\r\n    return returns_dict\r\n\r\n\r\n\r\n#Note: this is essentially test/pseudocode to see if this is the objective/what youre looking for\r\n# right now it is adding strategy name to column list through append... this can be an issue if you run multiple times\r\n# --> quick solution, add strategy name straight to colum list variable at top\r\ndef add_new_strat_to_returns_data(new_strat_name= '', filename = '', sheet_name=''):\r\n    new_strat = pd.read_excel('C:\\\\Users\\\\PCR7FJW\\\\Documents\\\\RMP\\\\EquityHedging\\\\data\\\\new_strats\\\\' + 'evolcon.xlsx',\r\n                                           sheet_name = 'Sheet1', index_col=0)\r\n    \r\n    data = pd.read_excel('C:\\\\Users\\\\PCR7FJW\\\\Documents\\\\RMP\\\\EquityHedging\\\\data\\\\update_strats\\\\' + 'ups_data.xlsx', sheet_name= 'data', index_col=0)\r\n    total_data = merge_data_frames(data, new_strat)\r\n    #NEW_DATA_COL_LIST.append(new_strat_name)\r\n    total_data.columns = NEW_DATA_COL_LIST\r\n    \r\n    data_dict = get_data_dict(total_data)\r\n    \r\n    return data_dict
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/EquityHedging/datamanager/data_manager.py b/EquityHedging/datamanager/data_manager.py
+--- a/EquityHedging/datamanager/data_manager.py	
++++ b/EquityHedging/datamanager/data_manager.py	
+@@ -11,7 +11,7 @@
+ import os
+ from datetime import datetime as dt
+ from math import prod
+-from EquityHedging.analytics import summary 
++# from EquityHedging.analytics import summary
+ 
+ 
+ CWD = os.getcwd()
+@@ -683,45 +683,6 @@
+ 
+     return table
+ 
+-    
+-
+-def all_strat_month_ret_table(returns_df, notional_weights = [], include_fi = False, new_strat = False, weighted = False):
+-    '''
+-    
+-
+-    Parameters
+-    ----------
+-    returns_df : Data Frame
+-        Data Frame containing monthly returns data
+-    strat_list : List
+-        DESCRIPTION. The default is ['Down Var','VOLA', 'Dynamic Put Spread', 'VRR', 'GW Dispersion','Corr Hedge','Def Var'].
+-
+-    Returns
+-    -------
+-    month_table : TYPE
+-        DESCRIPTION.
+-
+-    '''
+-    #make strat list the columns of returns_df
+-    
+-    if weighted == True:
+-        
+-        #get weighted strats and weighted hedges 
+-        returns_df = summary.get_weighted_data(returns_df,notional_weights,include_fi, new_strat)
+-        
+-    
+-    #create strat list from the columns of the returns data
+-    strat_list = returns_df.columns
+-    
+-    #create moth table dict
+-    month_table_dict = {}
+-    
+-    #loop through each strategy in the list and get the monthly returns table
+-    for strat in strat_list:
+-       month_table_dict[strat] = month_ret_table(returns_df, strat)
+-       #month_table_dict[strat] = month_table_dict[strat][:-1]
+-    return month_table_dict
+-
+ 
+ def get_new_returns_df(new_ret_df,ret_df):
+     #reset both data frames index to make current index (dates) into a column
+Index: EquityHedging/analytics/summary.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+># -*- coding: utf-8 -*-\r\n\"\"\"\r\nCreated on Tue Oct  1 17:59:28 2019\r\n\r\n@author: Powis Forjoe, Maddie Choi, and Zach Wells\r\n\"\"\"\r\n\r\nimport pandas as pd\r\nfrom ..datamanager import data_manager as dm\r\nfrom .hedge_metrics import get_hedge_metrics\r\nfrom .import util\r\nfrom .returns_stats import get_return_stats\r\nfrom .corr_stats import get_corr_analysis\r\nfrom .historical_selloffs import get_hist_sim_table\r\nfrom .rolling_cum import get_rolling_cum\r\n\r\n\r\ndef get_analysis(df_returns, notional_weights=[], include_fi=False, new_strat=False, freq='1M', weighted = False):\r\n    \"\"\"\r\n    Returns a dictionary of dataframes containing:\r\n    1. Return Statistics\r\n    2. Hedge Framework Metrics\r\n    \r\n    Parameters\r\n    ----------\r\n    df_returns : dataframe\r\n        dataframe of returns\r\n    notional_weights : list, optional\r\n        notional weights of strategies. The default is [].\r\n    include_fi : boolean, optional\r\n        Include Fixed Income benchmark. The default is False.\r\n    new_strat : boolean, optional\r\n        Does analysis involve a new strategy. The default is False.\r\n    freq : string, optional\r\n        frequency. The default is '1M'.\r\n    weighted : boolean, optional\r\n        Include weighgted hedges and weighgted strats. The default is False.\r\n\r\n    Returns\r\n    -------\r\n    dict\r\n        dictionary containing:\r\n           return_stats: dataframe\r\n               dataframe containg returns stats of each strategy from df_returns\r\n           hedge_metrics: dataframe\r\n               dataframe containg hedge metrics of each strategy from df_returns\r\n\r\n    \"\"\"\r\n    \r\n    col_list = list(df_returns.columns)\r\n    # analysis_dict = {}\r\n    \r\n    #if weighted, compute weighted hedges and strats\r\n    if weighted:\r\n        df_weighted_returns = get_weighted_data(df_returns,notional_weights,include_fi,new_strat)\r\n        \r\n        # Create pandas DataFrame for return statistics\r\n        df_return_stats = get_return_stats(df_weighted_returns, freq)\r\n    else:\r\n        # Create pandas DataFrame for return statistics\r\n        df_return_stats = get_return_stats(df_returns, freq)\r\n        \r\n        \r\n    # remove the weighted strats from the dataframe\r\n    if weighted:\r\n        df_weighted_strats = util.get_weighted_strats_df(df_returns, notional_weights, include_fi, new_strat)\r\n        hedge_returns = df_weighted_returns.copy()\r\n    \r\n        #remove weighted strats col\r\n        hedge_returns.drop([df_weighted_strats.columns[0]],axis=1,inplace=True)\r\n    \r\n    #remove weighted strats w/o new strat cols if in the df\r\n        if new_strat:\r\n            hedge_returns.drop([df_weighted_strats.columns[1]],axis=1,inplace=True)\r\n    else:\r\n        hedge_returns = df_returns.copy()\r\n        \r\n    #remove fi benchmark col if in the df\r\n    if include_fi:\r\n        hedge_returns.drop([col_list[1]],axis=1,inplace=True)\r\n    \r\n    # Create pandas DataFrame for hedge metrics\r\n    df_hedge_metrics = get_hedge_metrics(hedge_returns,freq)\r\n    \r\n    #remove equity col\r\n    df_hedge_metrics.drop([col_list[0]],axis=1,inplace=True)\r\n    \r\n    #remove decay metrics if frequency is 1M, 1Q, 1Y\r\n    if dm.switch_freq_int(freq) <= 12:\r\n        df_hedge_metrics.drop(['Decay Days (50% retrace)','Decay Days (25% retrace)',\r\n                             'Decay Days (10% retrace)'],inplace=True)\r\n    \r\n    #remove recovery metrics if frequency is 1M, 1Q, 1Y    \r\n    if dm.switch_freq_int(freq) <= 12:\r\n        df_return_stats.drop(['Recovery'],inplace=True)    \r\n\r\n        \r\n        \r\n    return {'return_stats':df_return_stats, 'hedge_metrics':df_hedge_metrics}\r\n\r\ndef get_analysis_sheet_data(df_returns, notional_weights=[], include_fi=False, new_strat=False,freq='1M', weighted=False):\r\n    \"\"\"\r\n    Returns data for analysis excel sheet into a dictionary\r\n\r\n    Parameters\r\n    ----------\r\n    df_returns : dataframe\r\n        dataframe of returns\r\n    notional_weights : list, optional\r\n        notional weights of strategies. The default is [].\r\n    include_fi : boolean, optional\r\n        Include Fixed Income benchmark. The default is False.\r\n    new_strat : boolean, optional\r\n        Does analysis involve a new strategy. The default is False.\r\n    freq : string, optional\r\n        frequency. The default is '1M'.\r\n    weighted : boolean, optional\r\n        Include weighgted hedges and weighgted strats. The default is False.\r\n\r\n    Returns\r\n    -------\r\n    dict\r\n       dictionary containing:\r\n           df_list: list\r\n               a list of dataframes:\r\n                   correlations, portfolio weightings, returns_stats, hedge_metrics\r\n           title_list: list\r\n               a list containing titles of each of the dataframes\r\n\r\n    \"\"\"\r\n    #create list of df_returns column names\r\n    col_list = list(df_returns.columns)\r\n    \r\n    #convert freq to string\r\n    freq_string = dm.switch_freq_string(freq)\r\n    \r\n    #get notional weights for weighted strategy returns if not accurate\r\n    if weighted:\r\n        notional_weights = util.check_notional(df_returns, notional_weights)\r\n    \r\n    #compute correlations\r\n    corr_dict = get_corr_analysis(df_returns, notional_weights, include_fi, weighted)\r\n    \r\n    #compute return stats and hedge metrics\r\n    analytics_dict = get_analysis(df_returns, notional_weights, include_fi, new_strat, freq,weighted)\r\n    \r\n    #compute portfolio weightings    \r\n    df_weights = []\r\n    weightings_title = ''\r\n    if weighted:\r\n        df_weights = util.get_df_weights(notional_weights, col_list, include_fi)\r\n        weightings_title = 'Portfolio Weightings'\r\n    \r\n    #store analytics and respective titles in lists\r\n    df_list = [corr_dict[\"full\"][0], corr_dict[\"equity_down\"][0], \r\n               corr_dict[\"equity_up\"][0], df_weights, analytics_dict['return_stats'],analytics_dict['hedge_metrics']]\r\n    \r\n    title_list = [corr_dict[\"full\"][1], corr_dict[\"equity_down\"][1], \r\n               corr_dict[\"equity_up\"][1], weightings_title,\r\n               'Return Statistics ({} Returns)'.format(freq_string),\r\n               'Hedging Framework Metrics ({} Returns)'.format(freq_string)]\r\n    \r\n    return {'df_list': df_list,'title_list': title_list}\r\n\r\n#TODO: Ask powis if this makes sense bc notional only when weighted so do we need to have  2 seperate normal_dict\r\ndef get_normal_sheet_data(df_returns, notional_weights=[], freq='1W', drop_bmk=True, weighted=False):\r\n\r\n    #get notional weights for weighted strategy returns if not accurate\r\n    if weighted:\r\n        notional_weights = util.check_notional(df_returns, notional_weights)\r\n    \r\n    normal_dict = get_norm_hedge_metrics(df_returns, notional_weights, freq, drop_bmk, weighted)\r\n    \r\n    #store analytics and respective titles in lists\r\n    df_list = [normal_dict['Hedge Metrics'], normal_dict['Normalized Data']]\r\n \r\n    \r\n    title_list = ['Hedging Framework Metrics', 'Normalized Hedge Metrics']\r\n    \r\n    return {'df_list': df_list,'title_list': title_list}\r\n\r\ndef get_data(returns_dict, notional_weights,weighted,freq_list=['Monthly', 'Weekly'],include_fi=False, new_strat=False):\r\n    \"\"\"\r\n    Returns a dictionary containing:\r\n        correlation data\r\n        analytics data\r\n        historical selloffs data\r\n        quintile data\r\n        annual $ returns data\r\n        \r\n    Parameters\r\n    ----------\r\n    returns_dict : dict\r\n        dictionary of returns data by frequencies.\r\n    notional_weights : list\r\n        notional weights of strategies.\r\n    weighted : list\r\n        [True,False].\r\n    freq_list : list, optional\r\n        list of frequencies:\r\n            'Daily', 'Weekly', 'Monthly'. The default is ['Monthly', 'Weekly']\r\n    include_fi : boolean, optional\r\n        Include Fixed Income benchmark. The default is False.\r\n    new_strat : boolean, optional\r\n        Does analysis involve a new strategy. The default is False.\r\n    \r\n    Returns\r\n    -------\r\n    dictionary containing:\r\n           corr_dict: dictionary\r\n           analytics_dict: dictionary\r\n           hist_dict: dictionary\r\n           quintile_df: dataframe\r\n           annual_df: dataframe\r\n           \r\n    \"\"\"\r\n    \r\n    #compute correation, analytics, historical selloffs, quintile and annual dollar returns datasets\r\n    corr_dict = get_corr_data(returns_dict, freq_list, weighted, notional_weights, include_fi)\r\n    analytics_dict = get_analytics_data(returns_dict,['Monthly', 'Weekly'],weighted,notional_weights, include_fi,new_strat)\r\n    hist_dict = get_hist_data(returns_dict,notional_weights, weighted)\r\n    quintile_df = get_grouped_data(returns_dict, notional_weights)\r\n    annual_df = get_annual_dollar_returns(returns_dict, notional_weights)\r\n    \r\n    #return a dictionary containing the data\r\n    return {'corr':corr_dict, 'analytics':analytics_dict, 'hist':hist_dict,\r\n            'quintile': quintile_df, 'annual_returns':annual_df}\r\n\r\ndef get_percentile(returns_df , bucket_format=util.bucket , group='Quintile', bucket_size = 5, strat='equity'):\r\n    \"\"\"\r\n    Computes Quintile or Decile based  on the given input. \r\n    \r\n    Parameters\r\n    ----------\r\n    df : data frame\r\n        returns data for given frequency \r\n    group : string\r\n        Quintile or Decile\r\n    bucket_format : method\r\n        which formatting method to use when computing quintile or decile\r\n    bucket_size : int\r\n        how many buckets will returns data be divided into\r\n\r\n    Returns\r\n    -------\r\n    groups : TYPE\r\n        DESCRIPTION.\r\n\r\n    \"\"\"\r\n    df = returns_df.copy()\r\n    col_list = list(df.columns)\r\n    if strat == 'equity':\r\n        strat = col_list[0]\r\n    else:\r\n        col_list.remove(strat)\r\n        col_list = [strat]+col_list\r\n        df = df[col_list]\r\n    df['percentile'] = df[strat].rank(pct = True).mul(bucket_size)\r\n    df[group] = df['percentile'].apply(bucket_format)\r\n    groups= df.groupby(group).mean()\r\n    groups = groups.sort_values(by=[strat], ascending=True)\r\n    groups.drop(['percentile'], axis=1, inplace=True)\r\n    groups.index.names = [strat + ' Monthly Returns Ranking']\r\n    return groups\r\n\r\n#TODO: Add frequency (Monthly, Weekly)  \r\ndef get_grouped_data(returns_dict, notional_weights=[], weighted=False, group='Quintile', strat='equity'):\r\n    \"\"\"\r\n    Returns a dataframe containing average returns of each strategy grouped \r\n    into quintiles based on the equity returns ranking.\r\n    \r\n    Parameters\r\n    ----------\r\n    returns_dict : dict\r\n        dictionary of returns data by frequencies.\r\n    notional_weights : list, optional\r\n        notional weights of strategies. The default is [].\r\n    weighted : boolean, optional\r\n        Include weighgted hedges and weighgted strats. The default is False.\r\n    \r\n    Returns\r\n    -------\r\n    quintile: dataframe\r\n        quinitle analysis data\r\n\r\n    \"\"\"\r\n    \r\n    df = returns_dict['Monthly'].copy()\r\n    \r\n    if weighted == True:\r\n        util.check_notional(df, notional_weights)\r\n        df = util.get_weighted_hedges(df, notional_weights)\r\n            \r\n    if group == 'Quintile':       \r\n        quintile = get_percentile(df, strat=strat)\r\n        return quintile\r\n    \r\n    elif group == 'Decile':\r\n        decile = get_percentile(df, util.decile_bucket , group, 10,strat)\r\n        return decile\r\n    \r\ndef get_corr_data(returns_dict, freq_list=['Monthly', 'Weekly'], weighted=[False], notional_weights=[], include_fi = False):\r\n    \"\"\"\r\n    Returns a dataframe containing correlations data\r\n    \r\n    Parameters\r\n    ----------\r\n    returns_dict : dict\r\n        dictionary of returns data by frequencies.\r\n   freq_list : list, optional\r\n        list of frequencies:\r\n            'Daily', 'Weekly', 'Monthly'. The default is ['Monthly', 'Weekly']\r\n    weighted : list, optional\r\n        [True,False]. The default is [False].\r\n     notional_weights : list\r\n        notional weights of strategies. The default is [].\r\n    include_fi : boolean, optional\r\n        Include Fixed Income benchmark. The default is False.\r\n\r\n    Returns\r\n    -------\r\n    corr_data : dataframe\r\n        correlation data.\r\n\r\n    \"\"\"\r\n    \r\n    corr_data = {}\r\n\r\n    if True in weighted:\r\n        notional_weights = util.check_notional(returns_dict['Monthly'], notional_weights)\r\n    \r\n    for freq in freq_list:\r\n        return_df = returns_dict[freq].copy()\r\n        temp_corr_data = {}\r\n        for w in weighted:\r\n            temp_corr_data[w] = get_corr_analysis(return_df, notional_weights, include_fi, w)\r\n        corr_data[freq] = temp_corr_data\r\n    return corr_data\r\n\r\ndef get_analytics_data(returns_dict, freq_list=['Monthly', 'Weekly'], weighted=[False], notional_weights=[], include_fi = False, new_strat=False):\r\n    \"\"\"\r\n    Returns a dataframe containing analytics data\r\n    \r\n    Parameters\r\n    ----------\r\n    returns_dict : dict\r\n        dictionary of returns data by frequencies.\r\n    freq_list : list, optional\r\n        list of frequencies:\r\n            'Daily', 'Weekly', 'Monthly'. The default is ['Monthly', 'Weekly']\r\n    weighted : list, optional\r\n        [True,False]. The default is [False].\r\n    notional_weights : list, optional\r\n        notional weights of strategies. The default is [].\r\n    include_fi : boolean, optional\r\n        Include Fixed Income benchmark. The default is False.\r\n    new_strat : boolean, optional\r\n        Does analysis involve a new strategy. The default is False.\r\n\r\n    Returns\r\n    -------\r\n    analytics_data : dictionary\r\n        analytics data.\r\n\r\n    \"\"\"\r\n    \r\n    analytics_data = {}\r\n    \r\n\r\n#TODO: fix to run when weighted has a true element is in the list and when weighted is true and false\r\n\r\n    if True in weighted:\r\n        notional_weights = util.check_notional(returns_dict['Monthly'], notional_weights)\r\n    \r\n    for freq in freq_list:\r\n        return_df = returns_dict[freq].copy()\r\n        temp_analytics_data = {}\r\n        \r\n        for w in weighted:\r\n            temp_analytics_data[w] = get_analysis(return_df, notional_weights, include_fi, new_strat,\r\n                                                       dm.switch_string_freq(freq),w)\r\n        analytics_data[freq] = temp_analytics_data\r\n    return analytics_data\r\n\r\ndef get_hist_data(returns_dict, notional_weights=[], weighted=[False]):\r\n    \"\"\"\r\n    Returns a dictionary containing historical selloff data\r\n\r\n    Parameters\r\n    ----------\r\n    returns_dict : dictionary\r\n        dictionary of returns data by frequencies.\r\n    notional_weights : list, optional\r\n        notional weights of strategies. The default is [].\r\n    weighted : list, optional\r\n        [True,False]. The default is [False].\r\n\r\n    Returns\r\n    -------\r\n    hist_data : dictionary\r\n        historical selloff data.\r\n\r\n    \"\"\"\r\n    daily = returns_dict['Daily'].copy()\r\n    hist_data = {}\r\n    for w in weighted:\r\n        hist_data[w] = get_hist_sim_table(daily, notional_weights, w)\r\n    \r\n    return hist_data\r\n\r\ndef get_annual_dollar_returns(returns_dict, notional_weights, new_strat=False):\r\n    \"\"\"\r\n    Returns a dataframe containing annual $ returns for each strategy.\r\n    \r\n    Parameters\r\n    ----------\r\n    returns_dict : dict\r\n        dictionary of returns data by frequencies.\r\n    notional_weights : list, optional\r\n        notional weights of strategies. The default is [].\r\n    new_strat : boolean, optional\r\n        Does analysis involve a new strategy. The default is False.\r\n    \r\n    Returns\r\n    -------\r\n    annual_returns: dataframe\r\n        annual $ returns data\r\n\r\n    \"\"\"\r\n    \r\n    #get annual returns data\r\n    annual_returns = returns_dict['Yearly'].copy()\r\n    \r\n    #confirm notional weights is correct len\r\n    notional_weights = util.check_notional(annual_returns, notional_weights)\r\n    \r\n    #compute annual returns for strategies\r\n    col_list = annual_returns.columns.to_list()\r\n    for i in range(len(notional_weights)):\r\n        annual_returns[annual_returns.columns[i]] *= notional_weights[i]*1E9\r\n    annual_returns = annual_returns[(annual_returns.select_dtypes('float').columns)[1:]]\r\n    \r\n    #compute annual returns for Tail Risk Program and add to annual_returns dataframe\r\n    sum_column = 0\r\n    col_list = col_list[1:]\r\n    for col in col_list:\r\n        sum_column += annual_returns[col]\r\n    if new_strat:\r\n        sum_column -= annual_returns[col_list[len(col_list)-1]]\r\n    annual_returns['Tail Risk Program'] = sum_column\r\n    col_list.insert(0,'Tail Risk Program')\r\n    annual_returns = annual_returns[col_list]\r\n    annual_returns.index.names = ['Year']\r\n    return annual_returns\r\n\r\ndef get_dollar_returns_data(returns_dict, notional_weights, new_strat_bool):\r\n    \"\"\"\r\n    \"\"\"\r\n    \r\n    ann_ret_dict = {}\r\n    for s in new_strat_bool:\r\n        ann_ret_dict[s] = get_annual_dollar_returns(returns_dict, notional_weights, s)\r\n    return ann_ret_dict\r\n\r\n#TODO: make flexible to compute corrs w/o weighted strats/hedges\r\ndef get_rolling_cum_data(df_returns, freq='1W', notional_weights=[]):\r\n    \"\"\"\r\n    Returns a dictionary of rolling cumulatiuve returns for different intervals\r\n\r\n    Parameters\r\n    ----------\r\n    df_returns : dataframe\r\n        DESCRIPTION.\r\n    freq : string, optional\r\n        '1W' or '1D'. The default is '1W'\r\n    notional_weights : list, optional\r\n        notional weights of strategies. The default is [].\r\n\r\n    Returns\r\n    -------\r\n    dict\r\n        dictionary containing dataframes\r\n\r\n    \"\"\"\r\n\r\n    if freq == '1W' or freq == '1D':\r\n        strategy_returns = df_returns.copy()\r\n        \r\n        #confirm notional weights is correct len\r\n        notional_weights = util.check_notional(df_returns, notional_weights)\r\n        \r\n        #compute weighted hedges\r\n        strat_weights = [weight/notional_weights[0] for weight in notional_weights]\r\n        strat_weights[0] = 0\r\n        strategy_returns['Weighted Hedges'] = strategy_returns.dot(tuple(strat_weights))\r\n        \r\n        #get rolling cumulative returns\r\n        rolling_cum_threemonths = get_rolling_cum(strategy_returns, interval=13)\r\n        rolling_cum_sixmonths = get_rolling_cum(strategy_returns, interval=26)\r\n        rolling_cum_annual = get_rolling_cum(strategy_returns, interval=52)\r\n        \r\n        return {'3M': rolling_cum_threemonths,\r\n                '6M': rolling_cum_sixmonths,\r\n                '1Y': rolling_cum_annual}\r\n    else:\r\n        print('Frequency of data has to be weekly to run this function')\r\n        \r\ndef get_weighted_data(df_returns, notional_weights=[], include_fi=False, new_strat=False):\r\n    \"\"\"\r\n    Returns dataframe containg df_returns plus the weighted strats and hedges data\r\n\r\n    Parameters\r\n    ----------\r\n    df_returns : dataframe\r\n        dataframe of returns\r\n    notional_weights : list, optional\r\n        notional weights of strategies. The default is [].\r\n    include_fi : boolean, optional\r\n        Include Fixed Income benchmark. The default is False.\r\n    new_strat : boolean, optional\r\n        Does analysis involve a new strategy. The default is False.\r\n\r\n    Returns\r\n    -------\r\n    df_weighted_returns : dataframe\r\n\r\n    \"\"\"\r\n    \r\n    #confirm notional weights is correct len\r\n    notional_weights = util.check_notional(df_returns, notional_weights)\r\n    \r\n    #Get weighted strategies with and without new strategy (if new_strat = True)\r\n    df_weighted_strats = util.get_weighted_strats_df(df_returns, notional_weights, include_fi,\r\n                                                  new_strat)\r\n\r\n    #merge weighted_strats with returns with and \r\n    #without new strategy (weighted_strats_old)\r\n    df_weighted_returns = pd.merge(df_returns, df_weighted_strats, left_index=True, \r\n                                   right_index=True, how='outer')\r\n    \r\n    #Get weighted hedges with and without new strategy (if new_strat = True)\r\n    df_weighted_hedges = util.get_weighted_hedges(df_returns, notional_weights, include_fi,new_strat)\r\n    \r\n    #merge weighted hedges with weighted returns\r\n    df_weighted_hedges.drop(list(df_returns.columns), axis=1, inplace=True)\r\n    df_weighted_returns = pd.merge(df_weighted_returns, df_weighted_hedges, left_index=True, \r\n                                   right_index=True, how='outer')\r\n    return df_weighted_returns\r\n\r\ndef get_norm_hedge_metrics(df_returns, notional_weights=[], freq='1W', drop_bmk=True, weighted=False, more_metrics=False):\r\n    \"\"\"\r\n    Returns dictionary with hedge metrics and normalized scores\r\n\r\n    Parameters\r\n    ----------\r\n    df_returns : dataframe\r\n    drop_bmk : boolean, optional\r\n        drop benchmark or not. The default is False.\r\n    notional_weights : list, optional\r\n        List with notional weights for each strategy. The default is [].\r\n    weighted : boolean, optional\r\n        The default is False.\r\n\r\n    Returns\r\n    -------\r\n    dictionary\r\n    \r\n    \"\"\"\r\n    \r\n    if weighted:\r\n         df_returns = util.get_weighted_hedges(df_returns, notional_weights)\r\n         \r\n    #calculates hedgemetrics \r\n    df_hm = get_hedge_metrics(df_returns, freq, full_list=False)\r\n    \r\n    #drop the first column (aka the benchmark) if drop_bmk=True\r\n    if drop_bmk:\r\n        df_hm.drop(df_hm.columns[0], axis = 1,inplace=True)\r\n\r\n    df_hm = df_hm.transpose()\r\n    \r\n    col_to_reverse = ['Downside Reliability','Tail Reliability','Non Tail Reliability']\r\n    \r\n    #converts down reliability metrics from negative to positive in order to correctly rank them\r\n    if more_metrics:\r\n        df_norm_hm = df_hm.copy()\r\n        for col in col_to_reverse:\r\n            df_norm_hm = util.reverse_signs_in_col(df_norm_hm,col)\r\n    else:\r\n        df_norm_hm = util.reverse_signs_in_col(df_hm,'Downside Reliability')\r\n        df_norm_hm.drop(['Average Return','Tail Reliability','Non Tail Reliability'], axis=1, inplace=True)\r\n        df_hm.drop(['Average Return','Tail Reliability','Non Tail Reliability'], axis=1, inplace=True)\r\n    \r\n    #normalizes the data\r\n    df_norm_hm = util.get_normalized_data(df_norm_hm)\r\n    \r\n    #create dict with hedge met and normalized data\r\n    return {'Hedge Metrics': df_hm, 'Normalized Data': df_norm_hm}\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/EquityHedging/analytics/summary.py b/EquityHedging/analytics/summary.py
+--- a/EquityHedging/analytics/summary.py	
++++ b/EquityHedging/analytics/summary.py	
+@@ -13,6 +13,7 @@
+ from .corr_stats import get_corr_analysis
+ from .historical_selloffs import get_hist_sim_table
+ from .rolling_cum import get_rolling_cum
++from ..datamanager.data_manager import month_ret_table
+ 
+ 
+ def get_analysis(df_returns, notional_weights=[], include_fi=False, new_strat=False, freq='1M', weighted = False):
+@@ -596,3 +597,41 @@
+     
+     #create dict with hedge met and normalized data
+     return {'Hedge Metrics': df_hm, 'Normalized Data': df_norm_hm}
++
++
++def all_strat_month_ret_table(returns_df, notional_weights = [], include_fi = False, new_strat = False, weighted = False):
++    '''
++
++
++    Parameters
++    ----------
++    returns_df : Data Frame
++        Data Frame containing monthly returns data
++    strat_list : List
++        DESCRIPTION. The default is ['Down Var','VOLA', 'Dynamic Put Spread', 'VRR', 'GW Dispersion','Corr Hedge','Def Var'].
++
++    Returns
++    -------
++    month_table : TYPE
++        DESCRIPTION.
++
++    '''
++    #make strat list the columns of returns_df
++
++    if weighted == True:
++
++        #get weighted strats and weighted hedges
++        returns_df = get_weighted_data(returns_df,notional_weights,include_fi, new_strat)
++
++
++    #create strat list from the columns of the returns data
++    strat_list = returns_df.columns
++
++    #create moth table dict
++    month_table_dict = {}
++
++    #loop through each strategy in the list and get the monthly returns table
++    for strat in strat_list:
++       month_table_dict[strat] = month_ret_table(returns_df, strat)
++       #month_table_dict[strat] = month_table_dict[strat][:-1]
++    return month_table_dict
+Index: EquityHedging/scripts/script.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+># -*- coding: utf-8 -*-\r\n\"\"\"\r\nCreated on Sat Apr 24 00:21:46 2021\r\n\r\n@author: Powis Forjoe, Zach Wells and Maddie Choi\r\n\"\"\"\r\nimport os\r\n\r\n#os.chdir('..\\..')\r\n\r\n#import libraries\r\nfrom EquityHedging.datamanager import data_manager as dm\r\nfrom EquityHedging.analytics.util import get_df_weights\r\nfrom EquityHedging.analytics import summary\r\nfrom EquityHedging.reporting.excel import reports as rp\r\nfrom EquityHedging.reporting import formatter as plots\r\n\r\n#import returns data\r\nequity_bmk = 'SPTR'\r\ninclude_fi = False\r\nweighted = [True, False]\r\nstrat_drop_list = ['Vortex']\r\nnew_strat = True\r\nreturns= dm.get_equity_hedge_returns(equity_bmk, include_fi, strat_drop_list)\r\n\r\n#Add new strat\r\nnew_strat = False\r\nif new_strat:\r\n    strategy_list = ['MACQ Macro TH']\r\n    filename = 'macro_th_index_levels.xlsx'\r\n    sheet_name = 'Sheet1'\r\n    new_strategy = dm.get_new_strategy_returns_data(filename, sheet_name, strategy_list)\r\n    new_strategy_dict = dm.get_data_dict(new_strategy, data_type='index')\r\n    returns = dm.merge_dicts(returns, new_strategy_dict)\r\n\r\n\r\n#get notional weights\r\n#notional_weights = dm.get_notional_weights(returns['Monthly'])\r\nnotional_weights = [11, 1, 1.25, 1, 0.75, 0.25, 1, .25, 1, 1, 0.4, 1,1]\r\n#notional_weights = [11, 1.25, 1, 1, 1, .25, 1, 1, 0.4, 1, 1]\r\nreturns = dm.get_returns_VRR_Portfolio(returns, notional_weights)\r\nnotional_weights[4:6] = [notional_weights[4] + notional_weights[5]]\r\ndf_weights = get_df_weights(notional_weights, list(returns['Monthly'].columns), include_fi)\r\n\r\n\r\n#compute correlations\r\ncheck_corr = False\r\nif check_corr:\r\n    corr_freq_list = ['Daily', 'Weekly', 'Monthly']\r\n    corr_dict = summary.get_corr_data(returns, corr_freq_list, weighted, notional_weights, include_fi)\r\n    data = corr_dict['Monthly']\r\n    corr_df = data[0]['full'][0]\r\n    plots.draw_corrplot(corr_df)\r\n    plots.draw_heatmap(corr_df, False)\r\n\r\n#compute analytics\r\n# import time\r\n# start = time.time()\r\ncheck_analysis = False\r\nif check_analysis:\r\n    analytics_freq_list = ['Weekly', 'Monthly']\r\n    analytics_dict = summary.get_analytics_data(returns,analytics_freq_list,weighted,notional_weights,include_fi,new_strat)\r\n\r\n# end = time.time()\r\n# print(end - start)\r\n\r\n#compute historical selloffs\r\ncheck_hs = False\r\nif check_hs:\r\n    hist_dict = summary.get_hist_data(returns,notional_weights, weighted)\r\n\r\n#get quintile dataframe\r\ncheck_quint = False\r\nif check_quint:\r\n    quintile_df = summary.get_grouped_data(returns, notional_weights, True, group='Quintile')\r\n\r\n#get annual dollar returns dataframe\r\ncheck_ann = False\r\nif check_ann:\r\n    annual_dollar_returns = summary.get_annual_dollar_returns(returns, notional_weights)\r\n\r\n\r\n#moving certain strats to end so we can compare against portfolio\r\ncolumn_to_move = 'Down Var'\r\nfor i in returns:\r\n    new_order = [col for col in returns[i].columns if col != column_to_move] + [column_to_move]\r\n    returns[i] = returns[i][new_order]\r\n    \r\n\r\n\r\n#run report\r\nequity_hedge_report = 'MACQMacroTH_equity_hedge_analysis.xlsx'\r\nselloffs = True\r\n# start = time.time()\r\nrp.get_equity_hedge_report(equity_hedge_report, returns,notional_weights, include_fi, new_strat, weighted[0], selloffs)\r\n# end = time.time()\r\n# print(end - start)\r\n\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/EquityHedging/scripts/script.py b/EquityHedging/scripts/script.py
+--- a/EquityHedging/scripts/script.py	
++++ b/EquityHedging/scripts/script.py	
+@@ -26,8 +26,8 @@
+ #Add new strat
+ new_strat = False
+ if new_strat:
+-    strategy_list = ['MACQ Macro TH']
+-    filename = 'macro_th_index_levels.xlsx'
++    strategy_list = ['JPM Corr SPY/TLT']
++    filename = 'JPM TLT SPY.xlsx'
+     sheet_name = 'Sheet1'
+     new_strategy = dm.get_new_strategy_returns_data(filename, sheet_name, strategy_list)
+     new_strategy_dict = dm.get_data_dict(new_strategy, data_type='index')
+@@ -36,7 +36,7 @@
+ 
+ #get notional weights
+ #notional_weights = dm.get_notional_weights(returns['Monthly'])
+-notional_weights = [11, 1, 1.25, 1, 0.75, 0.25, 1, .25, 1, 1, 0.4, 1,1]
++notional_weights = [11, 1, 1.25, 0.5, 0.85, 0, 1, .25, 1, 1, 1.05, 1, 1]
+ #notional_weights = [11, 1.25, 1, 1, 1, .25, 1, 1, 0.4, 1, 1]
+ returns = dm.get_returns_VRR_Portfolio(returns, notional_weights)
+ notional_weights[4:6] = [notional_weights[4] + notional_weights[5]]
+@@ -44,7 +44,7 @@
+ 
+ 
+ #compute correlations
+-check_corr = False
++check_corr = True
+ if check_corr:
+     corr_freq_list = ['Daily', 'Weekly', 'Monthly']
+     corr_dict = summary.get_corr_data(returns, corr_freq_list, weighted, notional_weights, include_fi)
+@@ -89,7 +89,7 @@
+ 
+ 
+ #run report
+-equity_hedge_report = 'MACQMacroTH_equity_hedge_analysis.xlsx'
++equity_hedge_report = 'JPM_SPYTLT CorrTP.xlsx'
+ selloffs = True
+ # start = time.time()
+ rp.get_equity_hedge_report(equity_hedge_report, returns,notional_weights, include_fi, new_strat, weighted[0], selloffs)
+Index: EquityHedging/scripts/strat_report_script.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+># -*- coding: utf-8 -*-\r\n\"\"\"\r\nCreated on Wed Jun 29 22:21:38 2022\r\n\r\n@author: RRQ1FYQ\r\n\"\"\"\r\nimport os\r\nCWD = os.getcwd()\r\nfrom EquityHedging.datamanager import data_manager as dm\r\nfrom EquityHedging.analytics import summary, util\r\nfrom EquityHedging.reporting.excel import reports as rp\r\nfrom EquityHedging.reporting import formatter as fmt\r\nimport pandas as pd\r\n\r\nequity_bmk = 'SPTR'\r\nstrat_drop_list = ['SPTR', 'Down Var', 'Vortex', 'Dynamic Put Spread',\r\n                   'Def Var','GW Dispersion', 'Corr Hedge', 'VOLA', 'Commodity Basket', 'ESPRSO', 'EVolCon', 'Moments']\r\ninclude_fi = False\r\n\r\n#create returns data dictionary for equity benchmark\r\nreturns= dm.get_equity_hedge_returns(equity_bmk, include_fi, strat_drop_list, only_equity=False)\r\nMXWDIM_prices = pd.read_excel(CWD+'\\\\RStrats\\\\' + 'Commods Example.xlsx', sheet_name = 'MXWDIM', index_col = 0)\r\nmxwdim_dict = dm.get_data_dict(MXWDIM_prices)\r\nfull_data_dict = dm.merge_dicts(mxwdim_dict, returns)\r\n# =============================================================================\r\n# #when analyzing VRR\r\n# #VRR_Port weighting\r\n# two=700\r\n# T=250\r\n# TOT=two+T\r\n# VRR2_weight = two/TOT\r\n# VRRT_weight = T/TOT\r\n#     \r\n# freqs = ['Daily', 'Weekly', 'Monthly', 'Quarterly', 'Yearly']\r\n# for freq in freqs:\r\n#     returns[freq]['VRR Portfolio'] = returns[freq]['VRR 2'] * VRR2_weight + returns[freq]['VRR Trend'] * VRRT_weight\r\n#     returns[freq].drop(['VRR 2','VRR Trend'],inplace=True,axis=1)\r\n# =============================================================================\r\n\r\n# =============================================================================\r\n# filename = 'Commods Example.xlsx'\r\n# sheet_name_list = ['MXWDIM', 'Macq', 'Barclays', 'BofA', 'BNP', 'JPM', 'MS', 'CITI']\r\n# full_data_dict = returns.copy()\r\n# for name in sheet_name_list:\r\n#     new_strat = pd.read_excel(dm.NEW_DATA+filename, sheet_name = name, index_col = 0)\r\n#     new_strat_dict = dm.get_data_dict(new_strat)\r\n#     full_data_dict = dm.merge_dicts(full_data_dict, new_strat_dict)\r\n# =============================================================================\r\n    \r\n\r\n#Get new strategy returns\r\nnew_strat = pd.read_excel(dm.NEW_DATA + 'UPS - Defensive Rates tracks.xlsx',\r\n                                           sheet_name = 'Sheet1', index_col=0)\r\nnew_strat_dict = dm.get_data_dict(new_strat)\r\n\r\n\r\nnew_strat = pd.read_excel(dm.NEW_DATA + 'Nomura Rates Strats.xlsm',\r\n                                           sheet_name = 'Sheet4', index_col=0)\r\nnew_strat_dict1 = dm.get_data_dict(new_strat)\r\n\r\n#merge dictionaries\r\nfull_data_dict = dm.merge_dicts_list([full_data_dict, new_strat_dict1])\r\n\r\nstrat_report_name = 'Rates Strategy Analysis (VRR,UBS,Nomura).xlsx'\r\nselloffs = True\r\nrp.generate_strat_report(strat_report_name, full_data_dict, selloffs = True)\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/EquityHedging/scripts/strat_report_script.py b/EquityHedging/scripts/strat_report_script.py
+--- a/EquityHedging/scripts/strat_report_script.py	
++++ b/EquityHedging/scripts/strat_report_script.py	
+@@ -13,15 +13,13 @@
+ import pandas as pd
+ 
+ equity_bmk = 'SPTR'
+-strat_drop_list = ['SPTR', 'Down Var', 'Vortex', 'Dynamic Put Spread',
+-                   'Def Var','GW Dispersion', 'Corr Hedge', 'VOLA', 'Commodity Basket', 'ESPRSO', 'EVolCon', 'Moments']
++strat_drop_list = ['SPTR', 'Corr Hedge', 'Down Var', 'Dynamic Put Spread', 'ESPRSO', 'Vortex',
++                   'Def Var','GW Dispersion', 'VOLA', 'Commodity Basket', 'EVolCon', 'Moments']
+ include_fi = False
+ 
+ #create returns data dictionary for equity benchmark
+ returns= dm.get_equity_hedge_returns(equity_bmk, include_fi, strat_drop_list, only_equity=False)
+-MXWDIM_prices = pd.read_excel(CWD+'\\RStrats\\' + 'Commods Example.xlsx', sheet_name = 'MXWDIM', index_col = 0)
+-mxwdim_dict = dm.get_data_dict(MXWDIM_prices)
+-full_data_dict = dm.merge_dicts(mxwdim_dict, returns)
++
+ # =============================================================================
+ # #when analyzing VRR
+ # #VRR_Port weighting
+@@ -49,18 +47,19 @@
+     
+ 
+ #Get new strategy returns
+-new_strat = pd.read_excel(dm.NEW_DATA + 'UPS - Defensive Rates tracks.xlsx',
+-                                           sheet_name = 'Sheet1', index_col=0)
++new_strat = pd.read_excel(CWD+'\\RStrats\\' + 'MXWDIM Historical Price.xlsx', sheet_name = 'Sheet2', index_col=0)
++new_strat = pd.read_excel(dm.NEW_DATA + 'BNP Equity Shallow Hedging.xlsx',
++                                           sheet_name = 'SPX', index_col=0)
+ new_strat_dict = dm.get_data_dict(new_strat)
+ 
+ 
+-new_strat = pd.read_excel(dm.NEW_DATA + 'Nomura Rates Strats.xlsm',
+-                                           sheet_name = 'Sheet4', index_col=0)
+-new_strat_dict1 = dm.get_data_dict(new_strat)
++new_strat = pd.read_excel(dm.NEW_DATA + 'nomurabask-citibask.xlsx',
++                                           sheet_name = 'CITI', index_col=0)
++new_strat_dict2 = dm.get_data_dict(new_strat)
+ 
+ #merge dictionaries
+-full_data_dict = dm.merge_dicts_list([full_data_dict, new_strat_dict1])
++full_data_dict = dm.merge_dicts_list([new_strat_dict, returns, new_strat_dict1, new_strat_dict2])
+ 
+-strat_report_name = 'Rates Strategy Analysis (VRR,UBS,Nomura).xlsx'
++strat_report_name = 'ALLRATESStratAnalysis.xlsx'
+ selloffs = True
+ rp.generate_strat_report(strat_report_name, full_data_dict, selloffs = True)
+Index: RStrats/SharpeVSCVar.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+># -*- coding: utf-8 -*-\r\n\"\"\"\r\nCreated on Tue Oct  3 15:45:57 2023\r\n\r\n@author: pcr7fjw\r\n\"\"\"\r\n\r\nimport pandas as pd\r\nimport numpy as np\r\nimport matplotlib.pyplot as plt\r\nfrom EquityHedging.datamanager import data_manager as dm\r\nfrom EquityHedging.analytics import returns_stats  as rs\r\nfrom matplotlib.ticker import FuncFormatter\r\nimport os\r\nCWD = os.getcwd()\r\n\r\ndef percent_formatter(x, pos):\r\n    return f'{x * 100:.2f}%'\r\n\r\ndef get_max_dd_from_returns(df):\r\n    # Calculate the cumulative returns\r\n    df['Cumulative_Returns'] = (1 + df).cumprod()\r\n\r\n    # Calculate the previous peaks\r\n    df['Previous_Peaks'] = df['Cumulative_Returns'].cummax()\r\n\r\n    # Calculate the drawdowns\r\n    df['Drawdowns'] = (df['Cumulative_Returns'] / df['Previous_Peaks']) - 1\r\n    \r\n    # Calculate the Maximum Drawdown\r\n    max_drawdown = df['Drawdowns'].min()\r\n    return max_drawdown\r\n\r\n#weighted index by notional weights\r\ndef get_weighted_index(df_index_prices, notional_weights = []):\r\n    weight_ratio = [notional / sum(notional_weights) for notional in notional_weights]\r\n    strat_list = df_index_prices.columns.tolist()\r\n    weighted_index = pd.Series(100, index=df_index_prices.index) \r\n    for i in range(0,len(strat_list)):\r\n        strat = strat_list[i]\r\n        strat_weight = weight_ratio[i]\r\n        StratStartLevel = df_index_prices[strat][0]\r\n        StratShare = (strat_weight * 100 / StratStartLevel) * (df_index_prices[strat] - StratStartLevel)\r\n        weighted_index += StratShare\r\n    \r\n    return weighted_index\r\n\r\n\r\ndef get_returns_analysis(df_index_prices, BMK = '', Strat = '', weights = [.01,.02,.03,.04,.05,.06,.07,.08,.09,.1,.11,.12,.13,.14,.15]):  \r\n    df_weighted_prices = pd.DataFrame({BMK: df_index_prices[BMK],Strat: df_index_prices[Strat]})\r\n    StratStartLevel = df_index_prices[Strat][0]\r\n    MXWDIMStartLevel = df_index_prices[BMK][0]\r\n    for i in weights:\r\n        StratShare = i * 100.0 / StratStartLevel\r\n        MXWDIMShare = 100.0 / MXWDIMStartLevel\r\n        df_weighted_prices[str(i)] = 100.0 + StratShare * (df_index_prices[Strat] - StratStartLevel) + MXWDIMShare * (df_index_prices[BMK]  - MXWDIMStartLevel)\r\n \r\n    returns_strat_only = dm.get_data_dict(df_weighted_prices)['Daily'].drop((Strat), axis=1)\r\n\r\n    var_list = []\r\n    cvar_list = []\r\n    sharpe_list = []\r\n    ret_list = []\r\n    vol_list = []\r\n    trackerror_list = []\r\n    ir_list = []\r\n    corr_list = []\r\n    max_dd_list = []\r\n    \r\n    for col in returns_strat_only:\r\n        ret = returns_strat_only[col].mean() * 252\r\n        vol = returns_strat_only[col].std() * np.sqrt(252)\r\n        sharpe = ret/vol\r\n        bottom5pct = np.percentile(returns_strat_only[col].values[1:],q=5)\r\n        cvar = returns_strat_only[col][returns_strat_only[col] < bottom5pct].mean()\r\n        excess_return = (returns_strat_only[col]- returns_strat_only[BMK])\r\n        track_error = np.std(excess_return) * np.sqrt(252)\r\n        if track_error == 0:\r\n            information_ratio = 0\r\n        else:     \r\n            information_ratio = excess_return.mean() * 252 / track_error\r\n        correlation = returns_strat_only[BMK].corr(returns_strat_only[col])\r\n        max_dd = get_max_dd_from_returns(returns_strat_only[col])\r\n        \r\n        var_list.append(bottom5pct)\r\n        cvar_list.append(cvar)\r\n        sharpe_list.append(sharpe)\r\n        ret_list.append(ret)\r\n        vol_list.append(vol)\r\n        trackerror_list.append(track_error)\r\n        ir_list.append(information_ratio)\r\n        corr_list.append(correlation)\r\n        max_dd_list.append(max_dd)\r\n        \r\n    df_metrics = pd.DataFrame()\r\n    df_metrics['Ret'] = ret_list\r\n    df_metrics['Vol'] = vol_list\r\n    df_metrics['Sharpe'] = sharpe_list\r\n    df_metrics['5%-ile'] = var_list\r\n    df_metrics['CVaR'] = cvar_list\r\n    df_metrics['Tracking Error'] = trackerror_list\r\n    df_metrics['IR'] = ir_list\r\n    df_metrics['Corr'] = corr_list\r\n    df_metrics['Max DD'] = max_dd_list \r\n    df_metrics.set_index(returns_strat_only.columns,inplace=True)\r\n    df_metrics['Rank'] = df_metrics['Tracking Error'].rank()\r\n    df_metrics['Rank'] = df_metrics['Rank'] * 50\r\n    \r\n    return df_metrics\r\n\r\n#plot SharpeVSCVaR\r\ndef show_SharpeCVaR(df_metrics, BMK = '', Strat = '', weights = []):\r\n    fig, ax = plt.subplots(figsize=(23, 15))\r\n    plt.scatter(df_metrics['CVaR'], df_metrics['Sharpe'], s= df_metrics['Rank'], c = 'blue', marker='o', label='')\r\n    labels = [BMK + ' 0 weight'] + [f'{int(wei * 100)}%' for wei in weights]\r\n    # Add labels to each data point\r\n    for i, label in enumerate(labels):\r\n        plt.annotate(label, (df_metrics['CVaR'][i], df_metrics['Sharpe'][i]), textcoords=\"offset points\", xytext=(-5,20), ha='center')\r\n    #Round x and y axes\r\n    for i, (x, y) in enumerate(zip(df_metrics['CVaR'], df_metrics['Sharpe'])):\r\n       x_rounded = round(x, 4)\r\n       y_rounded = round(y, 3)\r\n       label = f'({x_rounded}%, {y_rounded})'\r\n       plt.text(x+0.00002, y, label, ha='left', va='bottom')\r\n    # Customize the plot\r\n    plt.xticks(rotation=-45)\r\n    plt.gca().xaxis.set_major_formatter(FuncFormatter(percent_formatter))\r\n    plt.xlabel('CVaR')\r\n    plt.ylabel('Sharpe')\r\n    plt.title('MXWDIM w ' + Strat)\r\n    plt.show()\r\n\r\n#plot for sharpe, cvar, tracking error, correlation, information ratio against extended weights of strategy\r\ndef show_plots(df_metrics, Strat = ''):\r\n    plot_list = ['Sharpe', 'CVaR', 'Tracking Error', 'Corr', 'IR']\r\n    ol_weight_index_list = df_metrics.index.tolist()\r\n    for graph in plot_list:\r\n        if graph == 'IR':\r\n            ol_weight_index_list_IR = ol_weight_index_list.copy()\r\n            ol_weight_index_list_IR.pop(0)\r\n            ol_weight_index_list_IR_float = [float(x) for x in ol_weight_index_list_IR]\r\n            df_metrics_IR = df_metrics[graph].copy().tolist()\r\n            df_metrics_IR.pop(0)\r\n            plt.scatter(ol_weight_index_list_IR_float, df_metrics_IR, c = 'blue', marker='o', label='')\r\n            \r\n            plt.gca().xaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f'{x:.0%}'))\r\n    \r\n            plt.xticks(rotation=-45)\r\n            plt.xlabel('Extended ' + Strat + ' Weights')\r\n            plt.ylabel(graph)\r\n            plt.title('MXWDIM w ' + Strat + ': ' + 'Information Ratio')\r\n            #plt.legend()\r\n            plt.show()\r\n        else:\r\n            plt.scatter(ol_weight_index_list, df_metrics[graph], c = 'blue', marker='o', label='')\r\n            plt.xticks(rotation=-45)\r\n            plt.xlabel('Extended ' + Strat + ' Weights')\r\n            plt.ylabel(graph)\r\n            plt.title('MXWDIM w ' + Strat + ': ' + graph)\r\n            #plt.legend()\r\n            plt.show()\r\n\r\n#Transpose dataframes and Create an ExcelWriter object and specify the file name\r\ndef transpose_export_excel_file(strat_metrics, strat_type = '', multiple = False):\r\n    if multiple == True:\r\n        for strat, df in strat_metrics.items():\r\n            df = df.transpose()\r\n            df.columns = [df.columns[0]] + [f'{float(col) * 100:.0f}%' for col in df.columns[1:]]\r\n            strat_metrics[strat] = df\r\n        with pd.ExcelWriter(CWD+'\\\\RStrats\\\\' + strat_type + 'MetricsAnalysis.xlsx', engine='xlsxwriter') as writer:\r\n            for sheet_name, df in strat_metrics.items():\r\n                df.to_excel(writer, sheet_name=sheet_name, index=True)\r\n    else:\r\n        strat_metrics = strat_metrics.transpose()\r\n        file_path = CWD +'\\\\RStrats\\\\'+ strat_type + 'Metrics.xlsx'\r\n        # Export the DataFrame to an Excel file\r\n        strat_metrics.to_excel(file_path, index=True)\r\n        \r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\ndf_index_prices = pd.read_excel(CWD+'\\\\RStrats\\\\' + 'Performance Q3 2023.xlsx', sheet_name = 'Sheet2', index_col=0)\r\nMXWDIM_index = pd.read_excel(CWD+'\\\\RStrats\\\\' + 'Commods Example.xlsx', sheet_name = 'Sheet2', index_col=0)['MXWDIM']\r\n\r\nstrats_weighted_index = get_weighted_index(df_index_prices, notional_weights = [1,1.25,1,1,1,.25,1,1,.55,1])\r\n\r\ndf_index_prices = pd.read_excel(CWD+'\\\\RStrats\\\\' + 'Commods Example.xlsx', sheet_name = 'Sheet4', index_col=0)\r\nMXWDIM_index = pd.read_excel(CWD+'\\\\RStrats\\\\' + 'Commods Example.xlsx', sheet_name = 'Sheet2', index_col=0)['MXWDIM']\r\n\r\ncommods_weighted_index = get_weighted_index(df_index_prices, notional_weights = [1.25, 0.167, 0.167, 0.167, 0.167, 0.167, 0.167])\r\ndf_index_prices = pd.concat([MXWDIM_index, commods_weighted_index], axis=1, keys=[\"MXWDIM\", \"Commods Weighted Index\"], join='inner')\r\n\r\n\r\n\r\n\r\n#FOR SINGULAR INDEX ANALYSIS\r\nBMK = 'MXWDIM'\r\nStrat = 'Commods Weighted Index'\r\nweights = [.05,.1,.15,.2,.25,.3,.35,.4,.45,.5]\r\n\r\ndf_metrics = get_returns_analysis(df_index_prices, BMK = BMK, Strat = Strat, weights = weights)\r\nshow_SharpeCVaR(df_metrics, BMK = BMK, Strat = Strat, weights = weights)\r\nshow_plots(df_metrics, Strat = Strat)\r\ntranspose_export_excel_file(df_metrics, strat_type = Strat)\r\n\r\n\r\n\r\n\r\n#FOR MULTIPLE INDICIES ANALYSIS\r\nBMK = 'MXWDIM'\r\nfilename = 'GrindLowerHedgesTS.xlsx'\r\nsheetname = 'Sheet1'\r\nstrat_type = 'GrindLowHedges'\r\nstrat_index = pd.read_excel(CWD+'\\\\RStrats\\\\' + filename, sheet_name = sheetname, index_col = 0)\r\nstrat_list = strat_index.columns.tolist()\r\nstrat_list.remove('MXWDIM')\r\n\r\n#Get Analysis Metrics\r\ndict_strat_metrics = {}\r\nfor strat in strat_list:\r\n    df_stratname = f'{strat}'\r\n    dict_strat_metrics[df_stratname] = get_returns_analysis(strat_index, BMK = 'MXWDIM', Strat = strat)\r\n\r\n#Graph plots\r\nfor strat in strat_list:\r\n    df_stratname = f'{strat}'\r\n    show_SharpeCVaR(dict_strat_metrics[df_stratname], Strat = strat)\r\n    show_plots(dict_strat_metrics[df_stratname], Strat = strat)\r\n\r\n#graphing against strategies\r\ntest_strat_list = list(dict_strat_metrics.keys())\r\nplot_list = ['Ret', 'Vol', 'Sharpe', 'CVaR', 'Tracking Error', 'Corr', 'IR',]\r\nfor graph in plot_list:\r\n    plt.figure(figsize=(8, 6))\r\n    for strat in test_strat_list:\r\n        ol_weights_index_list = dict_strat_metrics[strat].index.tolist()\r\n        metrics_results_list = dict_strat_metrics[strat][graph]\r\n        if graph == 'IR':\r\n            ol_weights_index_list.pop(0)\r\n            ol_weights_index_list = [float(x) for x in ol_weights_index_list]\r\n            metrics_results_list = dict_strat_metrics[strat][graph].copy().tolist()\r\n            metrics_results_list.pop(0)\r\n        plt.scatter(ol_weights_index_list, metrics_results_list, label=strat, marker='o')\r\n    plt.xticks(rotation=-45)\r\n    plt.xlabel('Extended Weights')\r\n    plt.ylabel(graph)\r\n    plt.title(strat_type + ': ' + graph)\r\n    if graph == 'IR':\r\n        plt.gca().xaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f'{x:.0%}'))\r\n    \r\n    plt.legend(loc='upper left', bbox_to_anchor=(1, 1))\r\n    plt.show()\r\n\r\n#get report\r\ntranspose_export_excel_file(dict_strat_metrics, strat_type = strat_type, multiple = True)\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n
+===================================================================
+diff --git a/RStrats/SharpeVSCVar.py b/RStrats/SharpeVSCVar.py
+--- a/RStrats/SharpeVSCVar.py	
++++ b/RStrats/SharpeVSCVar.py	
+@@ -11,6 +11,7 @@
+ from EquityHedging.datamanager import data_manager as dm
+ from EquityHedging.analytics import returns_stats  as rs
+ from matplotlib.ticker import FuncFormatter
++from matplotlib.ticker import PercentFormatter
+ import os
+ CWD = os.getcwd()
+ 
+@@ -32,8 +33,13 @@
+     return max_drawdown
+ 
+ #weighted index by notional weights
+-def get_weighted_index(df_index_prices, notional_weights = []):
+-    weight_ratio = [notional / sum(notional_weights) for notional in notional_weights]
++#portfolio to be overlaid on must be position zero
++def get_weighted_index(df_index_prices, notional_weights = [], overlay = False):
++    if overlay == False:
++        weight_ratio = [notional / sum(notional_weights) for notional in notional_weights]
++    else:
++        weight_ratio = [notional / notional_weights[0] for notional in notional_weights]
++        
+     strat_list = df_index_prices.columns.tolist()
+     weighted_index = pd.Series(100, index=df_index_prices.index) 
+     for i in range(0,len(strat_list)):
+@@ -48,13 +54,9 @@
+ 
+ def get_returns_analysis(df_index_prices, BMK = '', Strat = '', weights = [.01,.02,.03,.04,.05,.06,.07,.08,.09,.1,.11,.12,.13,.14,.15]):  
+     df_weighted_prices = pd.DataFrame({BMK: df_index_prices[BMK],Strat: df_index_prices[Strat]})
+-    StratStartLevel = df_index_prices[Strat][0]
+-    MXWDIMStartLevel = df_index_prices[BMK][0]
+     for i in weights:
+-        StratShare = i * 100.0 / StratStartLevel
+-        MXWDIMShare = 100.0 / MXWDIMStartLevel
+-        df_weighted_prices[str(i)] = 100.0 + StratShare * (df_index_prices[Strat] - StratStartLevel) + MXWDIMShare * (df_index_prices[BMK]  - MXWDIMStartLevel)
+- 
++        df_weighted_prices[str(i)] = get_weighted_index(df_index_prices, notional_weights = [1,1*i], overlay = True)
++    
+     returns_strat_only = dm.get_data_dict(df_weighted_prices)['Daily'].drop((Strat), axis=1)
+ 
+     var_list = []
+@@ -108,6 +110,67 @@
+     
+     return df_metrics
+ 
++def get_returns_analysisV2(df_index_prices, BMK = '', baseStrat = '', addStrat = '', weights = [0.0,.01,.02,.03,.04,.05,.06,.07,.08,.09,.1]):  
++    df_weighted_prices = pd.DataFrame({BMK: df_index_prices[BMK], baseStrat: df_index_prices[baseStrat], addStrat: df_index_prices[addStrat]})
++    for i in weights:
++        if i == 0:
++            df_weighted_prices['EqHedge'] = get_weighted_index(df_index_prices,[11,9.89999,i*20.9], True)
++        else:
++            df_weighted_prices[str(i)] = get_weighted_index(df_index_prices,[11,9.89999,i*20.9], True)
++    
++    returns_strat_only = dm.get_data_dict(df_weighted_prices)['Daily'].drop(([baseStrat, addStrat]), axis=1)
++
++    var_list = []
++    cvar_list = []
++    sharpe_list = []
++    ret_list = []
++    vol_list = []
++    trackerror_list = []
++    ir_list = []
++    corr_list = []
++    max_dd_list = []
++    
++    for col in returns_strat_only:
++        ret = returns_strat_only[col].mean() * 252
++        vol = returns_strat_only[col].std() * np.sqrt(252)
++        sharpe = ret/vol
++        bottom5pct = np.percentile(returns_strat_only[col].values[1:],q=5)
++        cvar = returns_strat_only[col][returns_strat_only[col] < bottom5pct].mean()
++        excess_return = (returns_strat_only[col]- returns_strat_only[BMK])
++        track_error = np.std(excess_return) * np.sqrt(252)
++        if track_error == 0:
++            information_ratio = 0
++        else:     
++            information_ratio = excess_return.mean() * 252 / track_error
++        correlation = returns_strat_only[BMK].corr(returns_strat_only[col])
++        max_dd = get_max_dd_from_returns(returns_strat_only[col])
++        
++        var_list.append(bottom5pct)
++        cvar_list.append(cvar)
++        sharpe_list.append(sharpe)
++        ret_list.append(ret)
++        vol_list.append(vol)
++        trackerror_list.append(track_error)
++        ir_list.append(information_ratio)
++        corr_list.append(correlation)
++        max_dd_list.append(max_dd)
++        
++    df_metrics = pd.DataFrame()
++    df_metrics['Ret'] = ret_list
++    df_metrics['Vol'] = vol_list
++    df_metrics['Sharpe'] = sharpe_list
++    df_metrics['5%-ile'] = var_list
++    df_metrics['CVaR'] = cvar_list
++    df_metrics['Tracking Error'] = trackerror_list
++    df_metrics['IR'] = ir_list
++    df_metrics['Corr'] = corr_list
++    df_metrics['Max DD'] = max_dd_list 
++    df_metrics.set_index(returns_strat_only.columns,inplace=True)
++    df_metrics['Rank'] = df_metrics['Tracking Error'].rank()
++    df_metrics['Rank'] = df_metrics['Rank'] * 50
++    
++    return df_metrics
++
+ #plot SharpeVSCVaR
+ def show_SharpeCVaR(df_metrics, BMK = '', Strat = '', weights = []):
+     fig, ax = plt.subplots(figsize=(23, 15))
+@@ -127,36 +190,52 @@
+     plt.gca().xaxis.set_major_formatter(FuncFormatter(percent_formatter))
+     plt.xlabel('CVaR')
+     plt.ylabel('Sharpe')
+-    plt.title('MXWDIM w ' + Strat)
++    plt.title(BMK + ' w ' + Strat)
+     plt.show()
+ 
+ #plot for sharpe, cvar, tracking error, correlation, information ratio against extended weights of strategy
+-def show_plots(df_metrics, Strat = ''):
++def show_plots(df_metrics, BMK = '', Strat = ''):
+     plot_list = ['Sharpe', 'CVaR', 'Tracking Error', 'Corr', 'IR']
+     ol_weight_index_list = df_metrics.index.tolist()
+     for graph in plot_list:
+-        if graph == 'IR':
+-            ol_weight_index_list_IR = ol_weight_index_list.copy()
+-            ol_weight_index_list_IR.pop(0)
+-            ol_weight_index_list_IR_float = [float(x) for x in ol_weight_index_list_IR]
+-            df_metrics_IR = df_metrics[graph].copy().tolist()
+-            df_metrics_IR.pop(0)
+-            plt.scatter(ol_weight_index_list_IR_float, df_metrics_IR, c = 'blue', marker='o', label='')
+-            
+-            plt.gca().xaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f'{x:.0%}'))
+-    
++        if graph == 'CVaR':
++            plt.scatter('0.0', df_metrics[graph][0], c='red', marker='o', label='')
++            plt.scatter(ol_weight_index_list[1:], df_metrics[graph][1:], c='blue', marker='o', label='')
++
+             plt.xticks(rotation=-45)
+-            plt.xlabel('Extended ' + Strat + ' Weights')
++            plt.xlabel('Extended ' + Strat + ' Overlay Weights')
+             plt.ylabel(graph)
+-            plt.title('MXWDIM w ' + Strat + ': ' + 'Information Ratio')
++            plt.title(BMK + ' w ' + Strat + ': ' + graph)
++            plt.gca().yaxis.set_major_formatter(PercentFormatter(1, decimals=3))
+             #plt.legend()
+             plt.show()
++# =============================================================================
++#         if graph == 'IR':
++#             ol_weight_index_list_IR = ol_weight_index_list.copy()
++#             ol_weight_index_list_IR.pop(0)
++#             ol_weight_index_list_IR_float = [float(x) for x in ol_weight_index_list_IR]
++#             df_metrics_IR = df_metrics[graph].copy().tolist()
++#             df_metrics_IR.pop(0)
++#             plt.scatter(ol_weight_index_list_IR_float, df_metrics_IR, c = 'blue', marker='o', label='')
++#             
++#             plt.gca().xaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f'{x:.0%}'))
++#     
++#             plt.xticks(rotation=-45)
++#             plt.xlabel('Extended ' + Strat + ' Weights')
++#             plt.ylabel(graph)
++#             plt.title(BMK + ' w ' + Strat + ': ' + 'Information Ratio')
++#             #plt.legend()
++#             plt.show()
++#         else:
++# =============================================================================
+         else:
+-            plt.scatter(ol_weight_index_list, df_metrics[graph], c = 'blue', marker='o', label='')
++            plt.scatter('0.0', df_metrics[graph][0], c='red', marker='o', label='')
++            plt.scatter(ol_weight_index_list[1:], df_metrics[graph][1:], c='blue', marker='o', label='')
++
+             plt.xticks(rotation=-45)
+-            plt.xlabel('Extended ' + Strat + ' Weights')
++            plt.xlabel('Extended ' + Strat + ' Overlay Weights')
+             plt.ylabel(graph)
+-            plt.title('MXWDIM w ' + Strat + ': ' + graph)
++            plt.title(BMK + ' w ' + Strat + ': ' + graph)
+             #plt.legend()
+             plt.show()
+ 
+@@ -177,45 +256,95 @@
+         strat_metrics.to_excel(file_path, index=True)
+         
+ 
++#MSCI World
++MXWDIM_index = pd.read_excel(CWD+'\\RStrats\\' + 'MXWDIM Historical Price.xlsx', sheet_name = 'Sheet2', index_col=0)
++
++df_index_prices = pd.read_excel(CWD+'\\RStrats\\' + 'weighted hedgesSam.xlsx', sheet_name = 'Program Prices', index_col=0)
++commods_game_prices = pd.DataFrame({'Diversified Commodity Portfolio': df_index_prices.pop('Diversified Commodity Portfolio (noMacq)')})
++
++strats_weighted_index = get_weighted_index(df_index_prices, notional_weights = [1,1.25,0.5,0.85,1,0.25,1,1,1.05,1,1])
++strats_weighted_price = pd.DataFrame(strats_weighted_index, columns=['EqHedgeProgram'])
++df_index_prices = pd.merge(MXWDIM_index, strats_weighted_price, left_index=True, right_index=True)
++df_index_prices = pd.merge(df_index_prices, commods_game_prices, left_index=True, right_index=True)
++
++df_index_prices = pd.merge(MXWDIM_index, df_index_prices, left_index=True, right_index=True, how='inner')
++programPlusMSCI = get_weighted_index(df_index_prices, notional_weights = [11, 1, 1.25, 0.5, 0.85, 1, .25, 1, 1, 1.05, 1, 1], overlay=True)
++programPlusMSCI_prices = pd.DataFrame(programPlusMSCI, columns=['MSCI + EqHedgeProgram'])
++df_index_prices = pd.merge(programPlusMSCI_prices, commods_game_prices, left_index=True, right_index=True)
++
+ 
+ 
+ 
++#Correlation Hedge, Total Commodity Portfolio
++df_index_prices = pd.read_excel(CWD+'\\RStrats\\' + 'Book1.xlsx', sheet_name = 'exMACQ', index_col=0)
++weighted_index01 = get_weighted_index(df_index_prices, notional_weights = [0, 1]).to_frame(name='CommodONLY')
++weighted_index37 = get_weighted_index(df_index_prices, notional_weights = [.3, .7]).to_frame(name='Corr3Commod7')
++weighted_index55 = get_weighted_index(df_index_prices, notional_weights = [.5, .5]).to_frame(name='Corr5Commod5')
++weighted_index73 = get_weighted_index(df_index_prices, notional_weights = [.7, .3]).to_frame(name='Corr7Commod3')
++weighted_index10 = get_weighted_index(df_index_prices, notional_weights = [1, 0]).to_frame(name='CorrelationONLY')
+ 
++dataframes_list = [MXWDIM_index, weighted_index01, weighted_index37, weighted_index55, weighted_index73, weighted_index10]
++merged_df = dataframes_list[0]
++for df in dataframes_list[1:]:
++    merged_df = pd.merge(merged_df, df, left_index=True, right_index=True)
++
++
++#Carry/Convexity(QSP), MacqComods, NomurateUSDRate with S&P
++df_index_prices = pd.read_excel(CWD+'\\RStrats\\' + 'Book1.xlsx', sheet_name = 'Price', index_col=0)
++spx_prices = pd.DataFrame({'SPX': df_index_prices.pop('SPX')})
++weighted_index = get_weighted_index(df_index_prices, [2, 1, 1]).to_frame(name='C&C + NomRates + MacqCom(2_1_1)')
++df_index_prices = pd.merge(spx_prices, weighted_index, left_index = True, right_index=True, how='inner')
+ 
+ 
+ df_index_prices = pd.read_excel(CWD+'\\RStrats\\' + 'Performance Q3 2023.xlsx', sheet_name = 'Sheet2', index_col=0)
+-MXWDIM_index = pd.read_excel(CWD+'\\RStrats\\' + 'Commods Example.xlsx', sheet_name = 'Sheet2', index_col=0)['MXWDIM']
+-
++MXWDIM_index = pd.read_excel(CWD+'\\RStrats\\' + 'MXWDIM Historical Price.xlsx', sheet_name = 'Sheet2', index_col=0)
+ strats_weighted_index = get_weighted_index(df_index_prices, notional_weights = [1,1.25,1,1,1,.25,1,1,.55,1])
+ 
+-df_index_prices = pd.read_excel(CWD+'\\RStrats\\' + 'Commods Example.xlsx', sheet_name = 'Sheet4', index_col=0)
+-MXWDIM_index = pd.read_excel(CWD+'\\RStrats\\' + 'Commods Example.xlsx', sheet_name = 'Sheet2', index_col=0)['MXWDIM']
++#Commods with MXWDIM
++df_index_prices = pd.read_excel(CWD+'\\RStrats\\' + 'Commods ANalysis.xlsx', sheet_name = 'Rebased Indicies', index_col=0)
++MXWDIM_index = pd.DataFrame({'MXWDIM': df_index_prices.pop('MXWDIM')})
++commods_weighted_index = get_weighted_index(df_index_prices, notional_weights = [1, 0.1667, 0.1667, 0.1667, 0.1667, 0.1667, 0.1667])
++commods_weighted_index = pd.DataFrame(commods_weighted_index, columns=['Commods Weighted Index NO MACQ'])
++df_index_prices = pd.concat([MXWDIM_index, commods_weighted_index], axis=1, join='inner')
+ 
+-commods_weighted_index = get_weighted_index(df_index_prices, notional_weights = [1.25, 0.167, 0.167, 0.167, 0.167, 0.167, 0.167])
+-df_index_prices = pd.concat([MXWDIM_index, commods_weighted_index], axis=1, keys=["MXWDIM", "Commods Weighted Index"], join='inner')
++#Shallow Equity Hedge
++new_strat = pd.read_excel(dm.NEW_DATA + 'esprso.xlsx', sheet_name = 'Sheet2', index_col=0)
++current_sub = get_weighted_index(new_strat, [1,0.55]).to_frame(name='Current Shallow Equity Hedge')
++proposed_sub = get_weighted_index(new_strat, [0.5, 1.05]).to_frame(name='Proposed Shallow Equity Hedge')
++df_index_prices = pd.merge(current_sub, proposed_sub, left_index = True, right_index=True, how='inner').merge(MXWDIM_index, left_index = True, right_index=True, how='inner')
++
+ 
+ 
+ 
+ 
+ #FOR SINGULAR INDEX ANALYSIS
+-BMK = 'MXWDIM'
+-Strat = 'Commods Weighted Index'
+-weights = [.05,.1,.15,.2,.25,.3,.35,.4,.45,.5]
++BMK = 'MSCI + EqHedgeProgram'
++Strat = 'Diversified Commodity Portfolio'
++weights = [.01, .02, .03, .04 ,.05, .06, .07, .08, .09, .1]
+ 
+ df_metrics = get_returns_analysis(df_index_prices, BMK = BMK, Strat = Strat, weights = weights)
+ show_SharpeCVaR(df_metrics, BMK = BMK, Strat = Strat, weights = weights)
+-show_plots(df_metrics, Strat = Strat)
++show_plots(df_metrics, BMK = BMK, Strat = Strat)
+ transpose_export_excel_file(df_metrics, strat_type = Strat)
+ 
++#MODIFIED VERSION
++BMK = 'MXWDIM'
++baseStrat = 'EqHedgeProgram'
++addStrat = 'Diversified Commodity Portfolio'
++weights = [0,.01, .02, .03, .04 ,.05, .06, .07, .08, .09, .1]
+ 
++df_metrics = get_returns_analysisV2(df_index_prices, BMK, baseStrat, addStrat, weights)
++show_SharpeCVaR(df_metrics, BMK = BMK, Strat = 'EqHedge + Diversified Commodities', weights = weights)
++show_plots(df_metrics, BMK = BMK, Strat = 'EqHedge + Diversified Commodities')
++transpose_export_excel_file(df_metrics, strat_type = addStrat)
+ 
+ 
+ #FOR MULTIPLE INDICIES ANALYSIS
+ BMK = 'MXWDIM'
+ filename = 'GrindLowerHedgesTS.xlsx'
+-sheetname = 'Sheet1'
+-strat_type = 'GrindLowHedges'
+-strat_index = pd.read_excel(CWD+'\\RStrats\\' + filename, sheet_name = sheetname, index_col = 0)
++#sheetname = 'Sheet1'
++strat_type = 'CorrexMACQCommods'
++strat_index = merged_df #pd.read_excel(CWD+'\\RStrats\\' + filename, sheet_name = sheetname, index_col = 0)
+ strat_list = strat_index.columns.tolist()
+ strat_list.remove('MXWDIM')
+ 
+@@ -223,13 +352,13 @@
+ dict_strat_metrics = {}
+ for strat in strat_list:
+     df_stratname = f'{strat}'
+-    dict_strat_metrics[df_stratname] = get_returns_analysis(strat_index, BMK = 'MXWDIM', Strat = strat)
++    dict_strat_metrics[df_stratname] = get_returns_analysis(strat_index, BMK = 'MXWDIM', Strat = strat, weights = [.1, .2, .3, .4, .5, .6, .7, .8 ,.9 ,1])
+ 
+ #Graph plots
+ for strat in strat_list:
+     df_stratname = f'{strat}'
+     show_SharpeCVaR(dict_strat_metrics[df_stratname], Strat = strat)
+-    show_plots(dict_strat_metrics[df_stratname], Strat = strat)
++    show_plots(dict_strat_metrics[df_stratname], BMK = BMK, Strat = strat)
+ 
+ #graphing against strategies
+ test_strat_list = list(dict_strat_metrics.keys())
+@@ -239,20 +368,24 @@
+     for strat in test_strat_list:
+         ol_weights_index_list = dict_strat_metrics[strat].index.tolist()
+         metrics_results_list = dict_strat_metrics[strat][graph]
+-        if graph == 'IR':
+-            ol_weights_index_list.pop(0)
+-            ol_weights_index_list = [float(x) for x in ol_weights_index_list]
+-            metrics_results_list = dict_strat_metrics[strat][graph].copy().tolist()
+-            metrics_results_list.pop(0)
++# =============================================================================
++#         if graph == 'IR':
++#             ol_weights_index_list.pop(0)
++#             ol_weights_index_list = [float(x) for x in ol_weights_index_list]
++#             metrics_results_list = dict_strat_metrics[strat][graph].copy().tolist()
++#             metrics_results_list.pop(0)
++# =============================================================================
+         plt.scatter(ol_weights_index_list, metrics_results_list, label=strat, marker='o')
+     plt.xticks(rotation=-45)
+     plt.xlabel('Extended Weights')
+     plt.ylabel(graph)
+-    plt.title(strat_type + ': ' + graph)
+-    if graph == 'IR':
+-        plt.gca().xaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f'{x:.0%}'))
++    plt.title(graph)
++# =============================================================================
++#     if graph == 'IR':
++#         plt.gca().xaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f'{x:.0%}'))
++# =============================================================================
+     
+-    plt.legend(loc='upper left', bbox_to_anchor=(1, 1))
++    plt.legend(loc='lower center', bbox_to_anchor=(1,1))
+     plt.show()
+ 
+ #get report
