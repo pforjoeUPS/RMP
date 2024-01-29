@@ -26,18 +26,21 @@ def asset_class_bounds():
 #         'VOLA': (0.1329, 0.1331),
 #         'VRR 2': (.0903, .0905),
 #         'GW Dispersion': (.1063, .1065),
-         'Corr Hedge': (0,.2),
+#         'Corr Hedge': (0,.2),
 #         'Def Var': (.1063, .1065),
 #         'Macq Core': (.1063, .1065),
 #         'ESPRSO': (0.1116, 0.1118),
-         'EVolCon': (0,.2),
-         'Moments': (0,.2)
+#         'EVolCon': (0,.2),
+#         'Moments': (0,.2)
 # =============================================================================
         
     }
     return asset_class_bounds
 
-def get_robust_cov_matrix(benchmark_returns, strategy_returns, components=3, threshold = 0.05, crisis_level = .7):
+
+
+
+def get_robust_cov_matrix(benchmark_returns, strategy_returns, components=3, threshold = 0.05, regime_weight = .7, upper_level = False):
     """
     GMM for regime based covariance matrices.
     
@@ -46,6 +49,8 @@ def get_robust_cov_matrix(benchmark_returns, strategy_returns, components=3, thr
     strat_returns -- DataFrame
     components -- integer
     threshold -- float
+    regime_weight -- float
+    upper_level -- boolean
 
     Returns:
     regime_cov_matrix -- dict
@@ -63,17 +68,21 @@ def get_robust_cov_matrix(benchmark_returns, strategy_returns, components=3, thr
 
     # Predict the regime for each observation
     regimes = gmm.predict(data_standardized)
-
-    # Define thresholds for sell-off and positive regimes
-    lower_threshold = norm.ppf(threshold)
-    upper_threshold = norm.ppf(1 - threshold)
-    standardized_benchmark = data_standardized.iloc[:, 0]
-
-    # Label each data point as per the regime
-    regime_labels = pd.Series(1, index=standardized_benchmark.index)  # Default to 'normal' (label 1)
-    regime_labels[standardized_benchmark < lower_threshold] = 0  # Label for 'sell-off'
-    regime_labels[standardized_benchmark > upper_threshold] = 2  # Label for 'positive'
     
+        # Classify crisis period
+    if upper_level == True:
+        lower_threshold = norm.ppf(threshold)
+        upper_threshold = norm.ppf(1 - threshold)
+        standardized_benchmark = data_standardized.iloc[:, 0]
+        regime_labels = pd.Series(1, index=standardized_benchmark.index)  # Default to 'normal' (label 1)
+        regime_labels[standardized_benchmark < lower_threshold] = 0  # Label for 'sell-off'
+        regime_labels[standardized_benchmark > upper_threshold] = 2  # Label for 'positive'
+    elif upper_level == False:
+        lower_threshold = norm.ppf(threshold)
+        standardized_benchmark = data_standardized.iloc[:, 0]
+        regime_labels = pd.Series(1, index=standardized_benchmark.index)  # Default to 'normal' (label 1)
+        regime_labels[standardized_benchmark < lower_threshold] = 0  # Label for 'sell-off'
+        
     # Identify indices for each regime
     crisis_indices = np.where((regimes == 0) | (regimes == 2))[0]
     normal_indices = np.where(regimes == 1)[0]
@@ -94,10 +103,11 @@ def get_robust_cov_matrix(benchmark_returns, strategy_returns, components=3, thr
     }
     
     # Combine covariance matrices
-    combined_cov_matrix = cov_matrices['crisis']*crisis_level + cov_matrices['normal']*(1-crisis_level)
+    combined_cov_matrix = cov_matrices['crisis']*regime_weight + cov_matrices['normal']*(1-regime_weight)
     
-
     return combined_cov_matrix
+
+
 
 
 def mean_variance_optimization(returns, bmk_returns, optimization_type='sharpe'):
@@ -171,6 +181,8 @@ def mean_variance_optimization(returns, bmk_returns, optimization_type='sharpe')
     return result_dict
 
 
+
+
 # =============================================================================
 bmk_index = pd.read_excel(CWD+'\\RStrats\\' + 'SPX&MXWDIM Historical Price.xlsx', sheet_name = 'MXWDIM', index_col=0)
 df_index_prices = pd.read_excel(CWD+'\\RStrats\\' + 'weighted hedgesSam.xlsx', sheet_name = 'Program', index_col=0)
@@ -191,38 +203,3 @@ program_mean_var_weights = pd.merge(mean_var_weights_sh, mean_var_weights_ca, le
  
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-# =============================================================================
-# pca = PCA(n_components=2)  # or n_components=3 for 3D visualization
-# data_reduced = pca.fit_transform(data_standardized)
-# plt.figure(figsize=(10, 6))
-# plt.scatter(data_reduced[:, 0], data_reduced[:, 1], c=regimes, cmap='viridis', marker='o')
-# plt.title('GMM Clusters Visualization')
-# plt.xlabel('PCA Component 1')
-# plt.ylabel('PCA Component 2')
-# plt.colorbar(label='Cluster')
-# plt.show()
-# 
-# pca = PCA(n_components=3)  # or n_components=3 for 3D visualization
-# data_reduced = pca.fit_transform(data_standardized)
-# fig = plt.figure(figsize=(10, 7))
-# ax = fig.add_subplot(111, projection='3d')
-# ax.scatter(data_reduced[:, 0], data_reduced[:, 1], data_reduced[:, 2], c=regimes, cmap='viridis', marker='o')
-# ax.set_title('GMM Clusters Visualization')
-# ax.set_xlabel('PCA Component 1')
-# ax.set_ylabel('PCA Component 2')
-# ax.set_zlabel('PCA Component 3')
-# plt.show()
-# 
-# =============================================================================

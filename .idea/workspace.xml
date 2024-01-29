@@ -5,12 +5,9 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="097b79bf-9c35-4f3b-839c-13f2bf58ee38" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/RStrats/STRAT ANALYSIS/MRC.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/RStrats/STRAT ANALYSIS/MVO.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/RStrats/STRAT ANALYSIS/MeanVarianceModel.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/RStrats/STRAT ANALYSIS/MeanVarianceModel1.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/RStrats/STRAT ANALYSIS/rcm.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/RStrats/weighted hedgesSAM.xlsx" beforeDir="false" afterPath="$PROJECT_DIR$/RStrats/weighted hedgesSAM.xlsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/EquityHedging/scripts/script.py" beforeDir="false" afterPath="$PROJECT_DIR$/EquityHedging/scripts/script.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -62,6 +59,7 @@
       <workItem from="1706144404782" duration="440000" />
       <workItem from="1706144863933" duration="39000" />
       <workItem from="1706549651193" duration="53000" />
+      <workItem from="1706549724112" duration="505000" />
     </task>
     <servers />
   </component>
