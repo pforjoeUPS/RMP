@@ -455,7 +455,7 @@ class ReturnsDictAnalytic(ReturnsAnalytic):
         self.returns_stats_dict = self.get_stats_dict(key_list, 'returns')
 
 
-class liqAltsReturnsDictAnalytic(returnsDictAnalytic):
+class LiqAltsReturnsDictAnalytic(ReturnsDictAnalytic):
     def __init__(self,returns_dict, main_key = 'Monthly', rfr=0.0, target=0.0, 
                  include_bmk=False, bmk_data={}, bmk_key={},
                  include_eq=True, include_fi=True, include_cm=True, include_fx=True,

@@ -22,7 +22,7 @@ weighted = True
 strat_drop_list = []
 new_strat = False
 
-eq_hedge_dh = dh.EQHedgeDataHandler1(eq_bmk=eq_bmk, eq_mv=11.0,
+eq_hedge_dh = dh.EQHedgeDataHandler(eq_bmk=eq_bmk, eq_mv=11.0,
                                      include_fi=include_fi, fi_mv=20.0,
                                      strat_drop_list=[])
 
