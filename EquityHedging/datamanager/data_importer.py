@@ -12,6 +12,7 @@ import xlrd
 import pandas as pd
 
 from . import data_manager_new as dm
+from .data_manager_new import QIS_UNIVERSE, format_data
 
 NEXEN_DATA_COL_DICT = {'Account Name\n': 'Name', 'Account Id\n': 'Account Id',
                        'Return Type\n': 'Return Type', 'As Of Date\n': 'Dates',
@@ -261,6 +262,7 @@ class NexenDataImporter(DataImporter):
 
         self.data_import = self.data_import[self.col_dict.values()] if bool(self.col_dict) else self.data_import
 
+
 # class PutSpreadDataImporter(DataImporter):
 #     def __init__(self, filepath ,sheet_name = "Daily", index_col=0, skip_rows=[1],
 #                  data_source='custom', drop_na=False, index_data = False):
@@ -293,3 +295,11 @@ class NexenDataImporter(DataImporter):
 #                               data_source,drop_na, index_data)
 
 #         self.data_import.columns = ['99 Rep','Short Put','Put Spread']
+def get_qis_uni_dict():
+    qis_uni = {}
+    sheet_names = get_excel_sheet_names(QIS_UNIVERSE + "QIS Universe Time Series TEST.xlsx")
+    for sheet in sheet_names:
+        index_price = pd.read_excel(QIS_UNIVERSE + "QIS Universe Time Series TEST.xlsx", sheet_name=sheet, index_col=0,
+                                    header=1)
+        qis_uni[sheet] = format_data(index_price, freq='W')
+    return qis_uni
