@@ -11,7 +11,6 @@ from math import prod
 
 import numpy as np
 import pandas as pd
-from .data_importer import get_excel_sheet_names
 
 CWD = os.getcwd()
 DATA_FP = CWD + '\\EquityHedging\\data\\'
@@ -84,10 +83,13 @@ def merge_dicts(main_dict, new_dict, drop_na=True, fillzeros=False):
         try:
             main_df = main_dict[key].copy()
             new_df = new_dict[key]
-            if get_freq(main_df) == 'D' and check_freq(main_df, new_df):
-                main_df = main_df.fillna(0)
-                merged_dict[key] = merge_dfs(main_df, new_df, drop_na=drop_na, fillzeros=True)
-            else:
+            try:
+                if get_freq(main_df) == 'D' and check_freq(main_df, new_df):
+                    main_df = main_df.fillna(0)
+                    merged_dict[key] = merge_dfs(main_df, new_df, drop_na=drop_na, fillzeros=True)
+                else:
+                    merged_dict[key] = merge_dfs(main_df, new_df, drop_na=drop_na, fillzeros=fillzeros)
+            except ValueError:
                 merged_dict[key] = merge_dfs(main_df, new_df, drop_na=drop_na, fillzeros=fillzeros)
         except KeyError:
             pass
@@ -513,14 +515,6 @@ def month_ret_table(returns_df, strategy):
 
 
 # TODO: read the whole work book as a dicitonary then format by key
-def get_qis_uni_dict():
-    qis_uni = {}
-    sheet_names = get_excel_sheet_names(QIS_UNIVERSE + "QIS Universe Time Series TEST.xlsx")
-    for sheet in sheet_names:
-        index_price = pd.read_excel(QIS_UNIVERSE + "QIS Universe Time Series TEST.xlsx", sheet_name=sheet, index_col=0,
-                                    header=1)
-        qis_uni[sheet] = format_data(index_price, freq='W')
-    return qis_uni
 
 
 def check_notional(returns_df, notional_weights=[]):
