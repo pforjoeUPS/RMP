@@ -39,14 +39,14 @@ def update_df_dict_columns(df_dict, col_dict):
 
 
 def get_data_to_update(col_list, filename, sheet_name='data', put_spread=False):
-    '''
+    """
     Update data to dictionary
 
     Parameters
     ----------
     col_list : list
         List of columns for dict
-    filename : string        
+    filename : string
     sheet_name : string
         The default is 'data'.
     put_spread : boolean
@@ -57,8 +57,8 @@ def get_data_to_update(col_list, filename, sheet_name='data', put_spread=False):
     data_dict : dictionary
         dictionary of the updated data.
 
-    '''
-    # read excel file to dataframe
+    """
+    # read Excel file to dataframe
     data = pd.read_excel(UPDATE_DATA_FP + filename, sheet_name=sheet_name, index_col=0)
 
     # rename column(s) in dataframe
@@ -72,14 +72,14 @@ def get_data_to_update(col_list, filename, sheet_name='data', put_spread=False):
         data = data[['99%/90% Put Spread']]
 
         # add price into dataframe
-        data = dxf.get_prices_df(data)
+        data = dxf.get_price_data(data)
 
     data_dict = dxf.get_data_dict(data)
     return data_dict
 
 
 def match_dict_columns(main_dict, new_dict):
-    '''
+    """
     Parameters
     ----------
     main_dict : dictionary
@@ -91,7 +91,7 @@ def match_dict_columns(main_dict, new_dict):
     new_dict : dictionary
         dictionary with matched columns
 
-    '''
+    """
 
     # iterate through keys in dictionary
     for key in new_dict:
@@ -101,19 +101,19 @@ def match_dict_columns(main_dict, new_dict):
 
 
 def append_dict(main_dict, new_dict):
-    '''
+    """
     update an original dictionary by adding information from a new one
 
     Parameters
     ----------
-    main_dict : dictionary      
-    new_dict : dictionary        
+    main_dict : dictionary
+    new_dict : dictionary
 
     Returns
     -------
     main_dict : dictionary
 
-    '''
+    """
     # iterate through keys in dictionary
     for key in new_dict:
         # add value from new_dict to main_dict
@@ -194,7 +194,7 @@ def get_real_cols(df):
     return df
 
 
-class mainUpdater:
+class MainUpdater:
     def __init__(self, filename, report_name):
         self.filename = filename
         self.report_name = report_name
@@ -203,16 +203,20 @@ class mainUpdater:
         self.data_dict = self.calc_data_dict()
 
     def xform_data(self):
-        return dxf.dataXformer(filepath=UPDATE_DATA_FP + self.filename).data_xform
+        return dxf.DataXformer(filepath=UPDATE_DATA_FP + self.filename).data_xform
 
     def calc_data_dict(self):
         return dxf.copy_data(data=self.data_xform)
 
+    def get_report_object(self):
+        return rp.ReturnsReport(report_name=self.report_name, data=self.data_dict, data_file=True)
+
     def update_report(self):
-        pass
+        report = self.get_report_object()
+        report.run_report()
 
 
-class nexenDataUpdater(mainUpdater):
+class NexenDataUpdater(MainUpdater):
     """
     Class for updating Nexen data.
     
@@ -236,17 +240,17 @@ class nexenDataUpdater(mainUpdater):
         super().__init__(filename=filename, report_name=report_name)
 
     def xform_data(self):
-        return dxf.nexenDataXformer(filepath=UPDATE_DATA_FP + self.filename).data_xform
+        return dxf.NexenDataXformer(filepath=UPDATE_DATA_FP + self.filename).data_xform
 
-    def update_report(self):
+    def get_report_object(self):
         """
         Update the report of Nexen data.
 
         """
-        rp.returnMktValueReport(report_name=self.report_name, data=self.data_dict, data_file=True)
+        return rp.ReturnMktValueReport(report_name=self.report_name, data=self.data_dict, data_file=True)
 
 
-class innocapLiquidAltsDataUpdater(nexenDataUpdater):
+class InnocapLiquidAltsDataUpdater(NexenDataUpdater):
     """
     Class for updating Innocap Liquid Alternatives data.
     
@@ -272,7 +276,7 @@ class innocapLiquidAltsDataUpdater(nexenDataUpdater):
         super().__init__(filename, report_name)
 
     def xform_data(self):
-        return dxf.innocapDataXformer(UPDATE_DATA_FP + self.filename).data_xform
+        return dxf.InnocapDataXformer(UPDATE_DATA_FP + self.filename).data_xform
 
     def calc_data_dict(self):
         """
@@ -287,11 +291,6 @@ class innocapLiquidAltsDataUpdater(nexenDataUpdater):
                     '1907 III Fund Ltd _ Class CV': '1907 III CV',
                     '1907 Kepos': '1907 Kepos RP'
                     }
-        # self.old_col_list = ['1907 Campbell Trend Following LLC', '1907 III Class A','1907 Penso Class A',
-        #                 '1907 Systematica Trend Following',
-        #                 '1907 ARP Trend Following LLC_Class EM', '1907 III Fund Ltd _ Class CV', '1907 Kepos']
-        # self.new_col_list = ['1907 Campbell TF', '1907 III Class A', '1907 Penso Class A', '1907 Systematica TF'
-        #                      , '1907 ARP EM', '1907 III CV','1907 Kepos RP']
 
         updated_dict = update_df_dict_columns(self.data_xform, col_dict)
         data_dict = di.read_excel_data(filepath=RETURNS_DATA_FP + self.ret_filename, sheet_name=None)
@@ -299,7 +298,7 @@ class innocapLiquidAltsDataUpdater(nexenDataUpdater):
         return data_dict
 
 
-class bbgDataUpdater(mainUpdater):
+class BbgDataUpdater(MainUpdater):
     """
     Class for updating Bloomberg (BBG) data.
     
@@ -330,7 +329,7 @@ class bbgDataUpdater(mainUpdater):
         Returns:
             transformed_data (DataFrame or Dict): Transformed Bloomberg data.
         """
-        return dxf.bbgDataXformer(UPDATE_DATA_FP + self.filename).data_xform
+        return dxf.BbgDataXformer(UPDATE_DATA_FP + self.filename).data_xform
 
     def calc_data_dict(self):
         """
@@ -345,15 +344,15 @@ class bbgDataUpdater(mainUpdater):
                 data_dict[key] = data_dict[key][self.col_list]
         return data_dict
 
-    def update_report(self):
+    def get_report_object(self):
         """
         Update the report of Bloomberg (BBG) data.
 
         """
-        rp.returnsReport(self.report_name, self.data_dict, True)
+        return rp.ReturnsReport(self.report_name, self.data_dict, True)
 
 
-class hfBmkDataUpdater(bbgDataUpdater):
+class HFBmkDataUpdater(BbgDataUpdater):
     """
     Class for updating Hedge Fund Benchmark data.
 
@@ -387,10 +386,10 @@ class hfBmkDataUpdater(bbgDataUpdater):
         Returns:
             transformed_data (DataFrame or Dict): Transformed Hedge Fund Benchmark data.
         """
-        return dxf.bbgDataXformer(UPDATE_DATA_FP + self.filename, sheet_name='bbg_d').data_xform
+        return dxf.BbgDataXformer(UPDATE_DATA_FP + self.filename, sheet_name='bbg_d').data_xform
 
 
-class liqAltsBmkDataUpdater(hfBmkDataUpdater):
+class LiquidAltsBmkDataUpdater(HFBmkDataUpdater):
     """
     Class for updating Liquid Alternatives Benchmark data.
     
@@ -425,10 +424,10 @@ class liqAltsBmkDataUpdater(hfBmkDataUpdater):
        Returns:
            transformed_data (DataFrame or Dict): Transformed Liquid Alternatives Benchmark data.
        """
-        return dxf.bbgDataXformer(UPDATE_DATA_FP + self.filename, sheet_name='bbg_d').data_xform
+        return dxf.BbgDataXformer(UPDATE_DATA_FP + self.filename, sheet_name='bbg_d').data_xform
 
 
-class bmkDataUpdater(bbgDataUpdater):
+class BmkDataUpdater(BbgDataUpdater):
     """
     Class for updating Benchmark data.
     
@@ -459,7 +458,7 @@ class bmkDataUpdater(bbgDataUpdater):
        Returns:
            transformed_data (DataFrame or Dict): Transformed Benchmark data.
        """
-        return dxf.bbgDataXformer(UPDATE_DATA_FP + self.filename).data_xform
+        return dxf.BbgDataXformer(UPDATE_DATA_FP + self.filename).data_xform
 
     def calc_data_dict(self):
         """
@@ -476,7 +475,7 @@ class bmkDataUpdater(bbgDataUpdater):
 
 
 # TODO: get right nexen reports
-class gtPortDataUpdater(nexenDataUpdater):
+class GTPortDataUpdater(NexenDataUpdater):
     """
    Class for updating Asset Class Returns data.
 
@@ -506,15 +505,17 @@ class gtPortDataUpdater(nexenDataUpdater):
         Returns:
             data_dict (dict): Calculated data dictionary for Asset Class Returns data.
         """
-        col_dict = {'Total Credit': 'Credit', 'Total Equity': 'Public Equity', 'Total Fixed Income': 'Fixed Income',
-                    'Total Liquid Alts': 'Liquid Alts', 'Total Private Equity': 'Private Equity',
-                    'Total Real Estate': 'Real Estate',
-                    'Total UPS Cash': 'Cash', 'UPS GT Total Consolidation': 'Group Trust'}
+        col_dict = {'Total Equity': 'Public Equity', 'TOTAL EQ W/0 HEDGE + CE': 'Public Equity w/o Hedges',
+                    'Total EQ w/o Derivatives': 'Public Equity w/o Derivatives',
+                    'Total Fixed Income': 'Fixed Income', 'Total Liquid Alts': 'Liquid Alts',
+                    'Total Private Equity': 'Private Equity', 'Total Credit': 'Credit',
+                    'Total Real Estate': 'Real Estate', 'Total UPS Cash': 'Cash',
+                    'UPS GT Total Consolidation': 'Group Trust'}
         data_dict = update_df_dict_columns(self.data_xform, col_dict)
         return data_dict
 
 
-class gtBmkDataUpdater(gtPortDataUpdater):
+class GTBmkDataUpdater(GTPortDataUpdater):
     """
    Class for updating Asset Class Returns data.
 
@@ -534,8 +535,8 @@ class gtBmkDataUpdater(gtPortDataUpdater):
         super().__init__(report_name=report_name)
 
     def xform_data(self):
-        return {'liq_alts_bmk': liqAltsBmkDataUpdater().data_dict['Monthly'],
-                'nexen_bmk': dxf.nexenBmkDataXformer(filepath=UPDATE_DATA_FP + self.filename).data_xform}
+        return {'liq_alts_bmk': LiquidAltsBmkDataUpdater().data_dict['Monthly'],
+                'nexen_bmk': dxf.NexenBmkDataXformer(filepath=UPDATE_DATA_FP + self.filename).data_xform}
 
     def calc_data_dict(self):
         """
@@ -547,22 +548,22 @@ class gtBmkDataUpdater(gtPortDataUpdater):
         liq_alts_bmk_wgts = {'HFRX Macro/CTA': 0.5, 'HFRX Absolute Return': 0.3, 'SG Trend': 0.2}
         self.data_xform['liq_alts_bmk']['Liquid Alts Benchmark'] = self.data_xform['liq_alts_bmk'].dot(
             list(liq_alts_bmk_wgts.values()))
-        data = dm.merge_data_frames(self.data_xform['nexen_bmk'],
-                                    self.data_xform['liq_alts_bmk']['Liquid Alts Benchmark'], False)
+        data = dm.merge_dfs(self.data_xform['nexen_bmk'],
+                            self.data_xform['liq_alts_bmk']['Liquid Alts Benchmark'], False)
 
-        col_dict = {'Custom Credit Benchmark': 'Credit Benchmark',
-                    'Fixed Income Benchmark-Static': 'Fixed Income Benchmark',
-                    'MSCI All Country World Investable Market Net Index': 'Public Equity Benchmark',
-                    'NCREIF NFI-ODCE Equal Weighted Net Index 1QA^': 'Real Estate Benchmark',
-                    'UPS PE FOF Index': 'Private Equity Benchmark'}
+        col_dict = {'Custom Credit Benchmark': 'Custom Credit Bmk',
+                    'Fixed Income Benchmark-Static': 'FI Bmk-Static',
+                    'MSCI All Country World Investable Market Net Index': 'Equity-MSCI ACWI IMI-Bmk',
+                    'NCREIF NFI-ODCE Equal Weighted Net Index 1QA^': 'RE NCRIEF 1QA^ Bmk',
+                    'UPS PE FOF Index': 'PE FOF Bmk'}
         data = dm.rename_columns(data, col_dict)
-        return {'bmk': data}
+        return {'returns': data}
 
-    def update_report(self):
-        rp.returnsReport(self.report_name, self.data_dict, data_file=True)
+    def get_report_object(self):
+        return rp.ReturnsReport(self.report_name, self.data_dict, data_file=True)
 
 
-class equityHedgeReturnsUpdater(bmkDataUpdater):
+class EquityHedgeReturnsUpdater(BmkDataUpdater):
     """
     Class for updating Equity Hedge Returns data.
         
@@ -596,10 +597,10 @@ class equityHedgeReturnsUpdater(bmkDataUpdater):
 
         """
         # Import data from bloomberg into dataframe and create dictionary with different frequencies
-        new_ups_data_dict = dxf.bbgDataXformer(filepath=UPDATE_DATA_FP + 'ups_data.xlsx', sheet_name='bbg_d').data_xform
+        new_ups_data_dict = dxf.BbgDataXformer(filepath=UPDATE_DATA_FP + 'ups_data.xlsx', sheet_name='bbg_d').data_xform
 
         # Import vrr returns dictionary
-        vrr_dict = dxf.vrrDataXformer(filepath=UPDATE_DATA_FP + 'vrr_tracks_data.xlsx').data_xform
+        vrr_dict = dxf.VRRDataXformer(filepath=UPDATE_DATA_FP + 'vrr_tracks_data.xlsx').data_xform
 
         # merge returns dictionaries
         new_data_dict = dm.merge_dicts(new_ups_data_dict, vrr_dict)
@@ -607,12 +608,12 @@ class equityHedgeReturnsUpdater(bmkDataUpdater):
         return new_data_dict
 
 
-class liquidAltsReturnsUpdater(mainUpdater):
+class LiquidAltsReturnsUpdater(MainUpdater):
     def __init__(self, filename=None, report_name="all_liquid_alts_data"):
         super().__init__(filename, report_name)
 
     def xform_data(self):
-        return {'nexen': nexenDataUpdater().data_dict, 'innocap': innocapLiquidAltsDataUpdater().data_dict}
+        return {'nexen': NexenDataUpdater().data_dict, 'innocap': InnocapLiquidAltsDataUpdater().data_dict}
 
     def calc_data_dict(self):
         data_dict = {}
@@ -646,5 +647,5 @@ class liquidAltsReturnsUpdater(mainUpdater):
 
         return data_dict
 
-    def update_report(self):
-        rp.returnMktValueReport(self.report_name, self.data_dict, True)
+    def get_report_object(self):
+        return rp.ReturnMktValueReport(self.report_name, self.data_dict, True)
