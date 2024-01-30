@@ -7,10 +7,13 @@ Created on Sat Dec  3 23:27:30 2022
 
 # TODO: Make it Start, Trough, End, DD, Length, Recovery
 # TODO: change to return series
+
 import pandas as pd
 
 from .historical_selloffs_new import compute_event_ret
+from .returns_stats_new import get_max_dd
 from ..datamanager import data_manager_new as dm
+from ..datamanager import data_xformer_new as dxf
 
 try:
     # try importing cufflinks
@@ -28,23 +31,25 @@ except:
     except:
         print('No Plotly integration for Pandas')
 
+DD_COL_DICT = {'Peak': 'Start Date', 'Trough': 'End Date', 'Drawdown': 'Strategy Max DD'}
+
 
 def run_drawdown(return_series):
     """
     Parameters
     ----------
-    returns: Pandas Series
+    return_series: series
         Series with returns as values and index is dates
     
     Returns
     -------
-    drawdown: Pandas Series
+    drawdown: series
         Series with index values of dates and values of drawdown from
         running maximum
     
     """
 
-    price_series = dm.get_price_series(return_series)
+    price_series = dxf.get_price_data(return_series)
     window = len(price_series)
 
     # calculate the max drawdown in the past window periods for each period in the series.
@@ -62,11 +67,11 @@ def get_worst_drawdowns(return_series, num_worst=5, recovery=False):
 
     Parameters
     ----------
-    returns : TYPE
+    return_series : series
         DESCRIPTION.
     num_worst : TYPE, optional
         DESCRIPTION. The default is 5.
-
+    recovery: bool
     Returns
     -------
     worst_drawdowns : Pandas DataFrame
@@ -75,7 +80,7 @@ def get_worst_drawdowns(return_series, num_worst=5, recovery=False):
 
     """
     ret_dd_series = return_series.copy()
-    # first get the drawdowns with all of the data
+    # first get the drawdowns with all the data
     drawdowns = run_drawdown(ret_dd_series)
     worst_drawdowns = []
     # get the worst drawdown
@@ -129,7 +134,7 @@ def get_co_drawdowns(base_return, compare_return, num_worst=5,
     # get the drawdowns of the base return item
     drawdowns = get_worst_drawdowns(base_return, num_worst=num_worst)
     # use collect to collect the drawdowns for compare_return items
-    compare_index = dm.get_prices_df(compare_return)
+    compare_index = dxf.get_price_data(compare_return)
     collect = pd.DataFrame(columns=compare_index.columns, index=drawdowns.index)
     # strat_name = base_return.columns[0]
     strat_name = base_return.name
@@ -159,7 +164,7 @@ def get_co_drawdowns(base_return, compare_return, num_worst=5,
         # df.index = idx
         # df_plot(df, title, 'date', 'Drawdown', kind='bar')
     if return_df:
-        return co_drawdowns
+        return dm.rename_columns(co_drawdowns, DD_COL_DICT)
 
 
 # TODO: Clean comments
@@ -188,43 +193,37 @@ def get_drawdown_dates(drawdowns):
     peak_date = drawdowns[drawdowns.index <= trough_date]
     peak_date = peak_date[peak_date >= 0].dropna().index[-1]
     # peak_date_1 = drawdowns[drawdowns.index >= trough_date]
-    # peak_date_1 = peak_date_1[peak_date_1>=0].dropna().index[1]
+    # peak_date_1 = peak_date_1[peak_date_1>=0].drop_na().index[1]
     draw_dates = {'Peak': peak_date, 'Trough': trough_date,
                   'Drawdown': worst_val}
     return draw_dates
 
 
 # TODO: Add docstring
-def get_recovery_data(returns, draw):
-    # get strat name
-    # strat=returns.columns[0]
-    # strat=returns.name
-    # get index/price data
-    # ret_idx = dm.get_prices_df(returns)
-    ret_idx = dm.get_price_series(returns)
+def get_recovery_data(returns_data, draw):
+    return_index = dxf.get_price_data(returns_data)
 
     # remove data before drawdown
-    mask_rec = (ret_idx.index >= draw['Trough'])
-    ret_idx_1 = ret_idx.iloc[mask_rec]
+    mask_rec = (return_index.index >= draw['Trough'])
+    return_index_1 = return_index.iloc[mask_rec]
 
     # find end of dd date
-    peak_idx = ret_idx[ret_idx.index == draw['Peak']]
+    peak_index = return_index[return_index.index == draw['Peak']]
     try:
-        # draw['End'] = ret_idx_1[ret_idx_1[strat].gt(peak_idx[strat][0])].index[0]
-        draw['End'] = ret_idx_1[ret_idx_1.gt(peak_idx[0])].index[0]
+        draw['End'] = return_index_1[return_index_1.gt(peak_index[0])].index[0]
         end_date = draw['End']
     except IndexError:
         # if recover not done, pick last period as end date
         draw['End'] = float("nan")
-        end_date = ret_idx_1.last_valid_index()
+        end_date = return_index_1.last_valid_index()
 
     # get dd length
-    mask_dd = (returns.index >= draw['Peak']) & (returns.index <= end_date)
-    draw['Length'] = len(returns.iloc[mask_dd]) - 1
+    mask_dd = (returns_data.index >= draw['Peak']) & (returns_data.index <= end_date)
+    draw['Length'] = len(returns_data.iloc[mask_dd]) - 1
 
-    # get recovery lenth
-    mask_recov = (returns.index >= draw['Trough']) & (returns.index <= end_date)
-    draw['Recovery'] = len(returns.iloc[mask_recov]) - 1
+    # get recovery length
+    mask_recovery = (returns_data.index >= draw['Trough']) & (returns_data.index <= end_date)
+    draw['Recovery'] = len(returns_data.iloc[mask_recovery]) - 1
 
     # reorder draw dict
     desired_order_list = ['Peak', 'Trough', 'End', 'Drawdown', 'Length', 'Recovery']
@@ -240,9 +239,7 @@ def get_dd_matrix(returns_df):
         dd_matrix_df = pd.concat([dd_matrix_df, co_dd_dict[strat]])
 
     dd_matrix_df = dd_matrix_df.set_index(returns_df.columns, drop=False).rename_axis(None)
-    dd_matrix_df.rename(columns={'Peak': 'Start Date', 'Trough': 'End Date', 'Drawdown': 'Strategy Max DD'},
-                        inplace=True)
-    return dd_matrix_df
+    return dd_matrix_df[[*DD_COL_DICT.values(), *returns_df.columns]]
 
 
 # TODO: Add docstring and comments
@@ -262,6 +259,7 @@ def get_co_drawdown_data(returns_df, compare_returns=pd.DataFrame(), num_worst=5
             co_dd_dict[strat] = get_co_drawdowns(returns_df[strat], returns_df.drop([strat], axis=1), num_worst)
         else:
             co_dd_dict[strat] = get_co_drawdowns(returns_df[strat], compare_returns, num_worst)
+            co_dd_dict[strat] = dm.rename_columns(co_dd_dict[strat], {'Strategy Max DD': f'{strat} Max DD'})
     return co_dd_dict
 
 

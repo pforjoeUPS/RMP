@@ -10,6 +10,7 @@ from ..datamanager import data_manager_new as dm
 
 QUANTILE_STATS_LIST = ['Quartile', 'Quintile', 'Decile']
 
+# TODO: rethink this module, might have to start from return_series
 
 def get_quantile_df(returns_df, strat, quantile='Quintile'):
     """
@@ -18,7 +19,7 @@ def get_quantile_df(returns_df, strat, quantile='Quintile'):
     Parameters
     ----------
     returns_df : data frame
-        returns data for given frequency 
+        returns data for given frequency
     strat: string
     quantile : string
         Quartile, Quintile or Decile
@@ -30,7 +31,7 @@ def get_quantile_df(returns_df, strat, quantile='Quintile'):
 
     """
     data = returns_df.copy()
-    freq_data = dm.get_freq_data(data)
+    # freq_data = dm.get_freq_data(data)
 
     bucket_data = get_bucket_data(quantile)
 
@@ -45,7 +46,7 @@ def get_quantile_df(returns_df, strat, quantile='Quintile'):
 
 def get_quantile_dict(returns_df, quantile='Quintile'):
     """
-    Returns a dictionary dataframe containing average returns of each strategy grouped 
+    Returns a dictionary dataframe containing average returns of each strategy grouped
     into quintiles based on the equity returns ranking.
     
     Parameters
@@ -71,7 +72,7 @@ def get_quantile_dict(returns_df, quantile='Quintile'):
 def get_mkt_quantile_dict(returns_df, mkt_df, quantile='Quintile'):
     mkt_quantile_dict = {}
     for mkt in mkt_df:
-        data = dm.merge_data_frames(mkt_df[[mkt]], returns_df)
+        data = dm.merge_dfs(mkt_df[[mkt]], returns_df)
         mkt_quantile_dict[mkt] = get_quantile_df(data, mkt, quantile)
     return mkt_quantile_dict
 

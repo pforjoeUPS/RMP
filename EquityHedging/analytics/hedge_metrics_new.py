@@ -6,8 +6,7 @@ Created on Tue Oct  1 17:59:28 2019
 """
 
 from .decay_new import get_decay_days
-from .recovery import compute_decay_pct
-from .util_new import get_pos_neg_df, convert_dict_to_df
+from .util_new import get_pos_neg_df
 from ..datamanager import data_manager_new as dm
 
 HEDGE_METRICS_INDEX = ['Benefit Count', 'Benefit Median', 'Benefit Mean', 'Benefit Cum',
@@ -58,7 +57,7 @@ def get_benefit_stats(return_series, pct=.98):
     ----------
     return_series : series
         returns series.
-
+    pct: float, optional
     Returns
     -------
     benefit : dictionary
@@ -77,7 +76,7 @@ def get_convexity_stats(return_series, pct=.98):
     ----------
     return_series : series
         returns series.
-    
+    pct: float, optional
     Returns
     -------
     convexity : dictionary
@@ -95,16 +94,13 @@ def get_decay_stats(return_series, freq):
     ----------
     return_series : series
         returns series.
-    
-    col_name : string
-        strategy name in df_returns.
     freq : string
         frequency.
 
     Returns
     -------
     decay_dict : dictionary
-        {key: decay_percent, value: int)
+        {key: decay_percent, value: int}
 
     """
 
@@ -127,34 +123,6 @@ def get_decay_stats(return_series, freq):
     return decay_dict
 
 
-def get_decay_stats_2(df_returns, col_name, freq):
-    """
-    Return decay stats of returns
-
-    Parameters
-    ----------
-    return_series : series
-        returns series.
-    
-    col_name : string
-        strategy name in df_returns.
-    freq : string
-        frequency.
-
-    Returns
-    -------
-    decay_dict : dictionary
-        {key: decay_percent, value: int)
-
-    """
-
-    # Compute decay values only if data is daily or weekly
-    if dm.switch_freq_int(freq) >= 12:
-        return compute_decay_pct(df_returns, col_name, freq)
-    else:
-        return 0
-
-
 def get_cost_stats(return_series):
     """
     Return count, mean, mode and cumulative of all negative returns
@@ -175,7 +143,7 @@ def get_cost_stats(return_series):
 
 def get_reliability_stats(return_series, mkt_series, tail=False):
     """
-    Return correlation of strategy to equity bencmark downside returns and upside returns
+    Return correlation of strategy to equity benchmark downside returns and upside returns
     
     Parameters
     ----------
@@ -188,12 +156,12 @@ def get_reliability_stats(return_series, mkt_series, tail=False):
     Returns
     -------
     reliability : dictionary
-        dict{down:(double), up:(double),
-             tail:(double), non_tail:(double)}.
+        dict(down: double, up: double,
+             tail: double, non_tail: double).
 
     """
     # merge return and mkt series
-    mkt_ret_df = dm.merge_data_frames(mkt_series, return_series)
+    mkt_ret_df = dm.merge_dfs(mkt_series, return_series)
     mkt_id = mkt_series.name
     strat_id = return_series.name
 

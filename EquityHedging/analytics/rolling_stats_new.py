@@ -27,18 +27,21 @@ RET_STATS_LIST = ['median_ret', 'avg_ret', 'avg_pos_ret', 'avg_neg_ret', 'avg_po
                   'worst_period', 'pct_pos_periods', 'pct_neg_periods', 'skew', 'kurt', 'max_dd', 'var', 'cvar']
 
 
-def get_rolling_data(returns_df, years=3, rfr=0.0, target=0.0, p=0.05, include_bmk=False,
+def get_rolling_data(returns_df, years=3, sub_list_data=None, rfr=0.0, target=0.0, p=0.05, include_bmk=False,
                      bmk_df=pd.DataFrame(), bmk_key={}, include_mkt=False, mkt_df=pd.DataFrame()):
-    roll_stats = rollingActiveStats(returns_df, bmk_df, bmk_key, mkt_df, years, rfr, target, p)
+    if sub_list_data is None:
+        sub_list_data = {'ret_stats': None, 'mkt_stats': None, 'active_stats': None}
 
-    roll_stats.get_rolling_stat_data()
+    roll_stats = RollingActiveStats(returns_df, bmk_df, bmk_key, mkt_df, years, rfr, target, p)
+
+    roll_stats.get_rolling_stat_data(sub_list_data['ret_stats'])
     roll_stats.get_rolling_corr_data()
 
     if include_mkt:
-        roll_stats.get_rolling_mkt_data()
+        roll_stats.get_rolling_mkt_data(sub_list_data['mkt_stats'])
 
     if include_bmk:
-        roll_stats.get_rolling_active_data()
+        roll_stats.get_rolling_active_data(sub_list_data['active_stats'])
 
     return roll_stats.rolling_data
 
@@ -60,14 +63,14 @@ def get_rolling_series(data_series, window, function, kwargs={}):
 
 
 def get_active_data(return_series, bmk_series):
-    df_port_bmk = dm.merge_data_frames(return_series, bmk_series)
+    df_port_bmk = dm.merge_dfs(return_series, bmk_series)
     name_key = {'port': return_series.name, 'bmk': bmk_series.name}
     active_series = df_port_bmk[name_key['port']] - df_port_bmk[name_key['bmk']]
     active_series.name = name_key['port']
     return {'port': df_port_bmk[name_key['port']], 'bmk': df_port_bmk[name_key['bmk']], 'active': active_series}
 
 
-class rollingStats:
+class RollingStats:
     def __init__(self, returns_df, years=3, rfr=0.0, target=0.0, p=0.05):
 
         self.returns_df = returns_df
@@ -118,16 +121,18 @@ class rollingStats:
                                         axis=1)
         return rolling_stat_df
 
-    def get_rolling_stat_data(self):
+    def get_rolling_stat_data(self, sub_list=None):
+        if sub_list is None:
+            sub_list = list(RET_STATS_DICT.keys())
         print(f'Computing {self.window}{self.freq} rolling return stats')
         self.rolling_stats = {}
-        for ret_stat in RET_STATS_DICT:
+        for ret_stat in sub_list:
             self.rolling_stats[ret_stat] = self.get_rolling_stat_df(ret_stat)
         self.rolling_data['ret_stats'] = self.rolling_stats
         # return rolling_stats
 
 
-class rollingCorrStats(rollingStats):
+class RollingCorrStats(RollingStats):
     def __init__(self, returns_df, years=3, rfr=0.0, target=0.0, p=0.05):
 
         super().__init__(returns_df, years, rfr, target, p)
@@ -183,7 +188,7 @@ class rollingCorrStats(rollingStats):
         # return rolling_corr_stats
 
 
-class rollingMarketStats(rollingCorrStats):
+class RollingMarketStats(RollingCorrStats):
     def __init__(self, returns_df, mkt_df, years=3, rfr=0.0, target=0.0, p=0.05):
 
         super().__init__(returns_df, years, rfr, target, p)
@@ -203,7 +208,7 @@ class rollingMarketStats(rollingCorrStats):
         rolling_mkt_ret_series = self.get_rolling_stat(mkt_series, 'ann_ret')
         rolling_ret_series = self.get_rolling_stat(return_series, 'ann_ret')
         rolling_alpha_series = rolling_ret_series - (
-                    self.rfr + rolling_beta_series * (rolling_mkt_ret_series - self.rfr))
+                self.rfr + rolling_beta_series * (rolling_mkt_ret_series - self.rfr))
         return get_clean_series(rolling_alpha_series, mkt_series.name)
 
     def get_rolling_mkt_df(self, return_series, alpha=False):
@@ -225,7 +230,7 @@ class rollingMarketStats(rollingCorrStats):
     # def get_rolling_mkt_corr_data(self):
     #     self.rolling_mkt_corr_stats = self.get_rolling_mkt_data('corr')
 
-    def get_rolling_mkt_data(self):
+    def get_rolling_mkt_data(self, sub_list=None):
         print(f'Computing {self.window}{self.freq} rolling mkt stats')
 
         rolling_mkt_dict = {'alpha': self.get_rolling_mkt_df,
@@ -233,9 +238,9 @@ class rollingMarketStats(rollingCorrStats):
                             'corr': self.get_rolling_corr_df
                             }
         self.rolling_mkt_stats = {}
-
-        for mkt_stat in rolling_mkt_dict:
-
+        if sub_list is None:
+            sub_list = list(rolling_mkt_dict.keys())
+        for mkt_stat in sub_list:
             # make a dict to collect the data
             rolling_data = {}
             # iterate through items
@@ -256,8 +261,8 @@ class rollingMarketStats(rollingCorrStats):
         # return rolling_mkt_data
 
 
-class rollingActiveStats(rollingMarketStats):
-    def __init__(self, returns_df, bmk_df=dm.pd.DataFrame(), bmk_key={},
+class RollingActiveStats(RollingMarketStats):
+    def __init__(self, returns_df, bmk_df=pd.DataFrame(), bmk_key={},
                  mkt_df=pd.DataFrame(), years=3, rfr=0.0, target=0.0, p=0.05):
         super().__init__(returns_df, mkt_df, years, rfr, target, p, )
         self.bmk_df = bmk_df
@@ -269,16 +274,17 @@ class rollingActiveStats(rollingMarketStats):
     def get_active_stats_dict(self):
         return {'bmk_beta': self.get_rolling_bmk_beta, 'excess_ret': self.get_rolling_excess_ret,
                 'te': self.get_rolling_te, 'downside_te': self.get_rolling_te,
-                'ir': self.get_rolling_ir, 'asym_ir': self.get_rolling_ir
+                'te_downside_te': self.get_rolling_te_dwn_te, 'ir': self.get_rolling_ir, 'ir_asym': self.get_rolling_ir
                 }
 
-    def get_rolling_active_data(self):
+    def get_rolling_active_data(self, sub_list):
         print(f'Computing {self.window}{self.freq} rolling active stats')
         self.rolling_active_stats = {}
-        for active_stat in self.active_stats_dict:
+        if sub_list is None:
+            sub_list = list(self.active_stats_dict.keys())
+        for active_stat in sub_list:
             self.rolling_active_stats[active_stat] = self.get_rolling_active_df(active_stat)
         self.rolling_data['active_stats'] = self.rolling_active_stats
-        # return rolling_active_stats
 
     def get_rolling_active_df(self, active_stat='bmk_beta'):
         # make a df to collect the data
@@ -299,9 +305,9 @@ class rollingActiveStats(rollingMarketStats):
         active_function = self.active_stats_dict.get(active_stat)
         kwargs = {'active_dict': active_dict}
         if 'te' in active_stat:
-            kwargs['downside'] = False if active_stat == 'te' else True
+            kwargs['downside'] = False if active_stat.__eq__('te') else True
         if 'ir' in active_stat:
-            kwargs['asym'] = False if active_stat == 'ir' else True
+            kwargs['asym'] = False if active_stat.__eq__('ir') else True
         return active_function(*kwargs.values())
 
     def get_rolling_bmk_beta(self, active_dict):
@@ -319,7 +325,11 @@ class rollingActiveStats(rollingMarketStats):
         else:
             return self.get_rolling_stat(active_dict['active'], 'ann_vol')
 
+    def get_rolling_te_dwn_te(self, active_dict, downside=True):
+        return self.get_rolling_te(active_dict)/self.get_rolling_te(active_dict, downside)
+
     def get_rolling_ir(self, active_dict, asym=False):
         rolling_excess_ret = self.get_rolling_excess_ret(active_dict)
         rolling_te = self.get_rolling_te(active_dict, downside=asym)
         return get_clean_series(rolling_excess_ret / rolling_te, active_dict['port'].name)
+
