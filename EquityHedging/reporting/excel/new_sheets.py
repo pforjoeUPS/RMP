@@ -11,7 +11,7 @@ from . import formats
 from ...datamanager import data_manager_new as dm
 
 
-class setSheet:
+class SetSheet:
     def __init__(self, writer, sheet_name, row=0, col=0, first_col=0, last_col=1000, col_width=22, freeze=False):
         """
         Create default, formatted excel spread sheet
@@ -82,7 +82,7 @@ class setSheet:
         self.int_fmt = formats.set_number_format(self.workbook, num_format='0')
 
 
-class dataFrameSheet(setSheet):
+class DataFrameSheet(SetSheet):
     def __init__(self, writer, data_df, sheet_name, index=True, **kwargs):
         """
         Create excel sheet for historical returns
@@ -129,7 +129,7 @@ class dataFrameSheet(setSheet):
 
 
 # TODO: rethink data_dict, use key-value pairs
-class dataDictSheet(setSheet):
+class DataDictSheet(SetSheet):
     def __init__(self, writer, data, sheet_name, spaces=3, **kwargs):
 
         super().__init__(writer, sheet_name, **kwargs)
@@ -167,7 +167,7 @@ class dataDictSheet(setSheet):
 
 
 # TODO: test
-class tsDataDictSheet(dataDictSheet):
+class TSDataDictSheet(DataDictSheet):
     def __init__(self, writer, data, sheet_name, **kwargs):
 
         super().__init__(writer, data, sheet_name, **kwargs)
@@ -183,7 +183,7 @@ class tsDataDictSheet(dataDictSheet):
         return dm.switch_freq_string(freq)
 
 
-class histReturnSheet(dataFrameSheet):
+class HistReturnSheet(DataFrameSheet):
     def __init__(self, writer, returns_df, sheet_name='Monthly Historical Returns', freeze=True):
         """
         Create excel sheet for historical returns
@@ -229,7 +229,7 @@ class histReturnSheet(dataFrameSheet):
                                           {'type': 'cell', 'criteria': '>=', 'value': 0, 'format': self.pct_fmt})
 
 
-class mktValueSheet(histReturnSheet):
+class MktValueSheet(HistReturnSheet):
     def __init__(self, writer, data_df, sheet_name='market_values', freeze=True):
         """
         Create excel sheet for historical market values
@@ -258,7 +258,7 @@ class mktValueSheet(histReturnSheet):
                                           {'type': 'no_blanks', 'format': self.ccy_fmt})
 
 
-class ratioSheet(histReturnSheet):
+class RatioSheet(HistReturnSheet):
     def __init__(self, writer, data_df, sheet_name, freeze=True):
         """
         Create excel sheet for historical market values
@@ -283,7 +283,7 @@ class ratioSheet(histReturnSheet):
                                           {'type': 'no_blanks', 'format': self.digits_fmt})
 
 
-class histSelloffSheet(dataFrameSheet):
+class HistSelloffSheet(DataFrameSheet):
     def __init__(self, writer, hist_df, sheet_name='Historical Sell-offs'):
         """
         Create Excel sheet for historical selloffs
@@ -316,7 +316,7 @@ class histSelloffSheet(dataFrameSheet):
                                           {'type': 'cell', 'criteria': '>', 'value': 0, 'format': self.pct_fmt_pos})
 
 
-class drawdownSheet(dataFrameSheet):
+class DrawdownSheet(DataFrameSheet):
     def __init__(self, writer, drawdown_df, sheet_name='Drawdown Statistics', freq='1M'):
         self.freq = freq
         super().__init__(writer, drawdown_df, sheet_name, row=2, col=1, col_width=30, index=False)
@@ -355,7 +355,7 @@ class drawdownSheet(dataFrameSheet):
 
 
 # TODO: rewrite using analytics and dm classes
-class altsReturnStatsSheet(dataFrameSheet):
+class AltsReturnStatsSheet(DataFrameSheet):
     def __init__(self, writer, ret_stat_df, sheet_name='Returns Statistics', include_fi=False, include_bmk=False):
         """
         Create Excel sheet for historical selloffs
@@ -435,7 +435,7 @@ class altsReturnStatsSheet(dataFrameSheet):
 
 # Done
 # TODO: rewrite using analytics and dm classes
-class stratAltsReturnStatsSheet(altsReturnStatsSheet):
+class StratAltsReturnStatsSheet(AltsReturnStatsSheet):
     def __init__(self, writer, ret_stat_df, sheet_name='Returns Statistics', include_fi=False):
         super().__init__(writer, ret_stat_df, sheet_name, include_fi=include_fi)
 
@@ -477,8 +477,9 @@ class stratAltsReturnStatsSheet(altsReturnStatsSheet):
         self.worksheet.conditional_format(self.row + 28 + jump_2, self.col + 1, self.row + 32 + jump_2, self.col_dim,
                                           {'type': 'no_blanks', 'format': self.digits_fmt})
 
+
 # TODO: rewrite using analytics and dm classes
-class histReturnMTDYTDSheet(dataDictSheet):
+class HistReturnMTDYTDSheet(DataDictSheet):
     def __init__(self, writer, returns_data, sheet_name='MTD-YTD-ITD'):
         super().__init__(writer, returns_data, sheet_name, col_width=10.67, spaces=2, row=1)
 
@@ -510,8 +511,9 @@ class histReturnMTDYTDSheet(dataDictSheet):
         self.worksheet.conditional_format(self.row + 1, self.col + 1, self.row_dim, self.col_dim,
                                           {'type': 'cell', 'criteria': '>=', 'value': 0, 'format': self.pct_fmt})
 
+
 # TODO: rewrite using analytics and dm classes
-class corrStatsSheet(dataDictSheet):
+class CorrStatsSheet(DataDictSheet):
     def __init__(self, writer, corr_data, sheet_name='Correlation Analysis', include_fi=False):
         """
         Create Excel sheet for correlation ranks
@@ -554,7 +556,8 @@ class corrStatsSheet(dataDictSheet):
         self.worksheet.conditional_format(self.row + 1, self.col + 1, self.row_dim, self.col_dim,
                                           {'type': '3_color_scale'})
 
-class vrrSheet(dataFrameSheet):
+
+class VRRSheet(DataFrameSheet):
     def __init__(self, writer, vrr_df, sheet_name):
         """
         Create Excel sheet for VRR returns
@@ -586,9 +589,10 @@ class vrrSheet(dataFrameSheet):
         self.worksheet.conditional_format(self.row, self.col, self.row_dim, self.col,
                                           {'type': 'no_blanks', 'format': self.date_fmt})
 
+
 # TODO:review
-class quantileDataSheet(dataDictSheet):
-    def __init__(self, writer, data_dict, sheet_name='Quantile Data', row=2, col=1, col_width=22):
+class QuantileDataSheet(DataDictSheet):
+    def __init__(self, writer, data_dict, sheet_name='Quantile Analysis', row=2, col=1, col_width=22):
         """
         Create Excel sheet for grouped data
 
@@ -625,7 +629,7 @@ class quantileDataSheet(dataDictSheet):
 
 
 # TODO: review
-class analysisSheet(quantileDataSheet):
+class AnalysisSheet(QuantileDataSheet):
     def __init__(self, writer, data_dict, sheet_name='Monthly Analysis'):
         """
         Create an excel sheet with:
@@ -657,9 +661,9 @@ class analysisSheet(quantileDataSheet):
                     self.row = self.row_dim + self.spaces + 1
             else:
                 if key == 'weighting':
-                    if self.data[key]['wgts_df'].empty is False:
+                    if self.data[key]['weights_df'].empty is False:
                         weights_title = self.data[key]['title']
-                        self.set_worksheet(self.data[key], key='wgts_df', title=weights_title)
+                        self.set_worksheet(self.data[key], key='weights_df', title=weights_title)
                         self.conditional_port_worksheet_format()
                 if key == 'return_stats':
                     # format return statistics
@@ -674,7 +678,7 @@ class analysisSheet(quantileDataSheet):
             self.row = self.row_dim + self.spaces + 1
 
     def conditional_corr_worksheet_format(self, corr_key):
-        if corr_key == 'full':
+        if corr_key.__eq__('Full'):
             self.worksheet.conditional_format(self.row + 1, self.col + 1, self.row_dim, self.col_dim,
                                               {'type': 'duplicate', 'format': self.digits_fmt})
         else:
@@ -734,7 +738,7 @@ class analysisSheet(quantileDataSheet):
         #                                   {'type': 'no_blanks', 'format': self.digits_fmt})
         # format downside dev to percent
         self.worksheet.conditional_format(self.row + 16, self.col + 1, self.row + 16, self.col_dim,
-                                          {'type': 'no_blanks','format': self.pct_fmt})
+                                          {'type': 'no_blanks', 'format': self.pct_fmt})
         # format sortino to digits
         self.worksheet.conditional_format(self.row + 17, self.col + 1, self.row + 17, self.col_dim,
                                           {'type': 'no_blanks', 'format': self.digits_fmt})
@@ -788,7 +792,7 @@ class analysisSheet(quantileDataSheet):
 
 
 # TODO: Review something's not right
-class corrRankSheet(quantileDataSheet):
+class CorrRankSheet(QuantileDataSheet):
     def __init__(self, writer, corr_data, dates, sheet_name='Correlations Ranks'):
         """
         Create Excel sheet for correlation ranks
