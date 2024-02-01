@@ -8,11 +8,6 @@ Created on Wed Jan 24 10:40:28 2024
 import numpy as np
 import pandas as pd
 from sklearn.mixture import GaussianMixture
-# =============================================================================
-# from sklearn.decomposition import PCA
-# import matplotlib.pyplot as plt
-# from mpl_toolkits.mplot3d import Axes3D
-# =============================================================================
 from RStrats.stratanalysis import MVO as mvo
 
 from scipy.stats import norm
@@ -37,20 +32,17 @@ def asset_class_bounds():
     }
     return asset_class_bounds
 
-
-
-
-def get_robust_cov_matrix(benchmark_returns, strategy_returns, components=3, threshold = 0.05, regime_weight = .7, upper_level = False):
+# Robust Covariance Matrix using return distributions
+def get_robust_cov_matrix(benchmark_returns, strategy_returns, threshold = 0.05, regime_weight = .7, two_tails = False):
     """
-    GMM for regime based covariance matrices.
+    Using percentiles for robust covariance matrix
     
     Parameters:
     bmk_returns -- DataFrame
     strat_returns -- DataFrame
-    components -- integer
     threshold -- float
     regime_weight -- float
-    upper_level -- boolean
+    two_tails -- boolean
 
     Returns:
     regime_cov_matrix -- dict
@@ -62,30 +54,22 @@ def get_robust_cov_matrix(benchmark_returns, strategy_returns, components=3, thr
     # Standardize the data
     data_standardized = (data - data.mean()) / data.std()
 
-    # Fit the GMM
-    gmm = GaussianMixture(n_components=components, covariance_type='full', random_state=23)
-    gmm.fit(data_standardized)
-
-    # Predict the regime for each observation
-    regimes = gmm.predict(data_standardized)
+    # Establish percentile bounds
+    lower_threshold = norm.ppf(threshold)
+    upper_threshold = norm.ppf(1 - threshold)
+    standardized_benchmark = data_standardized.iloc[:, 0]
+    regime_labels = pd.Series(1, index=standardized_benchmark.index)  # Default to 'normal' (label 1)
     
-        # Classify crisis period
-    if upper_level == True:
-        lower_threshold = norm.ppf(threshold)
-        upper_threshold = norm.ppf(1 - threshold)
-        standardized_benchmark = data_standardized.iloc[:, 0]
-        regime_labels = pd.Series(1, index=standardized_benchmark.index)  # Default to 'normal' (label 1)
+    # Classify crisis period
+    if two_tails == True:
         regime_labels[standardized_benchmark < lower_threshold] = 0  # Label for 'sell-off'
         regime_labels[standardized_benchmark > upper_threshold] = 2  # Label for 'positive'
-    elif upper_level == False:
-        lower_threshold = norm.ppf(threshold)
-        standardized_benchmark = data_standardized.iloc[:, 0]
-        regime_labels = pd.Series(1, index=standardized_benchmark.index)  # Default to 'normal' (label 1)
+    else:
         regime_labels[standardized_benchmark < lower_threshold] = 0  # Label for 'sell-off'
         
     # Identify indices for each regime
-    crisis_indices = np.where((regimes == 0) | (regimes == 2))[0]
-    normal_indices = np.where(regimes == 1)[0]
+    crisis_indices = np.where((regime_labels == 0) | (regime_labels == 2))[0]
+    normal_indices = np.where(regime_labels == 1)[0]
 
     # Take out bmk from data_standarized
     bmk_name = data_standardized.columns[0]  # Assuming first column is benchmark
@@ -108,13 +92,11 @@ def get_robust_cov_matrix(benchmark_returns, strategy_returns, components=3, thr
     return combined_cov_matrix
 
 
-
-
 def mean_variance_optimization(returns, bmk_returns, optimization_type='sharpe'):
     """
     Mean-variance optimization.
     The objective can be based on either the Sharpe ratio or the Calmar ratio.
-    
+
     Parameters:
     returns -- DataFrame
     num_iterations -- float
@@ -124,7 +106,7 @@ def mean_variance_optimization(returns, bmk_returns, optimization_type='sharpe')
     Returns:
     Result of optimal weights and some statistics -- dict
     """
-    
+
     # Calculate mean and volatility of returns
     mean_returns = returns.mean()*252
     volatility = returns.std(axis=0)*np.sqrt(252)
@@ -179,27 +161,3 @@ def mean_variance_optimization(returns, bmk_returns, optimization_type='sharpe')
     }
 
     return result_dict
-
-
-
-
-# =============================================================================
-bmk_index = pd.read_excel(CWD+'\\RStrats\\' + 'SPX&MXWDIM Historical Price.xlsx', sheet_name = 'MXWDIM', index_col=0)
-df_index_prices = pd.read_excel(CWD+'\\RStrats\\' + 'weighted hedgesSam.xlsx', sheet_name = 'Program', index_col=0)
-
-#calculated returns off of price data
-bmk = 'MXWDIM'
-df_index_prices = pd.merge(df_index_prices, bmk_index, left_index=True, right_index=True, how='inner')
-returns = df_index_prices.pct_change().dropna()
-bmk_returns = pd.DataFrame({bmk: returns.pop(bmk)})
- 
-mvo_sh = mean_variance_optimization(returns, bmk_returns, optimization_type='sharpe')
-mvo_ca = mean_variance_optimization(returns, bmk_returns, optimization_type='calmar')
- 
-mean_var_weights_sh = pd.concat([pd.DataFrame({'Optimal Weight: Sharpe': mvo_sh['final_optimal_weights'].tolist()}, index=returns.columns.tolist()), pd.DataFrame({'Optimal Weight: Sharpe': [mvo_sh['final_portfolio_return'], mvo_sh['final_portfolio_volatility'], mvo_sh['final_portfolio_ret/vol']]}, index=['Ret', 'Vol', 'Ret/Vol'])])
-mean_var_weights_ca = pd.concat([pd.DataFrame({'Optimal Weight: Calmar': mvo_ca['final_optimal_weights'].tolist()}, index=returns.columns.tolist()), pd.DataFrame({'Optimal Weight: Calmar': [mvo_ca['final_portfolio_return'], mvo_ca['final_portfolio_volatility'], mvo_ca['final_portfolio_ret/vol']]}, index=['Ret', 'Vol', 'Ret/Vol'])])
- 
-program_mean_var_weights = pd.merge(mean_var_weights_sh, mean_var_weights_ca, left_index=True, right_index=True, how='inner')
- 
-
-

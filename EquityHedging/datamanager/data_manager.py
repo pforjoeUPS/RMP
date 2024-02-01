@@ -11,8 +11,6 @@ import numpy as np
 import os
 from datetime import datetime as dt
 from math import prod
-from EquityHedging.analytics import summary 
-
 
 CWD = os.getcwd()
 RETURNS_DATA_FP = CWD +'\\EquityHedging\\data\\'
@@ -682,45 +680,6 @@ def month_ret_table(returns_df, strategy):
     table.index.names = [strategy]
 
     return table
-
-    
-
-def all_strat_month_ret_table(returns_df, notional_weights = [], include_fi = False, new_strat = False, weighted = False):
-    '''
-    
-
-    Parameters
-    ----------
-    returns_df : Data Frame
-        Data Frame containing monthly returns data
-    strat_list : List
-        DESCRIPTION. The default is ['Down Var','VOLA', 'Dynamic Put Spread', 'VRR', 'GW Dispersion','Corr Hedge','Def Var'].
-
-    Returns
-    -------
-    month_table : TYPE
-        DESCRIPTION.
-
-    '''
-    #make strat list the columns of returns_df
-    
-    if weighted == True:
-        
-        #get weighted strats and weighted hedges 
-        returns_df = summary.get_weighted_data(returns_df,notional_weights,include_fi, new_strat)
-        
-    
-    #create strat list from the columns of the returns data
-    strat_list = returns_df.columns
-    
-    #create moth table dict
-    month_table_dict = {}
-    
-    #loop through each strategy in the list and get the monthly returns table
-    for strat in strat_list:
-       month_table_dict[strat] = month_ret_table(returns_df, strat)
-       #month_table_dict[strat] = month_table_dict[strat][:-1]
-    return month_table_dict
 
 
 def get_new_returns_df(new_ret_df,ret_df):

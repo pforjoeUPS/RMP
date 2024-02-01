@@ -4,15 +4,13 @@ Created on Fri Nov 10 14:05:57 2023
 
 @author: PCR7FJW
 """
+# TODO: Refactor and link different functions that we already have
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
 from scipy.optimize import minimize
-#from scipy.stats import skew, kurtosis
-#from RStrats import SharpeVSCVar as SVC
-#from EquityHedging.datamanager import data_manager as dm
-#from RStrats.stratanalysis import rcm as rcm
-
+from EquityHedging.analytics import returns_stats as rs
+from EquityHedging.datamanager import data_manager as dm
+# TODO: Use dm to transform returns to price data if needed
 import os
 CWD = os.getcwd()
 
@@ -27,32 +25,32 @@ def bootstrap_resample(data):
     return data.iloc[resample_indices]
 
     # Calculate CAGR
-def calculate_cagr(returns_series, years_lookback = 3):
-    years = returns_series.index.year.unique().tolist()[-years_lookback:]
-    returns = returns_series.loc[f'{years[0]}-01-01':f'{years[-1]}-12-31']
-    cum_returns = (1 + returns).cumprod() - 1
-    total_return = cum_returns.iloc[-1]
-    num_years = len(returns) / 252
-    cagr = (1 + total_return) ** (1 / num_years) - 1
-    return cagr
+# def calculate_cagr(returns_series, years_lookback = 3):
+#     years = returns_series.index.year.unique().tolist()[-years_lookback:]
+#     returns = returns_series.loc[f'{years[0]}-01-01':f'{years[-1]}-12-31']
+#     cum_returns = (1 + returns).cumprod() - 1
+#     total_return = cum_returns.iloc[-1]
+#     num_years = len(returns) / 252
+#     cagr = (1 + total_return) ** (1 / num_years) - 1
+#     return cagr
 
     # Calculate MAX DD
-def calculate_max_drawdown(returns_series):
-    cum_returns = (1 + returns_series).cumprod()
-    peak = cum_returns.cummax()
-    drawdown = (cum_returns/peak)-1
-    max_drawdown = drawdown.min()
-    return max_drawdown
+# def calculate_max_drawdown(returns_series):
+#    cum_returns = (1 + returns_series).cumprod()
+#    peak = cum_returns.cummax()
+#    drawdown = (cum_returns/peak)-1
+#    max_drawdown = drawdown.min()
+#    return max_drawdown
 
     # Calculate AVERAGE DRAWDOWN -- WIP
-def calculate_average_annual_drawdowns(returns_series, years_lookback = 3):
-    avg_max_dd = 0
-    for year in returns_series.index.year.unique().tolist()[-years_lookback:]:
-        returns_year = returns_series.loc[f'{year}-01-01':f'{year}-12-31']
-        max_dd_year = calculate_max_drawdown(returns_year)
-        avg_max_dd += max_dd_year
-    avg_max_dd /= years_lookback
-    return avg_max_dd
+# def calculate_average_annual_drawdowns(returns_series, years_lookback = 3):
+#     avg_max_dd = 0
+#     for year in returns_series.index.year.unique().tolist()[-years_lookback:]:
+#         returns_year = returns_series.loc[f'{year}-01-01':f'{year}-12-31']
+#         max_dd_year = calculate_max_drawdown(returns_year)
+#         avg_max_dd += max_dd_year
+#     avg_max_dd /= years_lookback
+#     return avg_max_dd
 
     # Define BOUNDS
 def asset_class_bounds():
@@ -72,12 +70,6 @@ def asset_class_bounds():
     }
     return asset_class_bounds
 
-    # Caclulate CVAR
-def calculate_cvar(portfolio_returns, alpha=0.05):
-    var = np.percentile(portfolio_returns, alpha * 100)
-    cvar = portfolio_returns[portfolio_returns <= var].mean()
-    return cvar
-
 
 def mean_variance_optimization(returns, bmk_returns=None, num_iterations=1000, optimization_type='sharpe'):
     """
@@ -95,8 +87,11 @@ def mean_variance_optimization(returns, bmk_returns=None, num_iterations=1000, o
     """
     
     # Calculate mean and volatility of returns
-    mean_returns = returns.mean() * 252
-    volatility = returns.std(axis=0) * np.sqrt(252)
+    # check difference of mean returns w Powis
+    #mean_returns = returns.mean() * 252
+    #volatility = returns.std(axis=0) * np.sqrt(252)
+    ann_returns = rs.get_ann_return(returns, freq='1D')
+    volatility = rs.get_ann_vol(returns, freq='1D')
     covariance_matrix = calculate_covariance_matrix(np.corrcoef(returns, rowvar=False), volatility)
 
     # Resample correlation matrices using bootstrap
@@ -115,7 +110,8 @@ def mean_variance_optimization(returns, bmk_returns=None, num_iterations=1000, o
 
     def calmar_objective(weights, expected_returns, sample_returns, covariance_matrix):
         portfolio_return = np.dot(expected_returns, weights)
-        max_drawdown = calculate_max_drawdown(bmk_returns.reindex(sample_returns.index))
+        bmk_prices = dm.get_prices_df(bmk_returns.reindex(sample_returns.index))
+        max_drawdown = rs.get_max_dd(bmk_prices)
         calmar_ratio = portfolio_return / abs(max_drawdown)
         return -calmar_ratio
 
@@ -135,10 +131,10 @@ def mean_variance_optimization(returns, bmk_returns=None, num_iterations=1000, o
         # Choose objective function based on optimization type
         if optimization_type == 'sharpe':
             objective = sharpe_objective
-            args = (mean_returns, covariance_matrix)
+            args = (ann_returns, covariance_matrix)
         elif optimization_type == 'calmar':
             objective = calmar_objective
-            args = (mean_returns, sample['resampled_returns'], covariance_matrix)
+            args = (ann_returns, sample['resampled_returns'], covariance_matrix)
         else:
             raise ValueError("Invalid optimization type. Choose 'sharpe' or 'calmar'.")
 
@@ -148,12 +144,14 @@ def mean_variance_optimization(returns, bmk_returns=None, num_iterations=1000, o
         all_optimal_weights.append(optimal_weights)
 
     # Aggregate results
-    final_optimal_weights = np.mean(all_optimal_weights, axis=0)
-    final_portfolio_return = np.sum(mean_returns * final_optimal_weights)
+    #final_optimal_weights = np.mean(all_optimal_weights, axis=0)
+    final_optimal_weights = pd.DataFrame(np.mean(all_optimal_weights, axis=0),index=returns.columns.tolist(), columns=['Weights'])
+    final_portfolio_return = np.sum(ann_returns * final_optimal_weights['Weights'])
     final_portfolio_volatility = np.sqrt(np.dot(final_optimal_weights.T, np.dot(covariance_matrix, final_optimal_weights)))
     final_portfolio_retvol = final_portfolio_return / final_portfolio_volatility
 
     # Create dictionary for results
+
     result_dict = {
         'final_optimal_weights': final_optimal_weights,
         'final_portfolio_return': final_portfolio_return,
@@ -171,44 +169,6 @@ def mean_variance_optimization(returns, bmk_returns=None, num_iterations=1000, o
 #         sterling_ratio = portfolio_return / (abs(avg_max_drawdown))
 #         return -sterling_ratio
 # =============================================================================
-
-
-#==================================================================================================================
-#MXWDIM DATA
-bmk_index = pd.read_excel(CWD+'\\RStrats\\' + 'SPX&MXWDIM Historical Price.xlsx', sheet_name = 'MXWDIM', index_col=0)
-
-#PROGRAM DATA
-df_index_prices = pd.read_excel(CWD+'\\RStrats\\' + 'weighted hedgesSam.xlsx', sheet_name = 'Program', index_col=0)
-
-#COMMODITIES
-df_index_prices = pd.read_excel(CWD+'\\RStrats\\' + 'Commods Example.xlsx', sheet_name = 'Sheet4', index_col=0)
-
-#RATES STRATEGIES
-new_strat = pd.read_excel(CWD+'\\RStrats\\' + 'VRR Timeseries.xlsx',
-                                           sheet_name = 'BASKETS', index_col=0)
-
-#CITI Dispersion
-df_index_prices = pd.read_excel(CWD+'\\RStrats\\' + 'CITIDispersionIndex.xlsx',
-                                           sheet_name = 'Gamma', index_col=0)
-
-
-
-#calculated returns off of price data
-bmk = 'MXWDIM'
-df_index_prices = pd.merge(df_index_prices, bmk_index, left_index=True, right_index=True, how='inner')
-returns = df_index_prices.pct_change().dropna()
-bmk_returns = pd.DataFrame({bmk: returns.pop(bmk)})
-
-mvo_sh = mean_variance_optimization(returns, num_iterations=500, optimization_type='sharpe')
-mvo_ca = mean_variance_optimization(returns, bmk_returns, num_iterations=500, optimization_type='calmar')
-
-mean_var_weights_sh = pd.concat([pd.DataFrame({'Optimal Weight: Sharpe': mvo_sh['final_optimal_weights'].tolist()}, index=returns.columns.tolist()), pd.DataFrame({'Optimal Weight: Sharpe': [mvo_sh['final_portfolio_return'], mvo_sh['final_portfolio_volatility'], mvo_sh['final_portfolio_ret/vol']]}, index=['Ret', 'Vol', 'Ret/Vol'])])
-mean_var_weights_ca = pd.concat([pd.DataFrame({'Optimal Weight: Calmar': mvo_ca['final_optimal_weights'].tolist()}, index=returns.columns.tolist()), pd.DataFrame({'Optimal Weight: Calmar': [mvo_ca['final_portfolio_return'], mvo_ca['final_portfolio_volatility'], mvo_ca['final_portfolio_ret/vol']]}, index=['Ret', 'Vol', 'Ret/Vol'])])
-
-program_mean_var_weights = pd.merge(mean_var_weights_sh, mean_var_weights_ca, left_index=True, right_index=True, how='inner')
-
-
-
 
 
 
