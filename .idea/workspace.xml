@@ -4,10 +4,23 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="097b79bf-9c35-4f3b-839c-13f2bf58ee38" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+    <list default="true" id="097b79bf-9c35-4f3b-839c-13f2bf58ee38" name="Changes" comment="Pushing Scratch file for RCM and MVO">
+      <change afterPath="$PROJECT_DIR$/RStrats/stratanalysis/MarginalAnalysisScript.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/RMP.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/RMP.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_1_24_2024_4_07_PM_[Changes]1/Commods Weighted IndexMetrics.xlsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_1_24_2024_4_07_PM_[Changes]1/GrindLowHedgesMetricsAnalysis.xlsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_1_24_2024_4_07_PM_[Changes]1/VRR Timeseries.xlsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_1_24_2024_4_07_PM_[Changes]1/returns_data.xlsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_1_24_2024_4_07_PM_[Changes]1/shelved.patch" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_1_24_2024_4_07_PM_[Changes]1/ups_data.xlsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_1_24_2024_4_07_PM_[Changes]1/vrr_tracks_data.xlsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_1_24_2024_4_07_PM_[Changes]1/weighted hedgesSAM.xlsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_1_24_2024_4_07_PM__Changes_1.xml" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/EquityHedging/scripts/script.py" beforeDir="false" afterPath="$PROJECT_DIR$/EquityHedging/scripts/script.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/EquityHedging/datamanager/data_manager.py" beforeDir="false" afterPath="$PROJECT_DIR$/EquityHedging/datamanager/data_manager.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RStrats/SharpeVSCVar.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/RStrats/stratanalysis/MeanVarianceModel.py" beforeDir="false" afterPath="$PROJECT_DIR$/RStrats/stratanalysis/MeanVarianceModel.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RStrats/stratanalysis/MeanVarianceModelOLD.py" beforeDir="false" afterPath="$PROJECT_DIR$/RStrats/stratanalysis/MeanVarianceModelOLD.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -29,18 +42,36 @@
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
+    <option name="showMembers" value="true" />
   </component>
   <component name="PropertiesComponent">{
   &quot;keyToString&quot;: {
+    &quot;Python.MVO.executor&quot;: &quot;Run&quot;,
+    &quot;Python.SharpeVSCVar.executor&quot;: &quot;Debug&quot;,
     &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/Users/PCR7FJW/Documents/RMP/RStrats/stratanalysis&quot;,
     &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
     &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
     &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
     &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.lookFeel&quot;,
     &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  },
+  &quot;keyToStringList&quot;: {
+    &quot;com.intellij.ide.scratch.ScratchImplUtil$2/New Scratch File&quot;: [
+      &quot;Python&quot;
+    ]
   }
 }</component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="C:\Users\PCR7FJW\Documents\RMP\RStrats\stratanalysis" />
+    </key>
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\PCR7FJW\Documents\RMP\RStrats\stratanalysis" />
+    </key>
+  </component>
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
@@ -60,10 +91,57 @@
       <workItem from="1706144863933" duration="39000" />
       <workItem from="1706549651193" duration="53000" />
       <workItem from="1706549724112" duration="505000" />
+      <workItem from="1706711019349" duration="7073000" />
+      <workItem from="1706721786322" duration="453000" />
+      <workItem from="1706799409139" duration="8010000" />
+      <workItem from="1706894702602" duration="6674000" />
+      <workItem from="1707143217216" duration="8831000" />
     </task>
+    <task id="LOCAL-00001" summary="Pushing/Updating DM, SUMMARY, MRC, MVO, RCM">
+      <option name="closed" value="true" />
+      <created>1706823659385</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1706823659385</updated>
+    </task>
+    <task id="LOCAL-00002" summary="Pushing Scratch file for RCM and MVO">
+      <option name="closed" value="true" />
+      <created>1706823739997</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1706823739997</updated>
+    </task>
+    <option name="localTasksCounter" value="3" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="Pushing/Updating DM, SUMMARY, MRC, MVO, RCM" />
+    <MESSAGE value="Pushing Scratch file for RCM and MVO" />
+    <option name="LAST_COMMIT_MESSAGE" value="Pushing Scratch file for RCM and MVO" />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/RStrats/stratanalysis/rcm.py</url>
+          <line>113</line>
+          <option name="timeStamp" value="4" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/RStrats/stratanalysis/rcm.py</url>
+          <line>51</line>
+          <option name="timeStamp" value="9" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
+  </component>
+  <component name="com.intellij.coverage.CoverageDataManagerImpl">
+    <SUITE FILE_PATH="coverage/RMP$SharpeVSCVar.coverage" NAME="SharpeVSCVar Coverage Results" MODIFIED="1706903606148" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/RStrats/stratanalysis" />
+    <SUITE FILE_PATH="coverage/RMP$MVO.coverage" NAME="MVO Coverage Results" MODIFIED="1706719336905" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/RStrats/stratanalysis" />
   </component>
 </project>

@@ -84,7 +84,7 @@ def format_data(df_index, freq="1M"):
        data = data.resample(freq).ffill()
     data = data.pct_change(1)
     data.dropna(inplace=True)
-    data = data.loc[(data!=0).any(1)]
+    data = data.loc[(data != 0).any(axis=1)]
     return data
 
 def get_min_max_dates(df_returns):

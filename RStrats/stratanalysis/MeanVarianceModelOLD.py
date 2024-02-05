@@ -7,11 +7,8 @@ Created on Fri Nov 10 14:05:57 2023
 import pandas as pd
 import numpy as np
 from scipy.optimize import minimize
-from RStrats import SharpeVSCVar as SVC
+from RStrats.stratanalysis import SharpeVSCVar as SVC
 import matplotlib.pyplot as plt
-from EquityHedging.datamanager import data_manager as dm
-from EquityHedging.analytics import returns_stats  as rs
-from matplotlib.ticker import FuncFormatter
 import os
 CWD = os.getcwd()
 
