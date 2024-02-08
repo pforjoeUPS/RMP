@@ -12,7 +12,8 @@ class BaseDataImporterTest(unittest.TestCase):
     def setUp(self):
         self.mock_data = pd.DataFrame({'col1': [1, 2, 3], 'col2': ['a', 'b', 'c']})
 
-    def assert_data_importer_initialized_correctly(self, data_importer, filepath, sheet_name, index_col, skip_rows, data_source, col_dict, index_data, expected_data=None):
+    def assert_data_importer_initialized_correctly(self, data_importer, filepath, sheet_name, index_col, skip_rows,
+                                                   data_source, col_dict, index_data, expected_data=None):
         self.assertEqual(data_importer.filepath, filepath)
         self.assertEqual(data_importer.sheet_name, sheet_name)
         self.assertEqual(data_importer.index_col, index_col)
@@ -30,7 +31,7 @@ class BaseDataImporterTest(unittest.TestCase):
 class TestDataImporter(BaseDataImporterTest):
     @patch('EquityHedging.datamanager.data_importer.pd.read_excel')
     def test_read_excel_data(self, mock_read_excel):
-        mock_data = {'col1': [1, 2, 3], 'col2': ['a', 'b', 'c']}
+        mock_data = {'row_1': [1, 2, 3], 'row_2': ['a', 'b', 'c']}
         mock_read_excel.return_value = mock_data
 
         result = read_excel_data('test_filepath.xlsx')
@@ -56,7 +57,8 @@ class TestDataImporterInitialization(BaseDataImporterTest):
         mock_read_excel_data.return_value = self.mock_data
 
         data_importer = DataImporter('test_filepath.xlsx')
-        self.assert_data_importer_initialized_correctly(data_importer, 'test_filepath.xlsx', 0, 0, [], 'custom', {}, False)
+        self.assert_data_importer_initialized_correctly(data_importer, 'test_filepath.xlsx', 0, 0, [], 'custom', {},
+                                                        False)
 
     @patch('EquityHedging.datamanager.data_importer.read_excel_data')
     def test_innocap_data_importer_init(self, mock_read_excel_data):
@@ -81,7 +83,6 @@ class TestDataImporterInitialization(BaseDataImporterTest):
 
     @patch('EquityHedging.datamanager.data_importer.read_excel_data')
     def test_nexen_data_importer_init(self, mock_read_excel_data):
-
         # Modify the mock data to include all columns from NEXEN_DATA_COL_DICT
         mock_data = pd.DataFrame({
             'Name': ['John', 'Jane'],
@@ -99,6 +100,7 @@ class TestDataImporterInitialization(BaseDataImporterTest):
         self.assert_data_importer_initialized_correctly(
             nexen_data_importer, 'test_filepath.xlsx', 0, None, [], 'nexen', expected_col_dict, False, expected_data
         )
+
 
 class TestDataImporterMethods(BaseDataImporterTest):
 
@@ -125,7 +127,6 @@ class TestDataImporterMethods(BaseDataImporterTest):
 
         self.assertTrue(result.equals(mock_data))
 
-
     @patch('EquityHedging.datamanager.data_importer.read_excel_data')
     def test_bbg_data_importer_get_col_dict(self, mock_read_excel_data):
         mock_keys_data = pd.DataFrame({'Index': ['A', 'B'], 'Description': ['DescA', 'DescB']})
@@ -136,8 +137,8 @@ class TestDataImporterMethods(BaseDataImporterTest):
 
         expected_result = {'A': 'DescA', 'B': 'DescB'}
         self.assertEqual(result, expected_result)
-        mock_read_excel_data.assert_called_with(filepath='test_filepath.xlsx', sheet_name='key', index_col=None, use_cols='A:B')
-
+        mock_read_excel_data.assert_called_with(filepath='test_filepath.xlsx', sheet_name='key', index_col=None,
+                                                use_cols='A:B')
 
 
 if __name__ == '__main__':
