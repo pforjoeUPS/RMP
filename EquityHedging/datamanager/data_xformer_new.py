@@ -9,8 +9,7 @@ import copy
 
 import pandas as pd
 
-from . import data_importer as di
-from . import data_manager_new as dm
+from . import data_importer as di, data_manager_new as dm
 
 
 def copy_data(data):

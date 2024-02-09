@@ -7,6 +7,7 @@ Created on Tue Oct  1 17:59:28 2019
 import calendar
 
 import pandas as pd
+from copy import deepcopy
 from . import returns_analytics as ra, returns_stats_new as rs
 from ..datamanager import data_manager_new as dm
 from ..datamanager.data_xformer_new import copy_data, get_data_dict
@@ -560,7 +561,7 @@ class LiquidAltsStratSummary(LiquidAltsAnalyticSummary):
 
     @staticmethod
     def add_bmk_data(data_handler):
-        updated_dh = copy_data(data_handler)
+        updated_dh = deepcopy(data_handler)
         updated_dh.returns = dm.merge_dfs(updated_dh.returns, updated_dh.bmk_returns[[updated_dh.bmk_name]])
         return updated_dh
 

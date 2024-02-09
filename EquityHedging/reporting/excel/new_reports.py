@@ -77,23 +77,14 @@ class DataReport(SetReport):
         self.data = data
         # self.info_dict = None
 
-    def run_report(self):
+    def run_report(self, **kwargs):
         self.writer = self.get_writer()
-        # self.generate_info_dict()
-        # self.generate_info_sheet()
         self.generate_report()
         self.print_report_info()
         self.writer.close()
 
     def get_writer(self):
         return pd.ExcelWriter(self.file_path, engine='xlsxwriter')
-
-    def generate_info_dict(self):
-        # self.info_dict = {'Report Name': self.report_name}
-        pass
-
-    def generate_info_sheet(self):
-        new_sheets.InfoSheet(self.writer, self)
 
     def generate_report(self, *kwargs):
         pass
@@ -404,13 +395,13 @@ class AltsReport(AnalyticReport):
                                                      include_best_worst_pd=self.include_best_worst_pd,
                                                      include_roll_stats=self.include_roll_stats)
 
-    def run_report(self, period_list):
+    def run_report(self, period_list=[]):
         self.writer = self.get_writer()
         self.generate_report(period_list)
         self.print_report_info()
         self.writer.close()
 
-    def generate_report(self, period_list):
+    def generate_report(self, period_list=[]):
         self.generate_period_sheets(period_list)
         if self.include_quantile:
             self.generate_quantile_sheets()
@@ -425,7 +416,7 @@ class AltsReport(AnalyticReport):
 
     def generate_period_sheets(self, period_list=[]):
         if any(period_list) is False:
-            period_list = period_list.copy()
+            period_list = self.analytic_summary.period_list.copy()
         for period in period_list:
             try:
                 self.generate_correlation_sheets(period)
@@ -497,45 +488,6 @@ class AltsReport(AnalyticReport):
         new_sheets.HistReturnMTDYTDSheet(writer=self.writer, data=self.data['mtd_ytd_itd']).create_sheet()
 
 
-    #
-    # def check_data_type(self, ):
-    #     if type(self.data) is not dict:
-    #         self.data = {'Full': self.returns_data.copy()}
-    #         try:
-    #             if type(self.mv_data) is not dict:
-    #                 self.mv_data = {'Full': self.mv_data.copy()}
-    #         except KeyError:
-    #             self.mv_data = {'Full': pd.DataFrame()}
-    #
-    # def generate_report(self):
-    #     self.check_data_type()
-    #     for key in self.data:
-    #         print(f'Computing {key} Analytics...')
-    #         # get analytics
-    #         returns_df = self.data[key].copy()
-    #         try:
-    #             mv_df = self.mv_data[key].copy()
-    #             returns_df.dropna(axis=1, inplace=True)
-    #             mv_df.dropna(axis=1, inplace=True)
-    #         except KeyError:
-    #             mv_df = pd.DataFrame()
-    #         analysis_data = summary.get_alts_data(returns_df, mv_df, include_fi=self.include_fi, freq=self.freq,
-    #                                               include_bmk=self.include_bmk, bmk_df=self.bmk_df,
-    #                                               bmk_dict=self.bmk_dict)
-    #
-    #         # create sheets
-    #         new_sheets.CorrStatsSheet(self.writer, analysis_data['corr'], sheet_name=f'Correlation Analysis ({key})',
-    #                                   include_fi=self.include_fi).create_sheets()
-    #         new_sheets.AltsReturnStatsSheet(self.writer, analysis_data['ret_stat_df'],
-    #                                         sheet_name=f'Returns Statistics ({key})', include_fi=self.include_fi,
-    #                                         include_bmk=self.include_bmk).create_sheets()
-    #     # returns_df = returns_data['Full'].copy()
-    #     return_sheet_name = dm.switch_freq_string(self.freq) + ' Historical Returns'
-    #     new_sheets.HistReturnSheet(self.writer, self.data['Full'], return_sheet_name).create_sheets()
-    #     new_sheets.HistReturnMTDYTDSheet(self.writer, summary.all_strat_month_ret_table(self.data['Full'],
-    #                                                                                     include_fi=self.include_fi)).create_sheets()
-
-
 class StratAltsReport(AltsReport):
     def __init__(self, report_name, data_handler, include_hf=False, include_fi=True, include_cm=True, include_fx=True):
         self.include_hf = include_hf
@@ -546,6 +498,12 @@ class StratAltsReport(AltsReport):
         return summary_new.LiquidAltsStratSummary(data_handler=self.data_handler, include_hf=self.include_hf,
                                                   include_fi=self.include_fi, include_cm=self.include_cm,
                                                   include_fx=self.include_hf)
+
+    def run_report(self):
+        self.writer = self.get_writer()
+        self.generate_report()
+        self.print_report_info()
+        self.writer.close()
 
     def generate_report(self):
         if self.include_hf:
@@ -568,43 +526,3 @@ class StratAltsReport(AltsReport):
     def generate_correlation_sheets(self):
         corr_dict = self.data['correlations']
         new_sheets.CorrStatsSheet(writer=self.writer, data=corr_dict).create_sheet()
-    # def __init__(self, report_name, returns_data, include_fi=True, freq='1M'):
-    #     super().__init__(report_name, returns_data, include_fi=include_fi, freq=freq)
-    #
-    # def generate_report(self):
-    #     print('in generate report')
-    #     analysis_df = pd.DataFrame()
-    #     col_list_1 = list(self.data.keys())
-    #     col_list_1[0] = 'Since Inception'
-    #     skip = 2 if self.include_fi else 1
-    #     col_list_2 = self.data['Full'].columns[skip:].tolist()
-    #     header = pd.MultiIndex.from_product([col_list_1, col_list_2])
-    #
-    #     # loop through frequencies
-    #     for key in self.data:
-    #         print(f'Computing {key} Analytics...')
-    #         # get analytics
-    #         analysis_data = summary.get_alts_strat_data(self.data[key], include_fi=self.include_fi, freq=self.freq)
-    #         analysis_data.columns = ['port_{}'.format(key), 'bench_{}'.format(key)]
-    #         analysis_df = dm.merge_dfs(analysis_df, analysis_data, drop_na=False, how='right')
-    #
-    #     analysis_df.columns = header
-    #
-    #     # returns stat sheet
-    #     new_sheets.StratAltsReturnStatsSheet(self.writer, analysis_df, sheet_name='Returns Statistics',
-    #                                          include_fi=self.include_fi).create_sheets()
-    #
-    #     # worst_dd sheet
-    #     new_sheets.DrawdownSheet(self.writer, dd.get_worst_drawdowns(self.data['Full'][col_list_2[0]], recovery=True),
-    #                              'Drawdown Statistics').create_sheets()
-    #     # index sheet
-    #     new_sheets.RatioSheet(self.writer, dxf.get_price_data(self.data['Full'][col_list_2]),
-    #                           sheet_name='Index').create_sheets()
-    #
-    #     # MTD-YTD sheet
-    #     new_sheets.HistReturnMTDYTDSheet(self.writer, summary.all_strat_month_ret_table(self.data['Full'],
-    #                                                                                     include_fi=self.include_fi)).create_sheets()
-    #
-    #     # historical return sheet
-    #     return_sheet = dm.switch_freq_string(self.freq) + ' Historical Returns'
-    #     new_sheets.HistReturnSheet(self.writer, self.data['Full'][col_list_2], return_sheet).create_sheets()
