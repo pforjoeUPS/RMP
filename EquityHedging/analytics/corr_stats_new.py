@@ -12,6 +12,51 @@ from ..datamanager import data_manager_new as dm
 from ..datamanager.data_xformer_new import copy_data
 
 
+
+class CorrStats:
+    def __init__(self, returns_df):
+        self.returns_df = returns_df
+        self.corr_stats = self.get_corr_analysis()
+        self.conditional_corr_stats
+
+    def get_corr_analysis(self):
+        """
+        Returns a dict of correlation matrices:
+            full correlation, when equity up, when equity down
+
+        Returns
+        -------
+        corr_dict : dictionary
+            {key: string, value: list[dataframe, string]}
+
+        """
+
+        return {"Full": {'corr_df': self.returns_df.corr(),
+                         'title': f'Correlation of {len(self.returns_df)} Historical Observations ({self.get_data_range()})'
+                         }
+                }
+
+    def get_data_range(self):
+        dates = dm.get_min_max_dates(self.returns_df)
+        return str(dates['start']).split()[0] + ' to ' + str(dates['end']).split()[0]
+
+    def get_conditional_corr(self, strat_id):
+        strat_up = (self.returns_df[self.returns_df[strat_id] > 0])
+        strat_down = (self.returns_df[self.returns_df[strat_id] < 0])
+        return {'corr_df': get_up_lwr_corr(strat_up, strat_down),
+                'title': f'Conditional correlation where {strat_id} > 0 (upper) and < 0 (lower)'
+                }
+
+    @staticmethod
+    def get_up_lwr_corr(up_df, lwr_df):
+        up_array = np.triu(up_df.corr().values)
+        lwr_array = np.tril(lwr_df.corr().values)
+        temp_array = up_array + lwr_array
+        for i in range(0, len(temp_array)):
+            temp_array[i][i] = 1
+
+        return pd.DataFrame(temp_array, index=lwr_df.columns, columns=up_df.columns)
+
 def get_corr_analysis(returns_df):
     """
     Returns a dict of correlation matrices: 
@@ -39,9 +84,9 @@ def get_data_range(returns_df):
     return str(dates['start']).split()[0] + ' to ' + str(dates['end']).split()[0]
 
 
-def get_conditional_corr(df_returns, strat_id):
-    strat_up = (df_returns[df_returns[strat_id] > 0])
-    strat_down = (df_returns[df_returns[strat_id] < 0])
+def get_conditional_corr(returns_df, strat_id):
+    strat_up = (returns_df[returns_df[strat_id] > 0])
+    strat_down = (returns_df[returns_df[strat_id] < 0])
     return {'corr_df': get_up_lwr_corr(strat_up, strat_down),
             'title': f'Conditional correlation where {strat_id} > 0 (upper) and < 0 (lower)'
             }

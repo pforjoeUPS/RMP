@@ -55,6 +55,7 @@ def get_arg_no(function):
 def get_clean_series(data_series, name):
     data_series.dropna(inplace=True)
     data_series.name = name
+    # data_series = data_series.sort_index()
     return data_series
 
 
@@ -119,6 +120,7 @@ class RollingStats:
         for strat in self.returns_df:
             rolling_stat_df = pd.concat([rolling_stat_df, self.get_rolling_stat(self.returns_df[strat], ret_stat)],
                                         axis=1)
+        rolling_stat_df = rolling_stat_df.sort_index()
         return rolling_stat_df
 
     def get_rolling_stat_data(self, sub_list=None):
@@ -168,6 +170,7 @@ class RollingCorrStats(RollingStats):
                 pass
             else:
                 rolling_corr_df = pd.concat([rolling_corr_df, rolling_corr_series], axis=1)
+                rolling_corr_df = rolling_corr_df.sort_index()
         return rolling_corr_df
 
     def get_rolling_corr_data(self):
@@ -219,6 +222,7 @@ class RollingMarketStats(RollingCorrStats):
             else:
                 rolling_mkt_series = self.get_rolling_beta(return_series, self.mkt_df[mkt])
             rolling_mkt_df = pd.concat([rolling_mkt_df, rolling_mkt_series], axis=1)
+            rolling_mkt_df = rolling_mkt_df.sort_index()
         return rolling_mkt_df
 
     # def get_rolling_alpha_data(self):
@@ -243,22 +247,24 @@ class RollingMarketStats(RollingCorrStats):
         for mkt_stat in sub_list:
             # make a dict to collect the data
             rolling_data = {}
+            mkt_function = rolling_mkt_dict.get(mkt_stat)
             # iterate through items
             for strat in self.returns_df:
                 try:
-                    mkt_function = rolling_mkt_dict.get(mkt_stat)
                     kwargs = {'return_series': self.returns_df[strat]}
                     if mkt_stat == 'corr':
                         kwargs['returns_df'] = self.mkt_df
                     else:
                         kwargs['alpha'] = True if mkt_stat == 'alpha' else False
-                    rolling_data[strat] = mkt_function(*kwargs.values())
+                    rolling_df = mkt_function(*kwargs.values())
+                    if rolling_df.empty is False:
+                        # rolling_mkt_df = rolling_mkt_df.sort_index()
+                        rolling_data[strat] = rolling_df.sort_index()
                 except KeyError:
                     print(f'Missing {mkt_stat} data for {strat}...check mkt_df')
                     pass
             self.rolling_mkt_stats[mkt_stat] = rolling_data
         self.rolling_data['mkt_stats'] = self.rolling_mkt_stats
-        # return rolling_mkt_data
 
 
 class RollingActiveStats(RollingMarketStats):
@@ -296,6 +302,7 @@ class RollingActiveStats(RollingMarketStats):
                 active_dict = get_active_data(self.returns_df[strat], self.bmk_df[bmk_name])
                 rolling_active_series = self.get_rolling_active_stat(active_dict, active_stat)
                 rolling_active_df = pd.concat([rolling_active_df, rolling_active_series], axis=1)
+                rolling_active_df = rolling_active_df.sort_index()
             except KeyError:
                 print(f'Missing bmk data for {strat}...check bmk_df or bmk_key')
                 pass

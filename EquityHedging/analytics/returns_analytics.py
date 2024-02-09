@@ -14,12 +14,14 @@ from . import corr_stats_new as cs
 from . import drawdowns as dd
 from . import hedge_metrics_new as hm
 from . import returns_stats_new as rs
+from .period_stats import BestWorstPeriods
 from .historical_selloffs_new import get_hist_sim_table
 from .quantile_stats import get_all_quantile_data
 from .rolling_stats_new import get_rolling_data
 from ..datamanager import data_xformer_new as dxf
 from .util_new import convert_dict_to_df
 from ..datamanager import data_manager_new as dm
+from ..datamanager.data_xformer_new import copy_data
 
 ACTIVE_COL_DICT = {'bmk_name': 'Bmk Name', 'bmk_beta': 'Bmk Beta', 'excess_ret': 'Excess Return (Ann)',
                    'te': 'Tracking Error (TE)', 'downside_te': 'Downside TE',
@@ -115,6 +117,7 @@ class ReturnsAnalytic:
         self.returns_stats_data = None
         self.roll_stats_data = None
         self.quantile_stats_data = None
+        self.best_worst_period_stats_data = None
 
     # TODO: Rethink computing al the stats for rolling
     def get_roll_stats(self, sub_list_data=None):
@@ -129,6 +132,19 @@ class ReturnsAnalytic:
     def get_quantile_stats(self):
         print('Computing Quantile data...')
         self.quantile_stats_data = get_all_quantile_data(returns_df=self.returns_df, mkt_df=self.mkt_ret_data)
+
+    def get_best_worst_pd_stats(self, freq='Q', num_periods=10):
+        if dm.check_freq(self.returns_df, freq=freq):
+            best_worst_pd = BestWorstPeriods(returns_df=self.returns_df,
+                                             mkt_df=self.mkt_ret_data, num_periods=num_periods)
+        else:
+            returns_freq_df = dm.convert_freq(self.returns_df, freq=freq)
+            mkt_freq_df = dm.convert_freq(self.mkt_ret_data, freq=freq)
+            best_worst_pd = BestWorstPeriods(returns_df=returns_freq_df,
+                                             mkt_df=mkt_freq_df, num_periods=num_periods)
+
+        self.best_worst_period_stats_data = {'worst_periods': best_worst_pd.worst_periods_data,
+                                             'best_periods': best_worst_pd.best_periods_data}
 
     def get_mkt_bool_data(self):
         return {'Equity': self.include_eq, 'Fixed Income': self.include_fi}
@@ -350,6 +366,7 @@ class ReturnsDictAnalytic(ReturnsAnalytic):
         self.returns_stats_dict = None
         self.roll_stats_dict = None
         self.quantile_stats_dict = None
+        self.best_worst_period_stats_dict = None
         self.get_analytics_dict()
 
     def get_return_analytic(self, key):
@@ -433,6 +450,12 @@ class ReturnsDictAnalytic(ReturnsAnalytic):
             self.analytics_dict[key].get_quantile_stats()
             self.quantile_stats_dict[key] = self.analytics_dict[key].quantile_stats_data
 
+    def get_best_worst_pd_stats_dict(self, key_list):
+        self.best_worst_period_stats_dict = {}
+        for key in key_list:
+            self.analytics_dict[key].get_best_worst_pd_stats()
+            self.quantile_stats_dict[key] = self.analytics_dict[key].get_best_worst_pd_stats_data
+
     def get_dd_stats_dict(self, key_list):
         self.dd_stats_dict = {}
         for key in key_list:
@@ -502,8 +525,9 @@ class LiquidAltsPeriodAnalytic(LiqAltsReturnsDictAnalytic):
         # self.get_dd_stats()
         # self.get_roll_stats()
 
-    def get_key_list(self, remove_list=['1 Year']):
-        sub_list = dxf.copy_data(list(self.returns_dict.keys()))
+    @staticmethod
+    def get_key_list(period_list, remove_list=['1 Year']):
+        sub_list = copy_data(period_list)
         return [x for x in sub_list if x not in remove_list]
 
 
