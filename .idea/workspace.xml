@@ -5,7 +5,12 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="b803898b-e4fe-48e5-b312-a81e5815600b" name="Changes" comment="Update modules in analytics">
-      <change beforePath="$PROJECT_DIR$/EquityHedging/scripts/script_new.py" beforeDir="false" afterPath="$PROJECT_DIR$/EquityHedging/scripts/script_new.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/EquityHedging/datamanager/data_handler.py" beforeDir="false" afterPath="$PROJECT_DIR$/EquityHedging/datamanager/data_handler.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/EquityHedging/datamanager/data_importer.py" beforeDir="false" afterPath="$PROJECT_DIR$/EquityHedging/datamanager/data_importer.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/EquityHedging/datamanager/data_manager_new.py" beforeDir="false" afterPath="$PROJECT_DIR$/EquityHedging/datamanager/data_manager_new.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/EquityHedging/datamanager/data_updater_new.py" beforeDir="false" afterPath="$PROJECT_DIR$/EquityHedging/datamanager/data_updater_new.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/EquityHedging/datamanager/data_xformer_new.py" beforeDir="false" afterPath="$PROJECT_DIR$/EquityHedging/datamanager/data_xformer_new.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -319,7 +324,10 @@
     </breakpoint-manager>
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
-    <SUITE FILE_PATH="coverage/RMP$update_script.coverage" NAME="update_script Coverage Results" MODIFIED="1691382689581" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/EquityHedging/scripts" />
+    <SUITE FILE_PATH="coverage/RMP$data_updater_new.coverage" NAME="data_updater_new Coverage Results" MODIFIED="1706896093403" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/EquityHedging/datamanager" />
+    <SUITE FILE_PATH="coverage/RMP$rolling_stats_new.coverage" NAME="rolling_stats_new Coverage Results" MODIFIED="1707500567222" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/EquityHedging/analytics" />
     <SUITE FILE_PATH="coverage/RMP$roll_stats_new.coverage" NAME="roll_stats_new Coverage Results" MODIFIED="1705533207654" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/EquityHedging/analytics" />
+    <SUITE FILE_PATH="coverage/RMP$update_script.coverage" NAME="update_script Coverage Results" MODIFIED="1691382689581" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/EquityHedging/scripts" />
+    <SUITE FILE_PATH="coverage/RMP$new_sheets.coverage" NAME="new_sheets Coverage Results" MODIFIED="1707350621828" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/EquityHedging/reporting/excel" />
   </component>
 </project>

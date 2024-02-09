@@ -7,10 +7,10 @@ Created on Tue Oct  1 17:59:28 2019
 
 import os
 from datetime import datetime as dt
-from math import prod
 
-import numpy as np
 import pandas as pd
+
+from EquityHedging.datamanager import data_importer as di, data_xformer_new as dxf
 
 CWD = os.getcwd()
 DATA_FP = CWD + '\\EquityHedging\\data\\'
@@ -84,9 +84,9 @@ def merge_dicts(main_dict, new_dict, drop_na=True, fillzeros=False):
             main_df = main_dict[key].copy()
             new_df = new_dict[key]
             try:
-                if get_freq(main_df) == 'D' and check_freq(main_df, new_df):
-                    main_df = main_df.fillna(0)
-                    merged_dict[key] = merge_dfs(main_df, new_df, drop_na=drop_na, fillzeros=True)
+                if get_freq(main_df) == 'D' and compare_freq(main_df, new_df):
+                    # main_df = main_df.fillna(0)
+                    merged_dict[key] = merge_dfs(main_df, new_df, drop_na=drop_na, fillzeros=fillzeros)
                 else:
                     merged_dict[key] = merge_dfs(main_df, new_df, drop_na=drop_na, fillzeros=fillzeros)
             except ValueError:
@@ -122,6 +122,8 @@ def merge_dfs(main_df, new_df, drop_na=True, fillzeros=False, how='outer'):
 
     df = pd.merge(main_df, new_df, left_index=True, right_index=True, how=how)
     if drop_na:
+        if fillzeros:
+            df = df.fillna(0)
         df.dropna(inplace=True)
     if fillzeros:
         df = df.fillna(0)
@@ -279,6 +281,19 @@ def switch_freq_string(arg):
     return switcher.get(arg, 'Daily')
 
 
+def format_date_index(data_df, freq='M'):
+    try:
+        if 'Y' in freq or 'A' in freq:
+            data_df.index = data_df.index.year
+        if 'Q' in freq:
+            data_df.index = 'Q' + data_df.index.quarter.astype(str) + ' ' + data_df.index.year.astype(str)
+        if 'M' in freq:
+            data_df.index = data_df.index.month_name().str[:3].astype(str) + ' ' + data_df.index.year.astype(str)
+    except AttributeError:
+        pass
+    return data_df
+
+
 def switch_string_freq(arg):
     """
     Return an string equivalent to freq
@@ -311,6 +326,10 @@ def get_freq(returns_df):
             return freq[0]
     else:
         return 'D'
+
+
+def get_freq_string(returns_df):
+    return switch_freq_string(get_freq(returns_df))
 
 
 def get_freq_data(returns_df):
@@ -407,21 +426,6 @@ def get_notional_weights(returns_df):
     return weights
 
 
-def get_real_cols(df):
-    """
-    Removes empty columns labeled 'Unnamed: ' after importing data
-
-    Parameters:
-    df -- dataframe
-
-    Returns:
-    dataframe
-    """
-    real_cols = [x for x in df.columns if not x.startswith("Unnamed: ")]
-    df = df[real_cols]
-    return df
-
-
 def get_new_strategy_returns_data(filename, sheet_name, return_data=True, strategy_list=[]):
     """
     dataframe of stratgy returns
@@ -435,7 +439,7 @@ def get_new_strategy_returns_data(filename, sheet_name, return_data=True, strate
     dataframe
     """
     strategy_df = pd.read_excel(NEW_DATA + filename, sheet_name=sheet_name, index_col=0)
-    strategy_df = get_real_cols(strategy_df)
+    strategy_df = di.DataImporter.get_real_cols(strategy_df)
     if strategy_list:
         strategy_df.columns = strategy_list
     try:
@@ -451,67 +455,9 @@ def get_new_strategy_returns_data(filename, sheet_name, return_data=True, strate
 
 
 # TODO: Move to analytics
-def compound_ret_from_monthly(strat_monthly_returns, strategy):
-    monthly_ret = strat_monthly_returns.copy()
-    monthly_ret["Year"] = monthly_ret.index.get_level_values('year')
-
-    years = np.unique(monthly_ret["Year"])
-    yr_ret = []
-    itd_ret = []
-    for i in range(0, len(years)):
-        # isolate monthly returns for single year
-        monthly_ret_by_yr = monthly_ret.loc[monthly_ret.Year == years[i]][strategy]
-        # calculate compound return
-        comp_ret = prod(1 + monthly_ret_by_yr) - 1
-        yr_ret.append(comp_ret)
-        itd_ret.append(np.prod((np.array(yr_ret) + 1).tolist()) - 1)
-
-    ret_dict = {"YTD": yr_ret, "ITD": itd_ret}
-    ret_df = pd.DataFrame(ret_dict, index=list(years))
-    return ret_df
 
 
 # TODO: Move to analytics
-def month_ret_table(returns_df, strategy):
-    """
-
-    Parameters
-    ----------
-    returns_df : Data Frame
-
-    strategy : String
-        Strategy name
-
-    Returns
-    -------
-    Data Frame
-
-    """
-    # pull monthly returns from dictionary
-    month_ret = pd.DataFrame(returns_df[strategy])
-    month_ret.dropna(inplace=True)
-
-    # create monthly return data frame with index of years
-    month_ret['year'] = month_ret.index.year
-    month_ret['month'] = month_ret.index.month_name().str[:3]
-
-    # change monthly returns into a table with x axis as months and y axis as years
-    strat_monthly_returns = month_ret.groupby(['year', 'month']).sum()
-    yr_itd_ret = compound_ret_from_monthly(strat_monthly_returns, strategy)
-
-    month_table = strat_monthly_returns.unstack()
-
-    # drop first row index
-    month_table = month_table.droplevel(level=0, axis=1)
-
-    # re order columns
-    month_table = month_table[["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]]
-
-    # Join yearly returns to the monthly returns table
-    table = pd.concat([month_table, yr_itd_ret], axis=1)
-    table.index.names = [strategy]
-
-    return table
 
 
 # TODO: read the whole work book as a dicitonary then format by key
@@ -556,16 +502,19 @@ def get_weights(mvs_df, total_col=False, add_total_wgt=False):
     return weights_df
 
 
-def get_agg_data(df_returns, mvs_df, agg_col):
-    agg_ret = df_returns.copy()
+def get_agg_data(returns_df, mvs_df, agg_col='Total-Composite', merge_agg=False):
+    agg_ret = returns_df.copy()
     agg_mv = mvs_df.copy()
     weights = get_weights(agg_mv)
     agg_ret[agg_col] = (agg_ret * weights).sum(axis=1)
     agg_mv[agg_col] = agg_mv.sum(axis=1)
-    # weights[agg_col] = weights.sum(axis=1)
-    return {'returns': agg_ret[[agg_col]], 'mv': agg_mv[[agg_col]],
-            # 'weights': weights[[agg_col]]
-            }
+    weights[agg_col] = weights.sum(axis=1)
+    if merge_agg:
+        return {'returns': agg_ret, 'mv': agg_mv, 'weights': weights}
+    else:
+        return {'returns': agg_ret[[agg_col]], 'mv': agg_mv[[agg_col]],
+                'weights': weights[[agg_col]]
+                }
 
 
 def get_new_strat_data(filename, sheet_name='data', freq='M', index_data=False):
@@ -622,5 +571,31 @@ def get_last_n_values(dict, n=1):
     return values
 
 
-def check_freq(main_df, new_df):
+def compare_freq(main_df, new_df):
     return get_freq(main_df) == get_freq(new_df)
+
+
+def drop_data(data_df, drop_list, drop_col=True, drop_row=False):
+    if drop_col:
+        data_df.drop(drop_list, axis=1, inplace=True)
+    if drop_row:
+        data_df.drop(drop_list, axis=0, inplace=True)
+    return data_df
+
+
+def filter_data_dict(data_dict, filter_list):
+    return {key: data_dict[key] for key in filter_list}
+
+
+def check_freq(data_df, freq='M'):
+    data_freq = get_freq(data_df)
+    return data_freq.__eq__(freq)
+
+
+def convert_freq(data_df, freq='M'):
+    data_freq = get_freq(data_df)
+    if switch_freq_int(data_freq) > switch_freq_int(freq):
+        return dxf.format_data(dxf.get_price_data(data_df), freq=freq)
+    else:
+        print(f'Warning: Cannot convert data freq to {switch_freq_string(freq)}')
+        return dxf.copy_data(data_df)

@@ -14,8 +14,9 @@ from . import data_xformer_new as dxf
 from ..reporting.excel import new_reports as rp
 
 CWD = os.getcwd()
-RETURNS_DATA_FP = CWD + '\\EquityHedging\\data\\returns_data\\'
-UPDATE_DATA_FP = CWD + '\\EquityHedging\\data\\update_data\\'
+DATA_FP = CWD + '\\EquityHedging\\data\\'
+RETURNS_DATA_FP = DATA_FP + 'returns_data\\'
+UPDATE_DATA_FP = DATA_FP + 'update_data\\'
 
 
 def update_columns(df, old_col_list, new_col_list):
@@ -152,8 +153,8 @@ def check_returns(returns_dict):
     if returns_dict['Monthly'].index[-1] < returns_dict['Weekly'].index[-1]:
         returns_dict['Weekly'] = returns_dict['Weekly'][:-1]
 
-    if returns_dict['Monthly'].index[-1] < returns_dict['Quarterly'].index[-1]:
-        returns_dict['Quarterly'] = returns_dict['Quarterly'][:-1]
+    # if returns_dict['Monthly'].index[-1] < returns_dict['Quarterly'].index[-1]:
+    #     returns_dict['Quarterly'] = returns_dict['Quarterly'][:-1]
 
     return returns_dict
 
@@ -194,7 +195,7 @@ def get_real_cols(df):
     return df
 
 
-class MainUpdater:
+class DataUpdater:
     def __init__(self, filename, report_name):
         self.filename = filename
         self.report_name = report_name
@@ -216,7 +217,7 @@ class MainUpdater:
         report.run_report()
 
 
-class NexenDataUpdater(MainUpdater):
+class NexenDataUpdater(DataUpdater):
     """
     Class for updating Nexen data.
     
@@ -298,7 +299,7 @@ class InnocapLiquidAltsDataUpdater(NexenDataUpdater):
         return data_dict
 
 
-class BbgDataUpdater(MainUpdater):
+class BbgDataUpdater(DataUpdater):
     """
     Class for updating Bloomberg (BBG) data.
     
@@ -310,7 +311,7 @@ class BbgDataUpdater(MainUpdater):
         col_list (list, optional): List of column names to include in the data. Default is an empty list.
     """
 
-    def __init__(self, filename, report_name, col_list=[]):
+    def __init__(self, filename, report_name, col_list=None):
         """
       Initializes the bbgDataUpdater instance.
 
@@ -319,6 +320,8 @@ class BbgDataUpdater(MainUpdater):
           report_name (str): Name of the report to generate.
           col_list (list, optional): List of column names to include in the data. Default is an empty list.
       """
+        if col_list is None:
+            col_list = []
         self.col_list = col_list
         super().__init__(filename, report_name)
 
@@ -365,7 +368,7 @@ class HFBmkDataUpdater(BbgDataUpdater):
             Default is an empty list.
     """
 
-    def __init__(self, filename='liq_alts_bmk_data.xlsx', report_name='hf_bmks-new', col_list=[]):
+    def __init__(self, filename='liq_alts_bmk_data.xlsx', report_name='hf_bmks-new', col_list=None):
         """
     Initializes the hfBmkDataUpdater instance.
     
@@ -378,6 +381,8 @@ class HFBmkDataUpdater(BbgDataUpdater):
             Default is an empty list.
     """
         super().__init__(filename, report_name, col_list)
+        if col_list is None:
+            col_list = []
 
     def xform_data(self):
         """
@@ -403,7 +408,7 @@ class LiquidAltsBmkDataUpdater(HFBmkDataUpdater):
     """
 
     def __init__(self, filename='liq_alts_bmk_data.xlsx', report_name='liq_alts_bmks-new',
-                 col_list=['HFRX Macro/CTA', 'HFRX Absolute Return', 'SG Trend']):
+                 col_list=None):
         """
        Initializes the liqAltsBmkDataUpdater instance.
 
@@ -416,6 +421,8 @@ class LiquidAltsBmkDataUpdater(HFBmkDataUpdater):
                Default is ['HFRX Macro/CTA', 'HFRX Absolute Return', 'SG Trend'].
        """
         super().__init__(filename, report_name, col_list)
+        if col_list is None:
+            col_list = ['HFRX Macro/CTA', 'HFRX Absolute Return', 'SG Trend']
 
     def xform_data(self):
         """
@@ -438,7 +445,9 @@ class BmkDataUpdater(BbgDataUpdater):
             Default is 'bmk_returns-new'.
     """
 
-    def __init__(self, filename='bmk_data.xlsx', report_name='bmk_returns-new', ret_filename='bmk_returns-new.xlsx'):
+    # TODO: Don't need ret_filename
+    def __init__(self, filename='bmk_data.xlsx', report_name='bmk_returns-new', ret_filename='bmk_returns-new.xlsx',
+                 new_index=True):
         """
         Initializes the bmkDataUpdater instance.
  
@@ -449,6 +458,7 @@ class BmkDataUpdater(BbgDataUpdater):
                 Default is 'bmk_returns-new'.
         """
         self.ret_filename = ret_filename
+        self.new_index = new_index
         super().__init__(filename, report_name)
 
     def xform_data(self):
@@ -458,7 +468,7 @@ class BmkDataUpdater(BbgDataUpdater):
        Returns:
            transformed_data (DataFrame or Dict): Transformed Benchmark data.
        """
-        return dxf.BbgDataXformer(UPDATE_DATA_FP + self.filename).data_xform
+        return dxf.BbgDataXformer(UPDATE_DATA_FP + self.filename, drop_na=False).data_xform
 
     def calc_data_dict(self):
         """
@@ -472,6 +482,11 @@ class BmkDataUpdater(BbgDataUpdater):
         returns_dict = di.read_excel_data(RETURNS_DATA_FP + self.ret_filename, sheet_name=None)
         data_dict = match_dict_columns(returns_dict, data_dict)
         return update_data(returns_dict, data_dict)
+
+    def add_new_index(self, new_index_dict):
+        if self.new_index:
+            self.data_dict = dm.merge_dicts(self.data_dict, new_index_dict, drop_na=False)
+            print(f'Added the following columns: {list(next(iter(new_index_dict.values())).columns)}')
 
 
 # TODO: get right nexen reports
@@ -574,7 +589,8 @@ class EquityHedgeReturnsUpdater(BmkDataUpdater):
             Default is 'eq_hedge_returns-new'.
     """
 
-    def __init__(self, filename=None, report_name='eq_hedge_returns-new', ret_filename='eq_hedge_returns.xlsx'):
+    # TODO: Don't need ret_filename
+    def __init__(self, filename=None, report_name='eq_hedge_returns-new', new_strats=False):
         """
         Initializes the equityHedgeReturnsUpdater instance.
 
@@ -584,7 +600,8 @@ class EquityHedgeReturnsUpdater(BmkDataUpdater):
             report_name (str, optional): Name of the report to generate.
                 Default is 'eq_hedge_returns-new'.
         """
-        super().__init__(filename, report_name, ret_filename)
+        self.eq_hedge_xform_data = None
+        super().__init__(filename=filename, report_name=report_name, new_index=new_strats)
 
     def xform_data(self):
         """
@@ -597,18 +614,19 @@ class EquityHedgeReturnsUpdater(BmkDataUpdater):
 
         """
         # Import data from bloomberg into dataframe and create dictionary with different frequencies
-        new_ups_data_dict = dxf.BbgDataXformer(filepath=UPDATE_DATA_FP + 'ups_data.xlsx', sheet_name='bbg_d').data_xform
+        eq_hedge_strats_data = dxf.BbgDataXformer(filepath=UPDATE_DATA_FP + 'ups_data.xlsx',
+                                                  sheet_name='bbg_d').data_xform
 
         # Import vrr returns dictionary
-        vrr_dict = dxf.VRRDataXformer(filepath=UPDATE_DATA_FP + 'vrr_tracks_data.xlsx').data_xform
+        vrr_data = dxf.VRRDataXformer(filepath=UPDATE_DATA_FP + 'vrr_tracks_data.xlsx').data_xform
+
+        self.eq_hedge_xform_data = {'eq_hedge_strats_data': eq_hedge_strats_data, 'vrr_data': vrr_data}
 
         # merge returns dictionaries
-        new_data_dict = dm.merge_dicts(new_ups_data_dict, vrr_dict)
-
-        return new_data_dict
+        return dm.merge_dicts_list(list(self.eq_hedge_xform_data.values()), drop_na=True)
 
 
-class LiquidAltsReturnsUpdater(MainUpdater):
+class LiquidAltsReturnsUpdater(DataUpdater):
     def __init__(self, filename=None, report_name="all_liquid_alts_data"):
         super().__init__(filename, report_name)
 
