@@ -49,6 +49,12 @@ EVENTS = [SPTR_MAXDD, GFC, EURO_DEBT, US_DEBT, CHINA_WEAKNESS,
           OIL_DROP, FEB_2018, Q4_2018, COVID_19]
 
 
+# class HistoricalSellOffs:
+#     def __init__(self, returns_df):
+#         self.returns_df = returns_df
+
+
+
 def compute_event_ret(index_df, strategy, start, end):
     """
     Returns the return of an event
