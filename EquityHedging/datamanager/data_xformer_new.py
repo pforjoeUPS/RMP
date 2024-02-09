@@ -21,8 +21,17 @@ def resample_data(df, freq):
     data = df.copy()
     data.index = pd.to_datetime(data.index)
     if not (freq == 'D'):
-        data = data.resample(freq).ffill()
+        data = data.resample(freq).ffill(limit=1)
     return data
+
+
+def resample_data2(df, freq):
+    data = df.copy()
+    data.index = pd.to_datetime(data.index)
+    if freq == 'D':
+        return data.groupby(pd.Grouper(freq='B')).last()
+    else:
+        return data.groupby(pd.Grouper(freq=freq)).last()
 
 
 def format_data(df_index, freq='M', drop_na=True, drop_zero=False):
@@ -38,6 +47,7 @@ def format_data(df_index, freq='M', drop_na=True, drop_zero=False):
     data = resample_data(df_index, freq)
     data = data.pct_change(1)
     data = data.iloc[1:, ]
+    # data = replace_zero_with_nan(data)
     if drop_na:
         data.dropna(inplace=True)
 
@@ -67,10 +77,6 @@ def get_data_dict(data, index_data=False, drop_na=True, xform=True):
         pass
 
     if index_data is False:
-        # try:
-        #     data.index = pd.to_datetime(data.index)
-        # except TypeError:
-        #     pass
         data = get_price_data(data)
     for freq in freq_list:
         freq_string = dm.switch_freq_string(freq)
@@ -103,20 +109,48 @@ def get_price_data(returns_data, multiplier=100):
 def update_index_data(index_data, multiplier=100):
     # insert extra row at top for first month of 100
     data = [{}]
+    freq = dm.get_freq(index_data)
     prices_data = pd.concat([pd.DataFrame(data), index_data])
 
     # fill columns with multiplier for row 1
-    for col in prices_data.columns:
-        prices_data[col][0] = multiplier
+    for col in prices_data:
+        idx_int = get_first_valid_index(prices_data[col]) - 1
+        prices_data[col].iloc[idx_int] = multiplier
 
     # update index to prior month
     prices_data.index.names = ['Dates']
     prices_data.reset_index(inplace=True)
     pd.set_option('mode.chained_assignment', None)
-    prices_data.loc[:, 'Dates'][0] = index_data.index[0] - pd.DateOffset(months=1)
+    prices_data.loc[:, 'Dates'][0] = index_data.index[0] - get_date_offset(freq)
     prices_data.set_index('Dates', inplace=True)
 
     return prices_data
+
+
+def get_date_offset(freq):
+    switcher = {
+        "D": pd.DateOffset(days=1),
+        "W": pd.DateOffset(weeks=1),
+        "M": pd.DateOffset(months=1),
+        "Q": pd.DateOffset(months=3),
+        "Y": pd.DateOffset(years=1)
+    }
+    return switcher.get(freq, 'D')
+
+
+# From stackoverflow
+def replace_zero_with_nan(data_df):
+    nan_filter = data_df.ne(0).groupby(data_df.index).cummax()
+
+    return data_df.where(nan_filter)
+
+
+def get_first_valid_index(data_series):
+    return data_series.index.get_loc(data_series.first_valid_index())
+
+
+def get_last_valid_index(data_series):
+    return data_series.index.get_loc(data_series.last_valid_index())
 
 
 class DataXformer:
@@ -175,9 +209,9 @@ class DataXformer:
     # return dataframe or dictionary of dataframes
     def xform_data(self):
         if self.data_dict_bool:
-            return self.data_import.copy()
+            return copy_data(self.data_import)
         else:
-            return get_data_dict(self.data_import, self.index_data, xform=self.format_data)
+            return get_data_dict(self.data_import, self.index_data, drop_na=self.drop_na, xform=self.format_data)
 
 
 class NexenDataXformer(DataXformer):
@@ -234,13 +268,13 @@ class NexenBmkDataXformer(NexenDataXformer):
     def xform_data(self):
         # pull out returns data into dataframe
         returns_df = self.data_import.pivot_table(values='Benchmark Return', index='Dates',
-                                                      columns='Benchmark Name')
+                                                  columns='Benchmark Name')
         returns_df /= 100
         return returns_df
 
 
 class BbgDataXformer(DataXformer):
-    def __init__(self, filepath, sheet_name='data', data_source='bbg',
+    def __init__(self, filepath, sheet_name='data', data_source='bbg', drop_na=True,
                  index_data=True, format_data=True):
         """
         Converts bbg Excel file into a bbgDataXformer object
@@ -263,12 +297,12 @@ class BbgDataXformer(DataXformer):
         bbgDataXformer object
 
         """
-        super().__init__(filepath=filepath, sheet_name=sheet_name, data_source=data_source,
+        super().__init__(filepath=filepath, sheet_name=sheet_name, data_source=data_source, drop_na=drop_na,
                          index_data=index_data, format_data=format_data)
         self.col_dict = self.dataImporter.col_dict
 
     def get_importer(self):
-        return di.BbgDataImporter(filepath=self.filepath, sheet_name=self.sheet_name)
+        return di.BbgDataImporter(filepath=self.filepath, sheet_name=self.sheet_name, drop_na=self.drop_na)
 
 
 class InnocapDataXformer(DataXformer):
