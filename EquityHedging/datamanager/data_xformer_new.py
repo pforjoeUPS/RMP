@@ -10,7 +10,12 @@ import copy
 import pandas as pd
 
 from . import data_importer as di, data_manager_new as dm
+NEXEN_DATA_COL_DICT = {'Account Name\n': 'Name', 'Account Id\n': 'Account Id',
+                       'Return Type\n': 'Return Type', 'As Of Date\n': 'Dates',
+                       'Market Value\n': 'Market Value', 'Account Monthly Return\n': 'Return'}
 
+NEXEN_BMK_DATA_COL_DICT = {'As Of Date\n': 'Dates', 'Benchmark Name\n': 'Benchmark Name',
+                           'Benchmark Monthly Return\n': 'Benchmark Return'}
 
 def copy_data(data):
     return copy.deepcopy(data) if isinstance(data, dict) else data.copy()
@@ -214,7 +219,7 @@ class DataXformer:
 
 
 class NexenDataXformer(DataXformer):
-    def __init__(self, filepath, data_source='nexen', col_dict=di.NEXEN_DATA_COL_DICT):
+    def __init__(self, filepath, data_source='nexen', col_dict= NEXEN_DATA_COL_DICT):
         """
         Converts excel file into a nexenDataXformer object
 
@@ -246,7 +251,7 @@ class NexenDataXformer(DataXformer):
 
 
 class NexenBmkDataXformer(NexenDataXformer):
-    def __init__(self, filepath, col_dict=di.NEXEN_DATA_COL_DICT | di.NEXEN_BMK_DATA_COL_DICT):
+    def __init__(self, filepath, col_dict=NEXEN_DATA_COL_DICT | NEXEN_BMK_DATA_COL_DICT):
         """
         Converts Excel file into a nexenDataXformer object
 
