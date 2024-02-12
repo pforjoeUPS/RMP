@@ -33,7 +33,7 @@ def resample_data2(df, freq):
         return data.groupby(pd.Grouper(freq=freq)).last()
 
 
-def format_data(df_index, freq='M', drop_na=True, drop_zero=False):
+def format_df(df_index, freq='M', drop_na=True, drop_zero=False):
     """
     Format dataframe, by freq, to return dataframe
     
@@ -80,7 +80,7 @@ def get_data_dict(data, index_data=False, drop_na=True, xform=True):
     for freq in freq_list:
         freq_string = dm.switch_freq_string(freq)
         if xform:
-            data_dict[freq_string] = format_data(data, freq, drop_na=drop_na)
+            data_dict[freq_string] = format_df(data, freq, drop_na=drop_na)
         else:
             data_dict[freq_string] = resample_data(data, freq)
     return data_dict
@@ -305,7 +305,7 @@ class BbgDataXformer(DataXformer):
 
 
 class InnocapDataXformer(DataXformer):
-    def __init__(self, filepath, sheet_name=0, data_source='innocap',
+    def __init__(self, filepath, sheet_name=0, data_source='innocap', freq='M',
                  col_dict={'Date': 'Dates', 'Account Name': 'Name', 'MTD Return': 'Return',
                            'Market Value': 'Market Value'}):
         """
@@ -326,7 +326,7 @@ class InnocapDataXformer(DataXformer):
         innocapDataXformer object
 
         """
-
+        self.freq = freq
         super().__init__(filepath=filepath, sheet_name=sheet_name, data_source=data_source, col_dict=col_dict)
 
     def get_importer(self):
@@ -336,12 +336,12 @@ class InnocapDataXformer(DataXformer):
     def xform_data(self):
         # pull out returns data into dataframe
         returns_df = self.data_import.pivot_table(values='Return', index='Dates', columns='Name')
-        freq = dm.get_freq(returns_df)
-        returns_df = resample_data(returns_df, freq)
+        # freq = dm.get_freq(returns_df)
+        returns_df = resample_data(returns_df, self.freq)
         returns_df /= 100
         # pull out market values data into dataframe
         mv_df = self.data_import.pivot_table(values='Market Value', index='Dates', columns='Name')
-        mv_df = resample_data(mv_df, freq)
+        mv_df = resample_data(mv_df, self.freq)
         return {'returns': returns_df, 'market_values': mv_df}
 
 
