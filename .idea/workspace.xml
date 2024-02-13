@@ -5,22 +5,9 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="097b79bf-9c35-4f3b-839c-13f2bf58ee38" name="Changes" comment="Pushing Scratch file for RCM and MVO">
-      <change afterPath="$PROJECT_DIR$/RStrats/stratanalysis/MarginalAnalysisScript.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/RMP.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/RMP.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_1_24_2024_4_07_PM_[Changes]1/Commods Weighted IndexMetrics.xlsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_1_24_2024_4_07_PM_[Changes]1/GrindLowHedgesMetricsAnalysis.xlsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_1_24_2024_4_07_PM_[Changes]1/VRR Timeseries.xlsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_1_24_2024_4_07_PM_[Changes]1/returns_data.xlsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_1_24_2024_4_07_PM_[Changes]1/shelved.patch" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_1_24_2024_4_07_PM_[Changes]1/ups_data.xlsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_1_24_2024_4_07_PM_[Changes]1/vrr_tracks_data.xlsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_1_24_2024_4_07_PM_[Changes]1/weighted hedgesSAM.xlsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_1_24_2024_4_07_PM__Changes_1.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_1_24_2024_4_07_PM__Changes_.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_1_24_2024_4_07_PM__Changes_.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_1_24_2024_4_20_PM__Changes_.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_1_24_2024_4_20_PM__Changes_.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/EquityHedging/datamanager/data_manager.py" beforeDir="false" afterPath="$PROJECT_DIR$/EquityHedging/datamanager/data_manager.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/RStrats/SharpeVSCVar.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/RStrats/stratanalysis/MeanVarianceModel.py" beforeDir="false" afterPath="$PROJECT_DIR$/RStrats/stratanalysis/MeanVarianceModel.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/RStrats/stratanalysis/MeanVarianceModelOLD.py" beforeDir="false" afterPath="$PROJECT_DIR$/RStrats/stratanalysis/MeanVarianceModelOLD.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -123,22 +110,6 @@
     <MESSAGE value="Pushing/Updating DM, SUMMARY, MRC, MVO, RCM" />
     <MESSAGE value="Pushing Scratch file for RCM and MVO" />
     <option name="LAST_COMMIT_MESSAGE" value="Pushing Scratch file for RCM and MVO" />
-  </component>
-  <component name="XDebuggerManager">
-    <breakpoint-manager>
-      <breakpoints>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/RStrats/stratanalysis/rcm.py</url>
-          <line>113</line>
-          <option name="timeStamp" value="4" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/RStrats/stratanalysis/rcm.py</url>
-          <line>51</line>
-          <option name="timeStamp" value="9" />
-        </line-breakpoint>
-      </breakpoints>
-    </breakpoint-manager>
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/RMP$SharpeVSCVar.coverage" NAME="SharpeVSCVar Coverage Results" MODIFIED="1706903606148" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/RStrats/stratanalysis" />
