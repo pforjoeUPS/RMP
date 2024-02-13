@@ -10,6 +10,7 @@ import zipfile
 import xlrd
 
 import pandas as pd
+from openpyxl import load_workbook
 
 from . import data_manager_new as dm
 
@@ -86,10 +87,8 @@ class DataImporter:
     def get_excel_sheet_names(file_path):
         sheets = []
         if file_path.endswith('.xlsx'):
-            with zipfile.ZipFile(file_path, 'r') as zip_ref:
-                xml = zip_ref.read("xl/workbook.xml").decode("utf-8")
-            for s_tag in re.findall("<sheet [^>]*", xml):
-                sheets.append(re.search('name="[^"]*', s_tag).group(0)[6:])
+            workbook = load_workbook(filename=file_path, read_only = True)
+            sheets = workbook.sheetnames
         elif file_path.endswith('.xls'):
             workbook = xlrd.open_workbook(file_path)
             sheets = workbook.sheet_names()
