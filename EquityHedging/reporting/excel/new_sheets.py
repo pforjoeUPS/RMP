@@ -37,7 +37,7 @@ class SetSheet:
 
         """
         self.writer = writer
-        self.sheet_name = sheet_name
+        self.sheet_name = self.format_sheet_name(sheet_name)
         self.workbook = self.writer.book
         self.row = row
         self.col = col
@@ -83,6 +83,11 @@ class SetSheet:
     def freeze_panes(self):
         if self.freeze:
             self.worksheet.freeze_panes(self.row + 1, self.col + 1)
+
+    @staticmethod
+    def format_sheet_name(sheet_name):
+        diff = -(len(sheet_name) - 31) if len(sheet_name) > 31 else None
+        return sheet_name[:diff]
 
 
 class InfoSheet(SetSheet):

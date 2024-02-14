@@ -129,8 +129,8 @@ class ReturnsReport(DataReport):
             self.data = {freq_string: self.data}
         for data_key, returns_df in self.data.items():
             print(f'Writing {data_key} Historical Returns sheet...')
-            diff = -(len(data_key) - 31) if len(data_key) > 31 else None
-            new_sheets.HistReturnSheet(writer=self.writer, data=returns_df, sheet_name=data_key[:diff]).create_sheet()
+            # diff = -(len(data_key) - 31) if len(data_key) > 31 else None
+            new_sheets.HistReturnSheet(writer=self.writer, data=returns_df, sheet_name=data_key).create_sheet()
 
 
 class ReturnMktValueReport(DataReport):
@@ -218,6 +218,7 @@ class HistSelloffReport(AnalyticReport):
         new_sheets.HistSelloffSheet(self.writer, self.data['selloffs']).create_sheet()
         new_sheets.HistReturnSheet(self.writer, self.data['returns']['Daily'],
                                    sheet_name='Daily Historical Returns').create_sheet()
+
 
 class EquityHedgeReport(HistSelloffReport):
     def __init__(self, report_name, data_handler, include_fi=False, new_strat=False, weighted=True, selloffs=True,
