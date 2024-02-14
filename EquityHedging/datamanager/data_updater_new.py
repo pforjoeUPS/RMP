@@ -294,7 +294,7 @@ class InnocapLiquidAltsDataUpdater(NexenDataUpdater):
                     }
 
         updated_dict = update_df_dict_columns(self.data_xform, col_dict)
-        data_dict = di.read_excel_data(filepath=RETURNS_DATA_FP + self.ret_filename, sheet_name=None)
+        data_dict = di.DataImporter.read_excel_data(filepath=RETURNS_DATA_FP + self.ret_filename, sheet_name=None)
         data_dict = update_data(main_dict=data_dict, new_dict=updated_dict, freq_data=False)
         return data_dict
 
@@ -479,7 +479,7 @@ class BmkDataUpdater(BbgDataUpdater):
         """
         # TODO: add comments
         data_dict = dxf.copy_data(self.data_xform)
-        returns_dict = di.read_excel_data(RETURNS_DATA_FP + self.ret_filename, sheet_name=None)
+        returns_dict = di.DataImporter.read_excel_data(RETURNS_DATA_FP + self.ret_filename, sheet_name=None)
         data_dict = match_dict_columns(returns_dict, data_dict)
         return update_data(returns_dict, data_dict)
 
