@@ -595,7 +595,7 @@ def check_freq(data_df, freq='M'):
 def convert_freq(data_df, freq='M'):
     data_freq = get_freq(data_df)
     if switch_freq_int(data_freq) > switch_freq_int(freq):
-        return dxf.format_data(dxf.get_price_data(data_df), freq=freq)
+        return dxf.format_df(dxf.get_price_data(data_df), freq=freq)
     else:
         print(f'Warning: Cannot convert data freq to {switch_freq_string(freq)}')
         return dxf.copy_data(data_df)
