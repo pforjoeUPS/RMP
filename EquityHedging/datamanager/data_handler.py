@@ -514,11 +514,13 @@ def create_notional_dict(strategy_list, notional_list=None):
 
 
 class QISDataHandler(MktDataHandler):
-    def __init__(self, eq_bmk='S&P 500', include_fi=False, strat_drop_list=None, weight_col='Weighted QIS Strats'):
-        super().__init__(eq_bmk=eq_bmk, include_fi=include_fi)
+    def __init__(self, filepath, eq_bmk='S&P 500', include_fi=False, include_cm=False, include_fx=False,
+                 strat_drop_list=None, weight_col='Weighted QIS Strats'):
+        super().__init__(eq_bmk=eq_bmk, include_fi=include_fi, include_cm=include_cm, include_fx=include_fx)
 
         if strat_drop_list is None:
             strat_drop_list = []
+        self.filepath = filepath
         self.strat_drop_list = strat_drop_list
         self.weight_col = weight_col
         self.returns = self.get_returns()
@@ -539,7 +541,7 @@ class QISDataHandler(MktDataHandler):
         dictionary
 
         """
-        data_importer = di.DataImporter(filepath=EQ_HEDGE_DATA_FP, sheet_name=None, drop_na=False, index_data=False)
+        data_importer = di.DataImporter(filepath=self.filepath, sheet_name=None, drop_na=False, index_data=False)
         returns_dict = dxf.copy_data(data_importer.data_import)
         if self.strat_drop_list:
             for freq_string in returns_dict:

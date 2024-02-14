@@ -19,7 +19,8 @@ strat_drop_list = ['Down Var', 'Vortex', 'VOLA I', 'VOLA II', 'Dynamic VOLA', 'V
 include_fi = False
 
 # create qis data handler
-qis_dh = dh.QISDataHandler(eq_bmk=eq_bmk, include_fi=include_fi, strat_drop_list=strat_drop_list)
+qis_dh = dh.QISDataHandler(filepath=dh.EQ_HEDGE_DATA_FP, eq_bmk=eq_bmk, include_fi=include_fi,
+                           strat_drop_list=strat_drop_list)
 
 new_strat = True
 if new_strat:
