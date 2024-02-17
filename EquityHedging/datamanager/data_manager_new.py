@@ -4,26 +4,10 @@ Created on Tue Oct  1 17:59:28 2019
 
 @author: Powis Forjoe, Maddie Choi
 """
-
-import os
+import copy
 from datetime import datetime as dt
 
 import pandas as pd
-
-from EquityHedging.datamanager import data_importer as di, data_xformer_new as dxf
-
-CWD = os.getcwd()
-DATA_FP = CWD + '\\EquityHedging\\data\\'
-RETURNS_DATA_FP = DATA_FP + 'returns_data\\'
-EQUITY_HEDGING_RETURNS_DATA = RETURNS_DATA_FP + 'eq_hedge_returns.xlsx'
-# RETURNS_DATA_FP = CWD +'\\EquityHedging\\data\\'
-# EQUITY_HEDGING_RETURNS_DATA = DATA_FP + 'ups_equity_hedge\\returns_data.xlsx'
-NEW_DATA = DATA_FP + 'new_strats\\'
-# UPDATE_DATA = RETURNS_DATA_FP + 'update_strats\\'
-UPDATE_DATA = DATA_FP + 'update_data\\'
-EQUITY_HEDGE_DATA = DATA_FP + 'ups_equity_hedge\\'
-
-QIS_UNIVERSE = CWD + '\\Cluster Analysis\\data\\'
 
 NEW_DATA_COL_LIST = ['SPTR', 'SX5T', 'M1WD', 'Long Corp', 'STRIPS', 'Down Var',
                      'Vortex', 'VOLA I', 'VOLA II', 'Dynamic VOLA', 'Dynamic Put Spread',
@@ -137,38 +121,6 @@ def get_columns_data(data):
             col_data[key] = list(data[key].columns)
     else:
         return list(data.columns)
-
-
-# TODO: move to dxf
-def resample_data(df, freq="M"):
-    data = df.copy()
-    data.index = pd.to_datetime(data.index)
-    if not (freq == 'D'):
-        data = data.resample(freq).ffill()
-    return data
-
-
-# TODO: move to dxf
-def format_data(index_df, freq="M", dropna=True, drop_zero=False):
-    """
-    Format dataframe, by freq, to return dataframe
-
-    Parameters:
-    df_index -- dataframe
-    freq -- string ('M', 'W', 'D')
-
-    Returns:
-    dataframe
-    """
-    data = resample_data(index_df, freq)
-    data = data.pct_change(1)
-    data = data.iloc[1:, ]
-    if dropna:
-        data.dropna(inplace=True)
-
-    if drop_zero:
-        data = data.loc[(data != 0).any(1)]
-    return data
 
 
 def get_min_max_dates(returns_df):
@@ -426,32 +378,7 @@ def get_notional_weights(returns_df):
     return weights
 
 
-def get_new_strategy_returns_data(filename, sheet_name, return_data=True, strategy_list=[]):
-    """
-    dataframe of stratgy returns
-
-    Parameters:
-    filename -- string
-    sheet_name -- string
-    strategy_list -- list
-
-    Returns:
-    dataframe
-    """
-    strategy_df = pd.read_excel(NEW_DATA + filename, sheet_name=sheet_name, index_col=0)
-    strategy_df = di.DataImporter.get_real_cols(strategy_df)
-    if strategy_list:
-        strategy_df.columns = strategy_list
-    try:
-        strategy_df.index = pd.to_datetime(strategy_df.index)
-    except TypeError:
-        pass
-    strategy_df = strategy_df.resample('D').ffill()
-    new_strategy_returns = strategy_df.copy()
-    if return_data is False:
-        new_strategy_returns = strategy_df.pct_change(1)
-    new_strategy_returns.dropna(inplace=True)
-    return new_strategy_returns
+# TODO: Move to DataImporter
 
 
 # TODO: Move to analytics
@@ -489,7 +416,7 @@ def check_notional(returns_df, notional_weights=[]):
     return notional_weights
 
 
-def get_weights(mvs_df, total_col=False, add_total_wgt=False):
+def get_weights(mvs_df: pd.DataFrame, total_col: bool = False, add_total_wgt: bool = False) -> pd.DataFrame:
     if total_col:
         col_len = mvs_df.shape[1] - 1
         weights_df = mvs_df.iloc[:, :col_len].divide(mvs_df.iloc[:, :col_len].sum(axis=1), axis='rows')
@@ -510,18 +437,11 @@ def get_agg_data(returns_df, mvs_df, agg_col='Total-Composite', merge_agg=False)
     agg_mv[agg_col] = agg_mv.sum(axis=1)
     weights[agg_col] = weights.sum(axis=1)
     if merge_agg:
-        return {'returns': agg_ret, 'mv': agg_mv, 'weights': weights}
+        return {'returns': agg_ret, 'market_values': agg_mv, 'weights': weights}
     else:
-        return {'returns': agg_ret[[agg_col]], 'mv': agg_mv[[agg_col]],
+        return {'returns': agg_ret[[agg_col]], 'market_values': agg_mv[[agg_col]],
                 'weights': weights[[agg_col]]
                 }
-
-
-def get_new_strat_data(filename, sheet_name='data', freq='M', index_data=False):
-    new_strat = pd.read_excel(DATA_FP + filename, sheet_name=sheet_name, index_col=0)
-    if index_data:
-        new_strat = format_data(new_strat, freq)
-    return new_strat
 
 
 def get_period_dict(returns_df):
@@ -592,10 +512,30 @@ def check_freq(data_df, freq='M'):
     return data_freq.__eq__(freq)
 
 
-def convert_freq(data_df, freq='M'):
-    data_freq = get_freq(data_df)
-    if switch_freq_int(data_freq) > switch_freq_int(freq):
-        return dxf.format_df(dxf.get_price_data(data_df), freq=freq)
-    else:
-        print(f'Warning: Cannot convert data freq to {switch_freq_string(freq)}')
-        return dxf.copy_data(data_df)
+def copy_data(data):
+    return copy.deepcopy(data) if isinstance(data, dict) else data.copy()
+
+
+def get_date_offset(freq):
+    switcher = {
+        "D": pd.DateOffset(days=1),
+        "W": pd.DateOffset(weeks=1),
+        "M": pd.DateOffset(months=1),
+        "Q": pd.DateOffset(months=3),
+        "Y": pd.DateOffset(years=1)
+    }
+    return switcher.get(freq, 'D')
+
+
+def replace_zero_with_nan(data_df):
+    nan_filter = data_df.ne(0).groupby(data_df.index).cummax()
+
+    return data_df.where(nan_filter)
+
+
+def get_first_valid_index(data_series):
+    return data_series.index.get_loc(data_series.first_valid_index())
+
+
+def get_last_valid_index(data_series):
+    return data_series.index.get_loc(data_series.last_valid_index())
