@@ -458,9 +458,9 @@ class LiquidAltsReturnsStatsSheet(MarketStatsDataSheet):
 
     def conditional_worksheet_format(self):
         self.increase_row_dim()
-        ann_ret_jump = self.row + 3
-        excess_ret_jump = ann_ret_jump + 1  # 7
-        bmk_beta_jump = excess_ret_jump + 1  # 8
+        ann_ret_jump = self.row + 3 # 5
+        excess_ret_jump = 0 # 7
+        bmk_beta_jump = 0  # 8
         first_col = self.col + 1
         ret_stats_jump = ann_ret_jump + 4  # 9
         avg_pos_neq_ratio_jump = ret_stats_jump + 1  # 10
@@ -472,8 +472,8 @@ class LiquidAltsReturnsStatsSheet(MarketStatsDataSheet):
         ratios_jump = max_dd_jump + 1  # 23
         if self.include_bmk:
             ann_ret_jump = self.row + 4  # 6
-            # excess_ret_jump = ann_ret_jump + 1  # 7
-            # bmk_beta_jump = excess_ret_jump + 1  # 8
+            excess_ret_jump = ann_ret_jump + 1  # 7
+            bmk_beta_jump = excess_ret_jump + 1  # 8
             ret_stats_jump = bmk_beta_jump + 4  # 12
             avg_pos_neq_ratio_jump = ret_stats_jump + 1  # 13
             period_stats_jump = avg_pos_neq_ratio_jump + 1  # 14
