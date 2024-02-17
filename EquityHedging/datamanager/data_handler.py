@@ -3,28 +3,17 @@ Created on Sun Aug  7 22:18:15 2022
 
 @author: NVG9HXP
 """
-import os
 
 from copy import deepcopy
 import pandas as pd
 
+import EquityHedging.datamanager.data_manager_new
 from . import data_importer as di
-
+from . import data_lists as dl
 from . import data_manager_new as dm
 from . import data_xformer_new as dxf
-from .data_updater_new import DATA_FP, RETURNS_DATA_FP
 
-BMK_DATA_FP = RETURNS_DATA_FP + 'bmk_returns-new.xlsx'
-
-# CWD = os.getcwd()
-HF_BMK_DATA_FP = RETURNS_DATA_FP + 'hf_bmks-new.xlsx'
-UPSGT_DATA_FP = RETURNS_DATA_FP + 'upsgt_returns-new.xlsx'
-UPSGT_BMK_DATA_FP = RETURNS_DATA_FP + 'upsgt_bmk_returns-new.xlsx'
-EQ_HEDGE_DATA_FP = RETURNS_DATA_FP + 'eq_hedge_returns-new.xlsx'
-# LIQ_ALTS_BMK_DATA_FP = RETURNS_DATA_FP+'liq_alts_bmks-old.xlsx'
-LIQ_ALTS_PORT_DATA_FP = RETURNS_DATA_FP + 'nexen_liq_alts_data-new.xlsx'
-NEW_STRAT_DATA_FP = DATA_FP + 'new_strats\\'
-LIQ_ALTS_MGR_DICT = {'Global Macro': ['1907 Penso Class A', 'Bridgewater Alpha', 'DE Shaw Oculus Fund',
+LIQ_ALTS_MGR_DICT = {'Global Macro': ['Bridgewater Alpha', 'DE Shaw Oculus Fund',
                                       'Element Capital', 'JSC Vantage', 'Capula TM Fund', 'KAF'
                                       # ,'EDL GOF'
                                       ],
@@ -46,21 +35,15 @@ EQ_HEDGE_STRAT_DICT = {'Down Var': 1.0, 'VOLA 3': 1.25, 'Dynamic Put Spread': 1.
                        'Commodity Basket': 1.0}
 
 
-# def read_ret_data(fp, sheet_name):
-#     ret_data = pd.read_excel(fp, sheet_name, index_col=0)
-#     return EquityHedging.datamanager.data_importer.get_real_cols(ret_data)
-
-
 # TODO: Import data using di. it'll be efficient in the long run.
 # TODO: Get mkt_ret_data, bmk_ret_data, hf_ret_data/hf_bmk_ret_data,
-
 
 class MktDataHandler:
     def __init__(self, include_eq=True, eq_bmk='MSCI ACWI', include_fi=True, fi_bmk='FI Benchmark',
                  include_cm=False, cm_bmk='Commodities (BCOM)', include_fx=False,
                  fx_bmk='U.S. Dollar Index'):
 
-        self.mkt_data_import = di.DataImporter.read_excel_data(filepath=BMK_DATA_FP, sheet_name=None)
+        self.mkt_data_import = di.ExcelImporter(file_path=dl.BMK_DATA_FP, sheet_name=None).read_excel_data()
         self.include_eq = include_eq
         self.eq_bmk = eq_bmk if self.include_eq else None
         self.include_fi = include_fi
@@ -117,8 +100,8 @@ class DataHandler(MktDataHandler):
         self.custom_returns_data = None
         self.update_mkt_returns()
 
-    def get_returns(self, filepath):
-        self.returns = di.DataImporter.read_excel_data(filepath, sheet_name='returns')
+    def get_returns(self, file_path):
+        self.returns = di.ExcelImporter(file_path, sheet_name='returns').read_excel_data()
         self.col_list = list(self.returns.columns)
         if self.freq_data is True:
             self.returns = dxf.get_data_dict(self.returns, drop_na=False)
@@ -135,10 +118,10 @@ class DataHandler(MktDataHandler):
                 self.mkt_returns = self.mkt_returns[dm.get_freq_string(self.returns)]
                 self.mkt_returns = self.update_dfs(self.mkt_returns)
 
-    def get_mvs(self, filepath):
+    def get_mvs(self, file_path):
         try:
             print('Getting market values...')
-            self.mvs = di.DataImporter.read_excel_data(filepath, sheet_name='market_values')
+            self.mvs = di.ExcelImporter(file_path, sheet_name='market_values').read_excel_data()
             print('market values added')
         except KeyError:
             self.mvs = None
@@ -165,6 +148,7 @@ class DataHandler(MktDataHandler):
                 self.get_weights()
             print(f'Dropping columns {drop_list} from returns...')
 
+    # TODO: bug when dropping ['Global Macro', 'Trend Following', 'Absolute Return', 'Total Liquid Alts']
     def filter_drop_list(self, drop_list):
         check_list = list(set(drop_list) - (set(self.col_list)))
         if any(check_list):
@@ -182,10 +166,10 @@ class DataHandler(MktDataHandler):
 class GTBmkDataHandler(DataHandler):
     def __init__(self, freq_data=False, eq_bmk='MSCI ACWI IMI', include_fi=True, fi_bmk='FI Benchmark'):
         super().__init__(freq_data=freq_data, eq_bmk=eq_bmk, include_fi=include_fi, fi_bmk=fi_bmk)
-        self.bmk_returns = self.get_bmk_returns(filepath=UPSGT_BMK_DATA_FP)
+        self.bmk_returns = self.get_bmk_returns(file_path=dl.UPSGT_BMK_DATA_FP)
 
-    def get_bmk_returns(self, filepath, drop_na=False):
-        returns_data = di.DataImporter.read_excel_data(filepath=filepath, sheet_name=0)
+    def get_bmk_returns(self, file_path, drop_na=False):
+        returns_data = di.ExcelImporter(file_path=file_path, sheet_name=0).read_excel_data()
         if self.freq_data:
             returns_data = dxf.get_data_dict(returns_data, drop_na=drop_na)
             self.mkt_returns = dm.filter_data_dict(data_dict=self.mkt_returns, filter_list=returns_data.keys())
@@ -201,14 +185,14 @@ class GTPortDataHandler(GTBmkDataHandler):
         super().__init__(freq_data=freq_data, eq_bmk=eq_bmk, include_fi=include_fi, fi_bmk=fi_bmk)
         # self.gt_di = None
         self.bmk_key = None
-        self.get_returns(filepath=UPSGT_DATA_FP)
-        self.get_mvs(filepath=UPSGT_DATA_FP)
+        self.get_returns(file_path=dl.UPSGT_DATA_FP)
+        self.get_mvs(file_path=dl.UPSGT_DATA_FP)
         self.update_mkt_returns()
-        # self.get_port_data(filepath=UPSGT_DATA_FP)
+        # self.get_port_data(file_path=dl.UPSGT_DATA_FP)
         self.get_bmk_key()
 
-    # def get_port_data(self, filepath, drop_na=False):
-    #     self.gt_di = di.DataImporter(filepath=filepath, sheet_name=None, drop_na=drop_na)
+    # def get_port_data(self, file_path, drop_na=False):
+    #     self.gt_di = di.DataImporter(file_path=file_path, sheet_name=None, drop_na=drop_na)
     #     self.returns = dxf.get_data_dict(self.gt_di.data_import['returns'], drop_na=drop_na)
     #     self.mvs = dxf.copy_data(self.gt_di.data_import['market_values'])
     #     self.weights = dm.get_weights(self.mvs, total_col=True, add_total_wgt=True)
@@ -251,7 +235,7 @@ class LiqAltsBmkDataHandler(DataHandler):
 
     def get_hf_returns(self):
         print('Getting Hedge Fund returns data...')
-        self.hf_returns = di.DataImporter.read_excel_data(filepath=HF_BMK_DATA_FP, sheet_name=None)
+        self.hf_returns = di.ExcelImporter(file_path=dl.HF_BMK_DATA_FP, sheet_name=None).read_excel_data()
         if self.freq_data is False:
             # self.mkt_returns = self.mkt_returns['Monthly']
             self.hf_returns = self.hf_returns['Monthly']
@@ -261,12 +245,12 @@ class LiqAltsBmkDataHandler(DataHandler):
         if self.freq_data:
             bmk_returns_data = {}
             for freq_string, returns_df in self.mkt_data_import.items():
-                temp_df = dxf.copy_data(returns_df[self.sub_port_list])
+                temp_df = EquityHedging.datamanager.data_manager_new.copy_data(returns_df[self.sub_port_list])
                 temp_df['Liquid Alts Bmk'] = self.get_wgt_avg_col(temp_df, [0.5, 0.3, 0.2])
                 bmk_returns_data[freq_string] = temp_df
             return bmk_returns_data
         else:
-            bmk_returns_df = dxf.copy_data(self.mkt_data_import['Monthly'])
+            bmk_returns_df = EquityHedging.datamanager.data_manager_new.copy_data(self.mkt_data_import['Monthly'])
             bmk_returns_df = bmk_returns_df[self.sub_port_list]
             bmk_returns_df['Liquid Alts Bmk'] = self.get_wgt_avg_col(bmk_returns_df, [0.5, 0.3, 0.2])
             return bmk_returns_df
@@ -290,11 +274,12 @@ def get_mgr_sub_port(mgr):
 class LiqAltsPortHandler(LiqAltsBmkDataHandler):
 
     def __init__(self, eq_bmk='MSCI ACWI', fi_bmk='FI Benchmark', cm_bmk='Commodities (BCOM)',
-                 fx_bmk='U.S. Dollar Index', update_mgr_returns=True):
+                 fx_bmk='U.S. Dollar Index', update_mgr_returns=True, compute_composites=True):
         super().__init__(freq_data=False, eq_bmk=eq_bmk, fi_bmk=fi_bmk, cm_bmk=cm_bmk, fx_bmk=fx_bmk)
 
         # self.get_raw_data = get_raw_data
         self.update_mgr_returns = update_mgr_returns
+        self.compute_composites = compute_composites
         self.mgr_returns_data = self.get_mgr_returns_data() if self.update_mgr_returns else None
         self.sub_ports = self.get_sub_port_data()
         self.returns = self.get_returns()
@@ -308,7 +293,7 @@ class LiqAltsPortHandler(LiqAltsBmkDataHandler):
     def get_sub_port_data(self):
         # pull all returns and mvs
         liq_alts_data = self.get_portfolio_data()
-        # liq_alts_mv = read_ret_data(LIQ_ALTS_PORT_DATA_FP, 'market_values')
+        # liq_alts_mv = read_ret_data(dl.LIQ_ALTS_PORT_DATA_FP, 'market_values')
         # define dicts and dataframes
         liq_alts_dict = {}
         total_ret = pd.DataFrame(index=liq_alts_data['returns'].index)
@@ -320,39 +305,46 @@ class LiqAltsPortHandler(LiqAltsBmkDataHandler):
             temp_mv = liq_alts_data['market_values'][LIQ_ALTS_MGR_DICT[key]].copy()
             temp_weights = dm.get_weights(temp_mv)
             temp_bmk = self.bmk_returns[[self.sub_ports_bmk_key[key]]].copy()
-            temp_dict = dm.get_agg_data(temp_ret, temp_mv, key)
             # if key == 'Trend Following':
-            #     temp_dict = {'returns': liq_alts_ret[[key]], 'mv':liq_alts_mv[[key]],
+            #     temp_dict = {'returns': liq_alts_ret[[key]], 'market_values':liq_alts_mv[[key]],
             #                  'weights': dm.get_weights(liq_alts_mv[[key]]),'bmk': temp_bmk}
-            liq_alts_dict[key] = {'returns': temp_ret, 'mv': temp_mv,
+            liq_alts_dict[key] = {'returns': temp_ret, 'market_values': temp_mv,
                                   'weights': temp_weights, 'bmk': temp_bmk}
+            temp_dict = {'returns': liq_alts_data['returns'][[key]],
+                         'market_values': liq_alts_data['market_values'][[key]]}
+            if self.compute_composites:
+                temp_dict = dm.get_agg_data(temp_ret, temp_mv, key)
             total_ret = dm.merge_dfs(total_ret, temp_dict['returns'], False)
-            total_mv = dm.merge_dfs(total_mv, temp_dict['mv'], False)
+            total_mv = dm.merge_dfs(total_mv, temp_dict['market_values'], False)
         print(f'Getting Total Liquid Alts sub portfolio data...')
-        total_dict = dm.get_agg_data(total_ret, total_mv, 'Total Liquid Alts')
+        total_dict = {'returns': liq_alts_data['returns'][['Total Liquid Alts']],
+                      'market_values': liq_alts_data['market_values'][['Total Liquid Alts']]}
+        if self.compute_composites:
+            total_dict = dm.get_agg_data(total_ret, total_mv, 'Total Liquid Alts')
         total_ret = dm.merge_dfs(total_ret, total_dict['returns'], False)
-        total_mv = dm.merge_dfs(total_mv, total_dict['mv'], False)
+        total_mv = dm.merge_dfs(total_mv, total_dict['market_values'], False)
         total_weights = dm.get_weights(total_mv, True, True)
-        liq_alts_dict['Total Liquid Alts'] = {'returns': total_ret, 'mv': total_mv,
+        liq_alts_dict['Total Liquid Alts'] = {'returns': total_ret, 'market_values': total_mv,
                                               'weights': total_weights, 'bmk': self.bmk_returns.copy()}
         return liq_alts_dict
 
     def get_portfolio_data(self):
         print('Getting portfolio data...')
-        liq_alts_data = di.DataImporter.read_excel_data(filepath=LIQ_ALTS_PORT_DATA_FP)
+        liq_alts_data = di.ExcelImporter(file_path=dl.LIQ_ALTS_PORT_DATA_FP).read_excel_data()
         if self.update_mgr_returns:
             liq_alts_data = self.merge_mgr_returns_data(liq_alts_data)
         return liq_alts_data
 
     @staticmethod
     def get_mgr_returns_data():
-        return di.DataImporter.read_excel_data(filepath=RETURNS_DATA_FP + 'liq_alts_mgr_returns.xlsx')
+        return di.ExcelImporter(file_path=dl.RETURNS_DATA_FP + 'liq_alts_mgr_returns.xlsx').read_excel_data()
 
     def merge_mgr_returns_data(self, liq_alts_data):
         print(f'Updating mgr returns {list(self.mgr_returns_data.keys())} data...')
         mgr_returns_df_list = []
         for mgr, mgr_returns_df in self.mgr_returns_data.items():
-            liq_alts_mgr_returns_df = dm.drop_nas(dxf.copy_data(liq_alts_data['returns'][[mgr]]))
+            liq_alts_mgr_returns_df = dm.drop_nas(
+                EquityHedging.datamanager.data_manager_new.copy_data(liq_alts_data['returns'][[mgr]]))
             while mgr_returns_df.index[-1] >= liq_alts_mgr_returns_df.index[0]:
                 liq_alts_mgr_returns_df = liq_alts_mgr_returns_df.iloc[1:, ]
             mgr_returns_df = pd.concat([mgr_returns_df, liq_alts_mgr_returns_df], axis=0)
@@ -363,18 +355,18 @@ class LiqAltsPortHandler(LiqAltsBmkDataHandler):
         return liq_alts_data
 
     def get_returns(self, return_data=True):
-        data = 'returns' if return_data else 'mv'
+        data = 'returns' if return_data else 'market_values'
         print(f'Getting Liquid Alts {data} data...')
         liq_alts_port = pd.DataFrame()
         for sub_port in self.sub_ports:
             liq_alts_port = dm.merge_dfs(liq_alts_port, self.sub_ports[sub_port][data], False)
         return liq_alts_port
 
-    def get_mvs(self):
+    def get_mvs(self, **kwargs):
         return self.get_returns(return_data=False)
 
     def get_full_port_data(self, return_data=True):
-        data = 'returns' if return_data else 'mv'
+        data = 'returns' if return_data else 'market_values'
         print(f'Getting Liquid Alts {data} data...')
         liq_alts_port = pd.DataFrame()
         for sub_port in self.sub_ports:
@@ -387,9 +379,9 @@ class LiqAltsPortHandler(LiqAltsBmkDataHandler):
         sub_port_mvs = pd.DataFrame()
         for sub_port in self.sub_ports:
             if sub_port == 'Total Liquid Alts':
-                sub_port_mvs = dm.merge_dfs(sub_port_mvs, self.sub_ports[sub_port]['mv'], False)
+                sub_port_mvs = dm.merge_dfs(sub_port_mvs, self.sub_ports[sub_port]['market_values'], False)
             else:
-                mgr_mvs = dm.merge_dfs(mgr_mvs, self.sub_ports[sub_port]['mv'], False)
+                mgr_mvs = dm.merge_dfs(mgr_mvs, self.sub_ports[sub_port]['market_values'], False)
         mgr_weights = dm.get_weights(mgr_mvs)
         sub_port_weights = dm.get_weights(sub_port_mvs, True, True)
         return dm.merge_dfs(mgr_weights, sub_port_weights, False)
@@ -408,8 +400,9 @@ class LiqAltsPortHandler(LiqAltsBmkDataHandler):
         self.sub_ports[sub_port]['returns'] = dm.merge_dfs(self.sub_ports[sub_port]['returns'], df_mgr_ret,
                                                            drop_na=False)
         col_list = list(self.sub_ports[sub_port]['returns'].columns)
-        self.sub_ports[sub_port]['mv'][col_list[len(col_list) - 1]] = dxf.get_price_data(df_mgr_ret, mv_amt)
-        self.sub_ports[sub_port]['weights'] = dm.get_weights(self.sub_ports[sub_port]['mv'])
+        self.sub_ports[sub_port]['market_values'][col_list[len(col_list) - 1]] = dxf.PriceData(df_mgr_ret,
+                                                                                               mv_amt).price_data
+        self.sub_ports[sub_port]['weights'] = dm.get_weights(self.sub_ports[sub_port]['market_values'])
         self.update_sub_port_total(sub_port)
         self.update_data()
         print(f'Updated {sub_port} portfolio...')
@@ -417,45 +410,45 @@ class LiqAltsPortHandler(LiqAltsBmkDataHandler):
     def remove_mgr(self, mgr):
         sub_port = get_mgr_sub_port(mgr)
         self.sub_ports[sub_port]['returns'].drop([mgr], axis=1, inplace=True)
-        self.sub_ports[sub_port]['mv'].drop([mgr], axis=1, inplace=True)
-        self.sub_ports[sub_port]['weights'] = dm.get_weights(self.sub_ports[sub_port]['mv'])
+        self.sub_ports[sub_port]['market_values'].drop([mgr], axis=1, inplace=True)
+        self.sub_ports[sub_port]['weights'] = dm.get_weights(self.sub_ports[sub_port]['market_values'])
         self.update_sub_port_total(sub_port)
         self.update_data()
         print(f'Removed {mgr} from {sub_port} portfolio...')
 
     def update_mgr(self, mgr, df_mgr_ret, mv_amt=100000000, update_ret=True, update_mv=False):
-        sub_port = get_mgr_sub_port(mgr)
-        col_list = list(self.sub_ports[sub_port]['returns'].columns)
+        sub_port_name = get_mgr_sub_port(mgr)
+        sub_port_data = dm.copy_data(self.sub_ports[sub_port_name])
+        col_list = list(sub_port_data['returns'].columns)
         if update_ret:
-            self.sub_ports[sub_port]['returns'].drop([mgr], axis=1, inplace=True)
-            self.sub_ports[sub_port]['returns'] = dm.merge_dfs(self.sub_ports[sub_port]['returns'], df_mgr_ret,
-                                                               drop_na=False)
-            self.sub_ports[sub_port]['returns'] = self.sub_ports[sub_port]['returns'][col_list]
+            sub_port_data['returns'].drop([mgr], axis=1, inplace=True)
+            sub_port_data['returns'] = dm.merge_dfs(sub_port_data['returns'], df_mgr_ret, drop_na=False)
+            sub_port_data['returns'] = sub_port_data['returns'][col_list]
         if update_mv:
-            self.sub_ports[sub_port]['mv'].drop([mgr], axis=1, inplace=True)
-            self.sub_ports[sub_port]['mv'][mgr] = dxf.get_price_data(self.sub_ports[sub_port]['returns'][mgr],
-                                                                     mv_amt)
-            self.sub_ports[sub_port]['mv'] = self.sub_ports[sub_port]['mv'][col_list]
-            self.sub_ports[sub_port]['weights'] = dm.get_weights(self.sub_ports[sub_port]['mv'])
-        self.update_sub_port_total(sub_port)
+            sub_port_data['market_values'].drop([mgr], axis=1, inplace=True)
+            sub_port_data['market_values'][mgr] = dxf.PriceData(sub_port_data['returns'][mgr], mv_amt).price_data
+            sub_port_data['market_values'] = sub_port_data['market_values'][col_list]
+            sub_port_data['weights'] = dm.get_weights(sub_port_data['market_values'])
+        self.sub_ports[sub_port_name] = sub_port_data
+        self.update_sub_port_total(sub_port_name)
         self.update_data(update_mv)
-        print(f'Updated {mgr} data in {sub_port} portfolio...')
+        print(f'Updated {mgr} data in {sub_port_name} portfolio...')
 
-    # TODO
+    def update_sub_port_total(self, sub_port_name):
+        total_string = 'Total Liquid Alts'
+        sub_port_data = dm.copy_data(self.sub_ports[sub_port_name])
+        sub_port_dict = dm.get_agg_data(sub_port_data['returns'], sub_port_data['market_values'], sub_port_name)
 
-    def update_sub_port_total(self, sub_port):
-        sub_port_dict = dm.get_agg_data(self.sub_ports[sub_port]['returns'],
-                                        self.sub_ports[sub_port]['mv'], sub_port)
-        self.sub_ports['Total Liquid Alts']['returns'][sub_port] = sub_port_dict['returns'][sub_port]
-        self.sub_ports['Total Liquid Alts']['mv'][sub_port] = sub_port_dict['mv'][sub_port]
-        total_ret = self.sub_ports['Total Liquid Alts']['returns'][list(LIQ_ALTS_MGR_DICT.keys())]
-        total_mv = self.sub_ports['Total Liquid Alts']['mv'][list(LIQ_ALTS_MGR_DICT.keys())]
-        total_dict = dm.get_agg_data(total_ret, total_mv, 'Total Liquid Alts')
-        self.sub_ports['Total Liquid Alts']['returns']['Total Liquid Alts'] = total_dict['returns'][
-            'Total Liquid Alts']
-        self.sub_ports['Total Liquid Alts']['mv']['Total Liquid Alts'] = total_dict['mv']['Total Liquid Alts']
-        self.sub_ports['Total Liquid Alts']['weights'] = dm.get_weights(self.sub_ports['Total Liquid Alts']['mv'], True,
-                                                                        True)
+        self.sub_ports[total_string]['returns'][sub_port_name] = sub_port_dict['returns'][sub_port_name]
+        self.sub_ports[total_string]['market_values'][sub_port_name] = sub_port_dict['market_values'][sub_port_name]
+        total_ret = self.sub_ports[total_string]['returns'][list(LIQ_ALTS_MGR_DICT.keys())]
+        total_mv = self.sub_ports[total_string]['market_values'][list(LIQ_ALTS_MGR_DICT.keys())]
+        total_dict = dm.get_agg_data(total_ret, total_mv, total_string)
+        self.sub_ports[total_string]['returns'][total_string] = total_dict['returns'][
+            total_string]
+        self.sub_ports[total_string]['market_values'][total_string] = total_dict['market_values'][total_string]
+        self.sub_ports[total_string]['weights'] = dm.get_weights(self.sub_ports[total_string]['market_values'],
+                                                                 total_col=True, add_total_wgt=True)
 
     def update_data(self, update_mv=True):
         self.returns = self.get_full_port_data()
@@ -464,7 +457,8 @@ class LiqAltsPortHandler(LiqAltsBmkDataHandler):
             self.weights = self.get_full_port_wgts()
         self.bmk_key = self.get_mgr_bmk_key_data()
 
-    def get_sub_mgrs(self, sub_port='Global Macro'):
+    @staticmethod
+    def get_sub_mgrs(sub_port='Global Macro'):
         mgr_list = []
         mgr_list = mgr_list + LIQ_ALTS_MGR_DICT[sub_port]
         mgr_list.append(sub_port)
@@ -472,9 +466,9 @@ class LiqAltsPortHandler(LiqAltsBmkDataHandler):
 
 
 class LiquidAltsStratDataHandler(LiqAltsBmkDataHandler):
-    def __init__(self, filepath, sheet_name=0, bmk_name='HFRX Macro/CTA', eq_bmk='MSCI ACWI', fi_bmk='FI Benchmark',
+    def __init__(self, file_path, sheet_name=0, bmk_name='HFRX Macro/CTA', eq_bmk='MSCI ACWI', fi_bmk='FI Benchmark',
                  cm_bmk='Commodities (BCOM)', fx_bmk='U.S. Dollar Index'):
-        self.filepath = filepath
+        self.file_path = file_path
         self.sheet_name = sheet_name
         self.bmk_name = bmk_name
         self.bmk_key = {}
@@ -483,8 +477,8 @@ class LiquidAltsStratDataHandler(LiqAltsBmkDataHandler):
         self.update_bmk_key()
         self.update_mkt_returns()
 
-    def get_returns(self):
-        returns_data = di.DataImporter.read_excel_data(filepath=self.filepath, sheet_name=self.sheet_name)
+    def get_returns(self, **kwargs):
+        returns_data = di.ExcelImporter(file_path=self.file_path, sheet_name=self.sheet_name).read_excel_data()
         self.col_list = returns_data.columns.tolist()
         return returns_data
 
@@ -514,13 +508,13 @@ def create_notional_dict(strategy_list, notional_list=None):
 
 
 class QISDataHandler(MktDataHandler):
-    def __init__(self, filepath, eq_bmk='S&P 500', include_fi=False, include_cm=False, include_fx=False,
+    def __init__(self, file_path, eq_bmk='S&P 500', include_fi=False, include_cm=False, include_fx=False,
                  strat_drop_list=None, weight_col='Weighted QIS Strats'):
         super().__init__(eq_bmk=eq_bmk, include_fi=include_fi, include_cm=include_cm, include_fx=include_fx)
 
         if strat_drop_list is None:
             strat_drop_list = []
-        self.filepath = filepath
+        self.file_path = file_path
         self.strat_drop_list = strat_drop_list
         self.weight_col = weight_col
         self.returns = self.get_returns()
@@ -541,8 +535,8 @@ class QISDataHandler(MktDataHandler):
         dictionary
 
         """
-        data_importer = di.DataImporter(filepath=self.filepath, sheet_name=None, drop_na=False, index_data=False)
-        returns_dict = dxf.copy_data(data_importer.data_import)
+        data_importer = di.DataImporter(file_path=self.file_path, sheet_name=None, drop_na=False, index_data=False)
+        returns_dict = EquityHedging.datamanager.data_manager_new.copy_data(data_importer.data_import)
         if self.strat_drop_list:
             for freq_string in returns_dict:
                 returns_dict[freq_string].drop(self.strat_drop_list, axis=1, inplace=True)
@@ -566,7 +560,7 @@ class QISDataHandler(MktDataHandler):
             notional_list = []
         if isinstance(new_strat_data, dict):
             strat_list = list(next(iter(new_strat_data.values())).columns)
-            new_strat_dict = dxf.copy_data(new_strat_data)
+            new_strat_dict = EquityHedging.datamanager.data_manager_new.copy_data(new_strat_data)
         else:
             strat_list = list(new_strat_data.columns)
             new_strat_dict = dxf.get_data_dict(new_strat_data, index_data=False)
@@ -642,7 +636,7 @@ class QISDataHandler(MktDataHandler):
 
     def get_weights_df(self):
         """
-        Returns dataframe with portoflio weighting information
+        Returns dataframe with portfolio weighting information
 
         Returns
         -------
@@ -692,7 +686,7 @@ class QISDataHandler(MktDataHandler):
     # TODO: Might have to rename
     def get_weighted_hedges(self, new_strat=False):
         """
-        Return dataframe of weighted hedge returns, with and without newest strategy
+        Return dataframe of weighted hedge returns, with and without the newest strategy
 
         Parameters
         ----------
@@ -734,8 +728,8 @@ class EQHedgeDataHandler(QISDataHandler):
 
         self.update_strat_list = update_strat_list
 
-        super().__init__(eq_bmk=eq_bmk, include_fi=include_fi, strat_drop_list=strat_drop_list,
-                         weight_col='Weighted Hedges')
+        super().__init__(file_path=dl.EQ_HEDGE_DATA_FP, eq_bmk=eq_bmk, include_fi=include_fi,
+                         strat_drop_list=strat_drop_list, weight_col='Weighted Hedges')
 
         self.eq_mv = eq_mv
         self.fi_mv = fi_mv if self.include_fi else 0.0
@@ -758,7 +752,7 @@ class EQHedgeDataHandler(QISDataHandler):
         dictionary
 
         """
-        eq_hedge_returns = di.DataImporter.read_excel_data(filepath=EQ_HEDGE_DATA_FP, sheet_name=None)
+        eq_hedge_returns = di.ExcelImporter(file_path=self.file_path, sheet_name=None).read_excel_data()
 
         returns_dict = {}
         for freq_string, returns_df in eq_hedge_returns.items():
@@ -818,7 +812,7 @@ class EQHedgeDataHandler(QISDataHandler):
 
     def get_weights_df(self):
         """
-        Returns dataframe with portoflio weighting information
+        Returns dataframe with portfolio weighting information
 
         Returns
         -------
@@ -869,7 +863,7 @@ class EQHedgeDataHandler(QISDataHandler):
 
     def get_weighted_strats(self, new_strat=False):
         """
-        Returns dictionary of weighted strategy returns, with and without newest strategy
+        Returns dictionary of weighted strategy returns, with and without the newest strategy
 
         Parameters
         ----------
