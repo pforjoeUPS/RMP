@@ -5,34 +5,79 @@ Created on Fri Jul 14 2023
 @author: Powis Forjoe
 """
 
-import re
-import zipfile
-import xlrd
-
 import pandas as pd
+import xlrd
 from openpyxl import load_workbook
 
 from . import data_manager_new as dm
 
-NEXEN_DATA_COL_DICT = {'Account Name\n': 'Name', 'Account Id\n': 'Account Id',
-                       'Return Type\n': 'Return Type', 'As Of Date\n': 'Dates',
-                       'Market Value\n': 'Market Value', 'Account Monthly Return\n': 'Return'}
-NEXEN_BMK_DATA_COL_DICT = {'As Of Date\n': 'Dates', 'Benchmark Name\n': 'Benchmark Name',
-                           'Benchmark Monthly Return\n': 'Benchmark Return'}
-QIS_UNIVERSE = dm.CWD + '\\Cluster Analysis\\data\\'
+
+class ExcelImporter:
+    def __init__(self, file_path, sheet_name=None, index_col=0, skip_rows=None, use_cols=None):
+        self.file_path = file_path
+        self.sheet_name = sheet_name
+        self.index_col = index_col
+        if skip_rows is None:
+            skip_rows = []
+        self.skip_rows = skip_rows
+        self.use_cols = use_cols
+
+    def read_excel_data(self):
+        """
+        Reads an Excel file into a dataframe or dictionary
+
+        Returns
+        -------
+        dataframe/dictionary of dataframes
+
+        """
+
+        data = pd.read_excel(self.file_path, sheet_name=self.sheet_name, index_col=self.index_col,
+                             skiprows=self.skip_rows, usecols=self.use_cols)
+        return self.get_real_cols(data)
+
+    def get_excel_sheet_names(self):
+        sheets = []
+        if self.file_path.endswith('.xlsx'):
+            workbook = load_workbook(filename=self.file_path, read_only=True)
+            sheets = workbook.sheetnames
+        elif self.file_path.endswith('.xls'):
+            workbook = xlrd.open_workbook(self.file_path)
+            sheets = workbook.sheet_names()
+        return sheets
+
+    @staticmethod
+    def get_real_cols(data):
+        """
+        Removes empty columns labeled 'Unnamed: ' after importing excel data
+
+        Parameters:
+        df -- dataframe
+
+        Returns:
+        dataframe
+        """
+        if isinstance(data, dict):
+            for key in data:
+                real_cols = [x for x in data[key].columns if not x.startswith("Unnamed: ")]
+                data[key] = data[key][real_cols]
+        else:
+            real_cols = [x for x in data.columns if not x.startswith("Unnamed: ")]
+            data = data[real_cols]
+        return data
 
 
 # TODO: add skip_cols
 class DataImporter:
 
-    def __init__(self, filepath, sheet_name=0, index_col=0, skip_rows=None,
+    def __init__(self, file_path, sheet_name=0, index_col=0, skip_rows=None,
                  data_source='custom', col_dict=None, drop_na=False, index_data=False):
         """
         Reads an Excel file into a dataImporter object
 
         Parameters
         ----------
-        filepath : string
+        file_path : string
             Valid string path.
         sheet_name : int, string, list of strings, ints, optional
             name(s) of Excel sheet(s) or positions. The default is 0.
@@ -57,8 +102,8 @@ class DataImporter:
             col_dict = {}
         if skip_rows is None:
             skip_rows = []
-        self.filepath = filepath
-        self.sheet_name = sheet_name  # if sheet_name != 0 else get_excel_sheet_names(self.filepath)
+        self.file_path = file_path
+        self.sheet_name = sheet_name  # if sheet_name != 0 else get_excel_sheet_names(self.file_path)
         self.index_col = index_col
         self.skip_rows = skip_rows
         self.data_source = data_source
@@ -67,52 +112,6 @@ class DataImporter:
         self.index_data = index_data
         self.data_import = self.import_data()
         self.data_dict_bool = isinstance(self.data_import, dict)
-
-    @staticmethod
-    def read_excel_data(filepath, sheet_name=None, index_col=0, skip_rows=None, use_cols=None):
-        """
-        Reads an Excel file into a dataframe or dictionary
-
-        Returns
-        -------
-        dataframe/dictionary of dataframes
-
-        """
-        if skip_rows is None:
-            skip_rows = []
-        return pd.read_excel(filepath, sheet_name=sheet_name, index_col=index_col,
-                             skiprows=skip_rows, usecols=use_cols)
-
-    @staticmethod
-    def get_excel_sheet_names(file_path):
-        sheets = []
-        if file_path.endswith('.xlsx'):
-            workbook = load_workbook(filename=file_path, read_only = True)
-            sheets = workbook.sheetnames
-        elif file_path.endswith('.xls'):
-            workbook = xlrd.open_workbook(file_path)
-            sheets = workbook.sheet_names()
-        return sheets
-
-    @staticmethod
-    def get_real_cols(data):
-        """
-        Removes empty columns labeled 'Unnamed: ' after importing data
-
-        Parameters:
-        df -- dataframe
-
-        Returns:
-        dataframe
-        """
-        if isinstance(data, dict):
-            for key in data:
-                real_cols = [x for x in data[key].columns if not x.startswith("Unnamed: ")]
-                data[key] = data[key][real_cols]
-        else:
-            real_cols = [x for x in data.columns if not x.startswith("Unnamed: ")]
-            data = data[real_cols]
-        return data
 
     def import_data(self):
         """
@@ -123,8 +122,8 @@ class DataImporter:
         dataframe or Dictionary of dataframes
 
         """
-        data = self.read_excel_data(filepath=self.filepath, sheet_name=self.sheet_name, index_col=self.index_col,
-                                    skip_rows=self.skip_rows)
+        data = ExcelImporter(file_path=self.file_path, sheet_name=self.sheet_name, index_col=self.index_col,
+                             skip_rows=self.skip_rows).read_excel_data()
         # drop nas
         if self.drop_na:
             data = dm.drop_nas(data)
@@ -141,14 +140,14 @@ class DataImporter:
 
 
 class InnocapDataImporter(DataImporter):
-    def __init__(self, filepath, sheet_name=0, index_col=None, skip_rows=None,
+    def __init__(self, file_path, sheet_name=0, index_col=None, skip_rows=None,
                  data_source='innocap', col_dict=None, drop_na=False, index_data=False):
         """
         Reads an Excel file into an innocapDataImporter object
 
         Parameters
         ----------
-        filepath : string
+        file_path : string
             Valid string path.
         sheet_name : int, string, list of strings, ints, optional
             name(s) of Excel sheet(s) or positions. The default is 0.
@@ -173,20 +172,20 @@ class InnocapDataImporter(DataImporter):
             col_dict = {}
         if skip_rows is None:
             skip_rows = [0, 1]
-        super().__init__(filepath, sheet_name, index_col, skip_rows,
-                         data_source, col_dict, drop_na, index_data)
+        super().__init__(file_path=file_path, sheet_name=sheet_name, index_col=index_col, skip_rows=skip_rows,
+                         data_source=data_source, col_dict=col_dict, drop_na=drop_na, index_data=index_data)
 
 
 class BbgDataImporter(InnocapDataImporter):
 
-    def __init__(self, filepath, sheet_name=0, index_col=0, skip_rows=None,
-                 data_source='bbg', drop_na=False, index_data=True):
+    def __init__(self, file_path, sheet_name=0, index_col=0, skip_rows=None, drop_na=False,
+                 index_data=True):
         """
         Reads an Excel file into an bbgDataImporter object
 
         Parameters
         ----------
-        filepath : string
+        file_path : string
             Valid string path.
         sheet_name : int, string, list of strings, ints, optional
             name(s) of Excel sheet(s) or positions. The default is 0.
@@ -194,8 +193,6 @@ class BbgDataImporter(InnocapDataImporter):
             The default is 0.
         skip_rows : list, optional
             list of rows to skip when importing. The default is [0,1,2,4,5,6].
-        data_source : string, optional
-            source of Excel file. The default is 'bbg'.
         drop_na : bool, optional
             drop NaN values. The default is False.
         index_data : TYPE, optional
@@ -208,11 +205,11 @@ class BbgDataImporter(InnocapDataImporter):
         """
         if skip_rows is None:
             skip_rows = [0, 1, 2, 4, 5, 6]
-        self.filepath = filepath
+        self.file_path = file_path
         self.col_dict = self.get_col_dict()
 
-        super().__init__(filepath=self.filepath, sheet_name=sheet_name, index_col=index_col, skip_rows=skip_rows,
-                         data_source=data_source, col_dict=self.col_dict, drop_na=drop_na, index_data=index_data)
+        super().__init__(file_path=self.file_path, sheet_name=sheet_name, index_col=index_col, skip_rows=skip_rows,
+                         data_source='bbg', col_dict=self.col_dict, drop_na=drop_na, index_data=index_data)
 
         # rename index col
         if isinstance(self.data_import, dict):
@@ -223,32 +220,30 @@ class BbgDataImporter(InnocapDataImporter):
 
     def get_col_dict(self):
         try:
-            keys_df = self.read_excel_data(filepath=self.filepath, sheet_name='key', index_col=None, use_cols='A:B')
+            keys_df = ExcelImporter(file_path=self.file_path, sheet_name='key', index_col=None,
+                                    use_cols='A:B').read_excel_data()
             return keys_df.set_index('Index').to_dict()['Description']
         except Exception as e:
             print(e)
             return {}
 
 
-# TODO: clean this to only have dates , account name, market value and return
 class NexenDataImporter(DataImporter):
-    def __init__(self, filepath, sheet_name=0, index_col=None, skip_rows=[], data_source='nexen',
-                 col_dict=NEXEN_DATA_COL_DICT, drop_na=False, index_data=False):
+    def __init__(self, file_path, sheet_name=0, index_col=None, skip_rows=[],
+                 col_dict={}, drop_na=False, index_data=False):
         """
         Reads an Excel file into a nexenDataImporter object
 
         Parameters
         ----------
-        filepath : string
+        file_path : string
             Valid string path.
         sheet_name : int, string, list of strings, ints, optional
             name(s) of Excel sheet(s) or positions. The default is 0.
         index_col : int, optional
             The default is None.
         skip_rows : list, optional
-            list of rows to skip when importing. The default is [].
-        data_source : string, optional
-            source of Excel file. The default is 'nexen'.
+            list of rows to skip when importing. The default is []
         drop_na : bool, optional
             drop NaN values. The default is False.
         index_data : TYPE, optional
@@ -259,21 +254,20 @@ class NexenDataImporter(DataImporter):
         nexenDataImporter object
 
         """
-        super().__init__(filepath=filepath, sheet_name=sheet_name, index_col=index_col, skip_rows=skip_rows,
-                         data_source=data_source, col_dict=col_dict, drop_na=drop_na, index_data=index_data)
+        super().__init__(file_path=file_path, sheet_name=sheet_name, index_col=index_col, skip_rows=skip_rows,
+                         data_source='nexen', col_dict=col_dict, drop_na=drop_na, index_data=index_data)
 
         self.data_import = self.data_import[self.col_dict.values()] if bool(self.col_dict) else self.data_import
 
-
 # class PutSpreadDataImporter(DataImporter):
-#     def __init__(self, filepath ,sheet_name = "Daily", index_col=0, skip_rows=[1],
+#     def __init__(self, file_path ,sheet_name = "Daily", index_col=0, skip_rows=[1],
 #                  data_source='custom', drop_na=False, index_data = False):
 #         """
 #         Reads an Excel file into a PutSpreadDataImporter object
 
 #         Parameters
 #         ----------
-#         filepath : string
+#         file_path : string
 #             Valid string path.
 #         sheet_name : int, string, list of strings, ints, optional
 #             name(s) of Excel sheet(s) or positions. The default is 0.
@@ -290,20 +284,21 @@ class NexenDataImporter(DataImporter):
 
 #         Returns
 #         -------
-#         putspreadDataImporter object
+#         PutSpreadDataImporter object
 
 #         """
-#         super().__init__(filepath, sheet_name, index_col, skip_rows,
+#         super().__init__(file_path, sheet_name, index_col, skip_rows,
 #                               data_source,drop_na, index_data)
 
 #         self.data_import.columns = ['99 Rep','Short Put','Put Spread']
 
 
-def get_qis_uni_dict():
-    qis_uni = {}
-    sheet_names = DataImporter.get_excel_sheet_names(QIS_UNIVERSE + "QIS Universe Time Series TEST.xlsx")
-    for sheet in sheet_names:
-        index_price = pd.read_excel(QIS_UNIVERSE + "QIS Universe Time Series TEST.xlsx", sheet_name=sheet, index_col=0,
-                                    header=1)
-        qis_uni[sheet] = dm.format_data(index_price, freq='W')
-    return qis_uni
+# def get_qis_uni_dict():
+#     qis_uni = {}
+#     sheet_names = DataImporter.get_excel_sheet_names(dl.QIS_UNIVERSE + "QIS Universe Time Series TEST.xlsx")
+#     for sheet in sheet_names:
+#         index_price = pd.read_excel(dl.QIS_UNIVERSE + "QIS Universe Time Series TEST.xlsx", sheet_name=sheet,
+#                                     index_col=0,
+#                                     header=1)
+#         qis_uni[sheet] = dm.format_data(index_price, freq='W')
+#     return qis_uni
