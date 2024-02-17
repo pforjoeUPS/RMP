@@ -101,8 +101,15 @@ class DataReport(SetReport):
         folder_location = self.file_path.replace(self.report_name + '.xlsx', '')
         print(f'"{self.report_name}.xlsx" report generated in "{folder_location}" folder')
 
+    def generate_returns_sheet(self, data, sheet_name):
+        new_sheets.HistReturnSheet(writer=self.writer, data=data, sheet_name=sheet_name).create_sheet()
+
+    def generate_mkt_value_sheet(self, data, sheet_name='market_values'):
+        new_sheets.MktValueSheet(self.writer, data=data, sheet_name=sheet_name).create_sheet()
+
 
 class ReturnsReport(DataReport):
+
     def __init__(self, report_name, data, data_file=True):
         """
         Generates Excel file containing historical returns for different frequencies
@@ -130,7 +137,7 @@ class ReturnsReport(DataReport):
         for data_key, returns_df in self.data.items():
             print(f'Writing {data_key} Historical Returns sheet...')
             # diff = -(len(data_key) - 31) if len(data_key) > 31 else None
-            new_sheets.HistReturnSheet(writer=self.writer, data=returns_df, sheet_name=data_key).create_sheet()
+            self.generate_returns_sheet(data=returns_df, sheet_name=data_key)
 
 
 class ReturnMktValueReport(DataReport):
@@ -155,10 +162,9 @@ class ReturnMktValueReport(DataReport):
 
     def generate_report(self):
         print("Writing Monthly Returns sheet...")
-        new_sheets.HistReturnSheet(writer=self.writer, data=self.data['returns'],
-                                   sheet_name='returns').create_sheet()
+        self.generate_returns_sheet(data=self.data['returns'], sheet_name='returns')
         print("Writing Monthly Market Values sheet...")
-        new_sheets.MktValueSheet(self.writer, self.data['market_values']).create_sheet()
+        self.generate_mkt_value_sheet(data=self.data['market_values'])
 
 
 class AnalyticReport(DataReport):
@@ -216,8 +222,7 @@ class HistSelloffReport(AnalyticReport):
     def generate_selloffs_sheets(self):
         # Create sheets
         new_sheets.HistSelloffSheet(self.writer, self.data['selloffs']).create_sheet()
-        new_sheets.HistReturnSheet(self.writer, self.data['returns']['Daily'],
-                                   sheet_name='Daily Historical Returns').create_sheet()
+        self.generate_returns_sheet(data=self.data['returns']['Daily'], sheet_name='Daily Historical Returns')
 
 
 class EquityHedgeReport(HistSelloffReport):
@@ -271,8 +276,7 @@ class EquityHedgeReport(HistSelloffReport):
         for freq in self.data['analytics']:
             new_sheets.AnalysisSheet(self.writer, self.data['analytics'][freq],
                                      sheet_name=f'{freq} Analysis').create_sheet()
-            new_sheets.HistReturnSheet(self.writer, self.data['returns'][freq],
-                                       sheet_name=f'{freq} Historical Returns').create_sheet()
+            self.generate_returns_sheet(data=self.data['returns'][freq], sheet_name=f'{freq} Historical Returns')
 
 
 class StratReport(EquityHedgeReport):
@@ -373,7 +377,7 @@ class RollingCumRetReport(DataReport):
 class AltsReport(AnalyticReport):
     def __init__(self, report_name, data_handler, full_port=False, sub_port='Global Macro', add_composite_data=True,
                  include_bmk=True, include_fi=True, include_cm=True, include_fx=True,
-                 include_dd=False, include_quantile=False, include_best_worst_pd=False, include_roll_stats=True):
+                 include_dd=False, include_quantile=False, include_best_worst_pd=False, include_roll_stats=False):
 
         self.full_port = full_port
         self.sub_port = sub_port
@@ -393,6 +397,7 @@ class AltsReport(AnalyticReport):
                                                      sub_port=self.sub_port, add_composite_data=self.add_composite_data,
                                                      include_bmk=self.include_bmk, include_fi=self.include_fi,
                                                      include_cm=self.include_cm, include_fx=self.include_fx,
+                                                     include_dd=self.include_dd, include_quantile=self.include_quantile,
                                                      include_best_worst_pd=self.include_best_worst_pd,
                                                      include_roll_stats=self.include_roll_stats)
 
@@ -482,8 +487,7 @@ class AltsReport(AnalyticReport):
 
     def generate_returns_sheets(self):
         for freq, returns_df in self.data['returns'].items():
-            new_sheets.HistReturnSheet(writer=self.writer, data=returns_df,
-                                       sheet_name=f'{freq} Historical Returns').create_sheet()
+            self.generate_returns_sheet(data=returns_df, sheet_name=f'{freq} Historical Returns')
 
     def generate_mtd_ytd_itd_sheets(self):
         new_sheets.HistReturnMTDYTDSheet(writer=self.writer, data=self.data['mtd_ytd_itd']).create_sheet()
