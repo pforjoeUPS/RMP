@@ -4,13 +4,84 @@ Created on Tue Oct  1 17:59:28 2019
 
 @author: Powis Forjoe, Maddie Choi, and Zach Wells
 """
+from ..datamanager import data_manager_new as dm, data_xformer_new as dxf
+
 import calendar
 
 import pandas as pd
 from copy import deepcopy
-from . import returns_analytics as ra, returns_stats_new as rs
-from ..datamanager import data_manager_new as dm
-from ..datamanager.data_xformer_new import copy_data, get_data_dict
+from . import returns_analytics as ra
+from .returns_stats_new import ReturnsStats
+
+
+class MTDSummary:
+    def __init__(self, monthly_returns_df):
+        self.monthly_returns_df = monthly_returns_df
+        self.mtd_ytd_itd_returns_dict = self.get_mtd_ytd_itd_returns_dict()
+
+    def get_mtd_ytd_itd_returns_dict(self):
+        mtd_ytd_itd_returns_dict = {}
+        print('Computing MTD YTD ITD returns...')
+        for strat in self.monthly_returns_df:
+            mtd_ytd_itd_returns_dict[strat] = self.get_mtd_ytd_itd_returns_df(self.monthly_returns_df[strat])
+        return mtd_ytd_itd_returns_dict
+
+    def get_mtd_ytd_itd_returns_df(self, monthly_returns_series):
+        return pd.concat([self.group_monthly_returns_by_year(monthly_returns_series),
+                          self.get_ytd_itd_returns_df(monthly_returns_series)], axis=1)
+
+    @staticmethod
+    def group_monthly_returns_by_year(monthly_returns_series):
+        """
+
+        Returns
+        -------
+        Data Frame
+
+        """
+        # pull monthly returns from dictionary
+        returns_df = pd.DataFrame(dm.drop_nas(monthly_returns_series))
+
+        # create monthly return data frame with index of years
+        returns_df['year'] = returns_df.index.year
+        returns_df['month'] = returns_df.index.month
+
+        # change monthly returns into a table with x-axis as months and y-axis as years
+        grouped_returns_df = returns_df.groupby(['year', 'month']).sum()
+
+        mtd_returns_by_year_df = grouped_returns_df.unstack()
+
+        # drop first row index
+        mtd_returns_by_year_df = mtd_returns_by_year_df.droplevel(level=0, axis=1)
+
+        mtd_returns_by_year_df.columns = [calendar.month_abbr[x] for x in list(mtd_returns_by_year_df.columns)]
+        # re-order columns
+        # mtd_returns_by_year_df = mtd_returns_by_year_df[
+        #     ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]]
+        #
+        # # Join yearly returns to the monthly returns table
+        # mtd_ytd_itd_returns_df = pd.concat([mtd_returns_by_year_df, ytd_itd_returns_df], axis=1)
+        # mtd_ytd_itd_returns_df.index.names = [returns_series.name]
+
+        return mtd_returns_by_year_df
+
+    @staticmethod
+    def get_ytd_itd_returns_df(monthly_returns_series):
+        monthly_returns_df = pd.DataFrame(dm.drop_nas(monthly_returns_series))
+        monthly_returns_df['year'] = monthly_returns_df.index.year
+
+        years = list(monthly_returns_df['year'].unique())
+        ytd_returns_list = []
+        itd_returns_list = []
+        for year in years:
+            # isolate monthly returns for single year
+            mtd_returns_series = monthly_returns_df.loc[monthly_returns_df.year == year][monthly_returns_series.name]
+            # calculate ytd and itd returns
+            returns_stats = ReturnsStats()
+            ytd_returns_list.append(returns_stats.get_cumulative_returns(mtd_returns_series))
+            itd_returns_list.append(returns_stats.get_cumulative_returns(pd.Series(ytd_returns_list)))
+
+        return pd.DataFrame({"YTD": ytd_returns_list, "ITD": itd_returns_list}, index=list(years))
 
 
 class AnalyticsSummary:
@@ -42,7 +113,7 @@ class AnalyticsSummary:
         self.get_mkt_data()
 
     def get_return_data(self):
-        self.returns = copy_data(self.data_handler.returns)
+        self.returns = dm.copy_data(self.data_handler.returns)
 
     def get_include_mkt_data(self):
         if self.data_handler.include_eq is False:
@@ -53,15 +124,15 @@ class AnalyticsSummary:
     def get_bmk_data(self):
         try:
             if self.include_bmk:
-                self.bmk_returns = copy_data(self.data_handler.bmk_returns)
-                self.bmk_key = copy_data(self.data_handler.bmk_key)
+                self.bmk_returns = dm.copy_data(self.data_handler.bmk_returns)
+                self.bmk_key = dm.copy_data(self.data_handler.bmk_key)
         except AttributeError:
             pass
 
     def get_mkt_data(self):
         self.get_include_mkt_data()
-        self.mkt_returns = copy_data(self.data_handler.mkt_returns)
-        self.mkt_key = copy_data(self.data_handler.mkt_key)
+        self.mkt_returns = dm.copy_data(self.data_handler.mkt_returns)
+        self.mkt_key = dm.copy_data(self.data_handler.mkt_key)
 
     def get_reporting_data(self, **kwargs):
         self.get_analytics(**kwargs)
@@ -105,72 +176,10 @@ class AnalyticsSummary:
         quantile_df = quantile_df[strat_list]
         return quantile_df
 
-    def get_mtd_ytd_itd_returns_dict(self, monthly_returns_df):
-        mtd_ytd_itd_returns_dict = {}
+    @staticmethod
+    def get_mtd_ytd_itd_returns_dict(monthly_returns_df):
         print('Computing MTD YTD ITD returns...')
-        for strat in monthly_returns_df:
-            mtd_ytd_itd_returns_dict[strat] = self.get_mtd_ytd_itd_returns_df(monthly_returns_df[strat])
-        return mtd_ytd_itd_returns_dict
-
-    def get_mtd_ytd_itd_returns_df(self, monthly_returns_series):
-        return pd.concat([self.group_monthly_returns_by_year(monthly_returns_series),
-                          self.get_ytd_itd_returns_df(monthly_returns_series)], axis=1)
-
-    @staticmethod
-    def group_monthly_returns_by_year(monthly_returns_series):
-        """
-
-        Parameters
-        ----------
-        monthly_returns_series : Data Frame
-
-        Returns
-        -------
-        Data Frame
-
-        """
-        # pull monthly returns from dictionary
-        returns_df = pd.DataFrame(dm.drop_nas(monthly_returns_series))
-
-        # create monthly return data frame with index of years
-        returns_df['year'] = returns_df.index.year
-        returns_df['month'] = returns_df.index.month
-
-        # change monthly returns into a table with x axis as months and y axis as years
-        grouped_returns_df = returns_df.groupby(['year', 'month']).sum()
-
-        mtd_returns_by_year_df = grouped_returns_df.unstack()
-
-        # drop first row index
-        mtd_returns_by_year_df = mtd_returns_by_year_df.droplevel(level=0, axis=1)
-
-        mtd_returns_by_year_df.columns = [calendar.month_abbr[x] for x in list(mtd_returns_by_year_df.columns)]
-        # re order columns
-        # mtd_returns_by_year_df = mtd_returns_by_year_df[
-        #     ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]]
-        #
-        # # Join yearly returns to the monthly returns table
-        # mtd_ytd_itd_returns_df = pd.concat([mtd_returns_by_year_df, ytd_itd_returns_df], axis=1)
-        # mtd_ytd_itd_returns_df.index.names = [returns_series.name]
-
-        return mtd_returns_by_year_df
-
-    @staticmethod
-    def get_ytd_itd_returns_df(monthly_returns_series):
-        monthly_returns_df = pd.DataFrame(dm.drop_nas(monthly_returns_series))
-        monthly_returns_df['year'] = monthly_returns_df.index.year
-
-        years = list(monthly_returns_df['year'].unique())
-        ytd_returns_list = []
-        itd_returns_list = []
-        for year in years:
-            # isolate monthly returns for single year
-            mtd_returns_series = monthly_returns_df.loc[monthly_returns_df.year == year][monthly_returns_series.name]
-            # calculate ytd and itd returns
-            ytd_returns_list.append(rs.get_cum_ret(mtd_returns_series))
-            itd_returns_list.append(rs.get_cum_ret(pd.Series(ytd_returns_list)))
-
-        return pd.DataFrame({"YTD": ytd_returns_list, "ITD": itd_returns_list}, index=list(years))
+        return MTDSummary(monthly_returns_df).mtd_ytd_itd_returns_dict
 
 
 class EqHedgeAnalyticSummary(AnalyticsSummary):
@@ -198,10 +207,10 @@ class EqHedgeAnalyticSummary(AnalyticsSummary):
     def get_return_data(self):
         if self.weighted:
             self.data_handler.get_weighted_returns(self.new_strat)
-            self.returns = copy_data(self.data_handler.weighted_returns)
+            self.returns = dm.copy_data(self.data_handler.weighted_returns)
             self.weights_df = self.data_handler.get_weights_df()
         else:
-            self.returns = copy_data(self.data_handler.returns)
+            self.returns = dm.copy_data(self.data_handler.returns)
 
     def get_reporting_data(self):
         self.get_analytics()
@@ -225,7 +234,7 @@ class EqHedgeAnalyticSummary(AnalyticsSummary):
         if self.include_quantile:
             self.reporting_data['quantiles'] = self.format_mkt_quantile_data()
         if self.selloffs:
-            self.reporting_data['selloffs'] = copy_data(self.ra.historical_selloff_data)
+            self.reporting_data['selloffs'] = dm.copy_data(self.ra.historical_selloff_data)
 
     def format_analytics_data(self, freq_string):
         return {'correlations': self.format_corr_stats_data(freq_string), 'weighting': self.format_weights(),
@@ -233,7 +242,7 @@ class EqHedgeAnalyticSummary(AnalyticsSummary):
                 'hedge_metrics': self.format_hedge_metrics_data(freq_string)}
 
     def format_corr_stats_data(self, freq_string):
-        corr_stats_data = copy_data(self.ra.corr_stats_dict[freq_string])
+        corr_stats_data = dm.copy_data(self.ra.corr_stats_dict[freq_string])
         if self.weighted:
             for key in corr_stats_data:
                 column_list = corr_stats_data[key]['corr_df'].columns.tolist()
@@ -243,7 +252,7 @@ class EqHedgeAnalyticSummary(AnalyticsSummary):
         return corr_stats_data
 
     def format_return_stats_data(self, freq_string):
-        return_stats_data = copy_data(self.ra.returns_stats_dict[freq_string])
+        return_stats_data = dm.copy_data(self.ra.returns_stats_dict[freq_string])
         ret_stats_idx_list = ['Time Frame', f'No. of {freq_string} Observations', 'Annualized Return',
                               'Annualized Volatility', 'Return/Volatility', 'Max DD', 'Return/Max DD', 'Max 1M DD',
                               'Max 1M DD Date', 'Ret/Max 1M DD', 'Max 3M DD', 'Max 3M DD Date', 'Ret/Max 3M DD',
@@ -254,11 +263,11 @@ class EqHedgeAnalyticSummary(AnalyticsSummary):
                 'title': f'Return Statistics ({freq_string} Returns)'}
 
     def format_hedge_metrics_data(self, freq_string):
-        return {'hm_df': copy_data(self.ra.hedge_metrics_dict[freq_string]),
+        return {'hm_df': dm.copy_data(self.ra.hedge_metrics_dict[freq_string]),
                 'title': f'Hedging Framework Metrics ({freq_string} Returns)'}
 
     def format_weights(self):
-        return {'weights_df': copy_data(self.weights_df), 'title': 'Portfolio Weightings'}
+        return {'weights_df': dm.copy_data(self.weights_df), 'title': 'Portfolio Weightings'}
 
     def format_returns_data(self):
         mkt_return_dict = dm.merge_dicts(self.mkt_returns, self.returns, drop_na=False)
@@ -286,18 +295,18 @@ class HistSellOffAnalyticSummary(EqHedgeAnalyticSummary):
             self.data_handler.get_weighted_returns(self.new_strat)
             self.returns = {'Daily': self.data_handler.weighted_returns['Daily']}
         else:
-            self.returns = {'Daily': copy_data(self.data_handler.returns['Daily'])}
+            self.returns = {'Daily': dm.copy_data(self.data_handler.returns['Daily'])}
 
     def get_mkt_data(self):
         self.get_include_mkt_data()
-        self.mkt_returns = {'Daily': copy_data(self.data_handler.mkt_returns['Daily'])}
-        self.mkt_key = copy_data(self.data_handler.mkt_key)
+        self.mkt_returns = {'Daily': dm.copy_data(self.data_handler.mkt_returns['Daily'])}
+        self.mkt_key = dm.copy_data(self.data_handler.mkt_key)
 
     def get_analytics(self):
         self.ra.get_hist_selloff()
 
     def format_data(self):
-        self.reporting_data = {'selloffs': copy_data(self.ra.historical_selloff_data),
+        self.reporting_data = {'selloffs': dm.copy_data(self.ra.historical_selloff_data),
                                'returns': self.format_returns_data()}
 
 
@@ -343,9 +352,9 @@ class LiquidAltsAnalyticSummary(AnalyticsSummary):
         if self.full_port:
             self.returns = dm.get_period_dict(self.data_handler.returns)
         else:
-            return_data = copy_data(self.data_handler.sub_ports[self.sub_port]['returns'])
+            return_data = dm.copy_data(self.data_handler.sub_ports[self.sub_port]['returns'])
             if self.add_composite_data and self.sub_port != 'Total Liquid Alts':
-                sub_port_data = copy_data(self.data_handler.sub_ports['Total Liquid Alts']['returns'])
+                sub_port_data = dm.copy_data(self.data_handler.sub_ports['Total Liquid Alts']['returns'])
                 return_data = dm.merge_dfs(return_data, sub_port_data, False)
             self.returns = dm.get_period_dict(return_data)
 
@@ -377,7 +386,6 @@ class LiquidAltsAnalyticSummary(AnalyticsSummary):
             self.ra.get_best_worst_pd_stats()
 
     def format_data(self):
-        # self.reporting_data = {}
         analytics_dict = {}
         correlations_dict = {}
         for period in self.returns:
@@ -405,7 +413,7 @@ class LiquidAltsAnalyticSummary(AnalyticsSummary):
                 'market_stats': self.format_mkt_stats_data(period, partial_stats)}
 
     def format_returns_stats_data(self, period):
-        returns_stats_data = copy_data(self.ra.returns_stats_dict[period])
+        returns_stats_data = dm.copy_data(self.ra.returns_stats_dict[period])
         ret_stats_idx_list = ['Time Frame', 'No. of Monthly Observations', 'Bmk Name', 'Annualized Return',
                               'Excess Return (Ann)', 'Bmk Beta', 'Median Period Return', 'Avg. Period Return',
                               'Avg. Period Up Return', 'Avg. Period Down Return', 'Avg Pos Return/Avg Neg Return',
@@ -422,7 +430,7 @@ class LiquidAltsAnalyticSummary(AnalyticsSummary):
         #         'title': f'Returns Statistics ({period})'}
 
     def format_mkt_stats_data(self, period, partial_stats=False):
-        mkt_stats_data = copy_data(self.ra.mkt_stats_dict[period])
+        mkt_stats_data = dm.copy_data(self.ra.mkt_stats_dict[period])
         mkt_stats_idx_list = ['EQ Alpha', 'EQ Beta', 'EQ Correlation', 'FI Alpha', 'FI Beta', 'FI Correlation',
                               'CM Alpha', 'CM Beta', 'CM Correlation', 'FX Alpha', 'FX Beta', 'FX Correlation']
         if period.__eq__('3 Year') or period.__eq__('1 Year'):
@@ -431,7 +439,7 @@ class LiquidAltsAnalyticSummary(AnalyticsSummary):
         return mkt_stats_data
 
     def format_corr_stats_data(self, period):
-        corr_stats_data = copy_data(self.ra.corr_stats_dict[period])
+        corr_stats_data = dm.copy_data(self.ra.corr_stats_dict[period])
         if period.__eq__('3 Year'):
             return {key: corr_stats_data[key] for key in [self.ra.main_key]}
         else:
@@ -495,7 +503,7 @@ class LiquidAltsAnalyticSummary(AnalyticsSummary):
         return f'Rolling {window}{self.ra.freq} {roll_title_dict[roll_stats][key]}'
 
     def format_roll_stats_data(self):
-        roll_data = copy_data(self.ra.roll_stats_data)
+        roll_data = dm.copy_data(self.ra.roll_stats_data)
         roll_stats_function_dict = {'ret_stats': self.format_rolling_return_stats_data,
                                     'active_stats': self.format_rolling_active_stats_data,
                                     'mkt_stats': self.format_rolling_mkt_stats_data
@@ -537,7 +545,7 @@ class LiquidAltsAnalyticSummary(AnalyticsSummary):
         else:
             returns_data = dm.merge_dfs(self.mkt_returns, self.returns[self.ra.main_key], drop_na=False, how='inner')
 
-        return get_data_dict(returns_data, drop_na=False)
+        return dxf.get_data_dict(data_df=returns_data, drop_na=False)
 
     def format_monthly_returns_data(self):
         df_list = [self.ra.bmk_df, self.ra.returns_df] if self.include_bmk else [self.ra.returns_df]
@@ -588,8 +596,9 @@ class LiquidAltsStratSummary(LiquidAltsAnalyticSummary):
                                'drawdowns': self.format_dd_stats_data(),
                                'returns': self.format_returns_data()}
         if self.include_hf:
-            self.reporting_data['correlations'] = copy_data(self.hf_ra.corr_stats_data)
-            self.reporting_data['returns'] = get_data_dict(dm.merge_dfs(self.hf_ra.mkt_ret_data, self.hf_ra.returns_df))
+            self.reporting_data['correlations'] = dm.copy_data(self.hf_ra.corr_stats_data)
+            self.reporting_data['returns'] = dxf.DataXformer.get_data_dict(data=dm.merge_dfs(self.hf_ra.mkt_ret_data,
+                                                                                             self.hf_ra.returns_df))
 
     def format_analytics_data(self):
         col_list_1 = list(self.returns.keys())
