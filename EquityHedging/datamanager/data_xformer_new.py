@@ -12,10 +12,8 @@ from . import data_lists as dl
 
 
 def get_new_strat_data(file_path, sheet_name='data', freq='M', index_data=False):
-    new_strat = di.ExcelImporter(file_path=file_path, sheet_name=sheet_name, index_col=0).read_excel_data()
-    if index_data:
-        new_strat = format_df(new_strat, freq)
-    return new_strat
+    return get_new_strategy_returns_data(file_path=file_path, sheet_name=sheet_name, freq=freq,
+                                         return_data=not index_data)
 
 
 def get_new_strategy_returns_data(file_path, sheet_name, freq='D', return_data=True, strategy_list=None):
@@ -134,7 +132,7 @@ class PriceData:
         """
 
         price_data = self.multiplier * (1 + self.returns_data).cumprod()
-
+        # price_data = self.multiplier * (self.returns_data.add(1).cumprod())
         if isinstance(price_data, pd.Series):
             return self.update_index_data(price_data)[0]
         else:
