@@ -7,7 +7,7 @@ Created on Tue Apr 20 21:54:16 2021
 
 import numpy as np
 
-from .returns_stats_new import get_ann_vol
+from .returns_stats_new import ReturnsStats
 from ..datamanager import data_manager_new as dm
 from ..datamanager import data_xformer_new as dxf
 
@@ -173,10 +173,10 @@ def get_decay_days(return_series, freq="M", retrace_pct=.50, sd=1.28, look_back_
     """
 
     # compute threshold based off sd figure
-    threshold = sd * get_ann_vol(return_series, freq)
+    threshold = sd * ReturnsStats(freq=freq).get_ann_vol(return_series)
 
     # convert return dataframe to index dataframe
-    price_series = dxf.get_price_data(return_series, 1)
+    price_series = dxf.PriceData(return_series, 1).price_data
 
     # convert look back and look fwd days to frequency type
     if freq != "D":
