@@ -195,7 +195,7 @@ class InnocapLiquidAltsDataUpdater(NexenDataUpdater):
             report_name (str, optional): Name of the report to generate. 
                 Default is 'innocap_liq_alts_data-new'.
         """
-        self.ret_filename = ret_filename
+        self.ret_filename = report_name + '.xlsx'
         super().__init__(filename, report_name)
 
     def xform_data(self):
@@ -380,7 +380,7 @@ class BmkDataUpdater(BbgDataUpdater):
             report_name (str, optional): Name of the report to generate.
                 Default is 'bmk_returns-new'.
         """
-        self.ret_filename = ret_filename
+        self.ret_filename = report_name + '.xlsx'
         super().__init__(filename=filename, report_name=report_name, drop_na=False, new_index=new_index)
 
     def xform_data(self):
@@ -401,7 +401,8 @@ class BmkDataUpdater(BbgDataUpdater):
         """
         # TODO: add comments
         data_dict = dm.copy_data(self.data_xform)
-        returns_dict = di.DataImporter.read_excel_data(dl.RETURNS_DATA_FP + self.ret_filename, sheet_name=None)
+        excel_importer = di.ExcelImporter(file_path=dl.RETURNS_DATA_FP + self.ret_filename)
+        returns_dict = excel_importer.read_excel_data()
         data_dict = self.match_dict_columns(returns_dict, data_dict)
         return self.update_data(returns_dict, data_dict)
 
@@ -507,13 +508,13 @@ class EquityHedgeReturnsUpdater(BmkDataUpdater):
     """
 
     # TODO: Don't need ret_filename
-    def __init__(self, filename=None, report_name='eq_hedge_returns-new', new_strats=False):
+    def __init__(self, filename='eq_hedge_returns.xlsx', report_name='eq_hedge_returns-new', new_strats=False):
         """
         Initializes the equityHedgeReturnsUpdater instance.
 
         Args:
             filename (str, optional): Name of the input Excel file containing data.
-                Default is 'eq_hedge_returns.xlsx'.
+                Default is c.
             report_name (str, optional): Name of the report to generate.
                 Default is 'eq_hedge_returns-new'.
         """
@@ -540,7 +541,7 @@ class EquityHedgeReturnsUpdater(BmkDataUpdater):
         self.eq_hedge_xform_data = {'eq_hedge_strats_data': eq_hedge_strats_data, 'vrr_data': vrr_data}
 
         # merge returns dictionaries
-        return dm.merge_dicts_list(list(self.eq_hedge_xform_data.values()), drop_na=True)
+        return dm.merge_dicts_list(list(self.eq_hedge_xform_data.values()), drop_na=True, how='inner')
 
 
 class LiquidAltsReturnsUpdater(DataUpdater):
