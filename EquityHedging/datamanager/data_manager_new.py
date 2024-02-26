@@ -8,6 +8,7 @@ import copy
 from datetime import datetime as dt
 
 import pandas as pd
+from math import isnan
 
 NEW_DATA_COL_LIST = ['SPTR', 'SX5T', 'M1WD', 'Long Corp', 'STRIPS', 'Down Var',
                      'Vortex', 'VOLA I', 'VOLA II', 'Dynamic VOLA', 'Dynamic Put Spread',
@@ -24,7 +25,7 @@ LIQ_ALTS_MGR_DICT = {'Global Macro': ['1907 Penso Class A', 'Bridgewater Alpha',
                      }
 
 
-def merge_dicts_list(dict_list, drop_na=True, fillzeros=False):
+def merge_dicts_list(dict_list, drop_na=True, fillzeros=False, how='outer'):
     """
     merge main dictionary with a dictionary list
 
@@ -32,7 +33,8 @@ def merge_dicts_list(dict_list, drop_na=True, fillzeros=False):
     ----------
     dict_list : list
     drop_na: bool
-
+    fillzeros: bool
+    how: basestring
     Returns
     -------
     main_dict : dictionary
@@ -44,11 +46,11 @@ def merge_dicts_list(dict_list, drop_na=True, fillzeros=False):
     # iterate through dictionary
     for new_dict in dict_list:
         # merge each dictionary in the list of dictionaries to the main
-        main_dict = merge_dicts(main_dict, new_dict, drop_na, fillzeros)
+        main_dict = merge_dicts(main_dict=main_dict, new_dict=new_dict, drop_na=drop_na, fillzeros=fillzeros, how=how)
     return main_dict
 
 
-def merge_dicts(main_dict, new_dict, drop_na=True, fillzeros=False):
+def merge_dicts(main_dict, new_dict, drop_na=True, fillzeros=False, how='outer'):
     """
     Merge new_dict to main_dict
 
@@ -68,13 +70,16 @@ def merge_dicts(main_dict, new_dict, drop_na=True, fillzeros=False):
             main_df = main_dict[key].copy()
             new_df = new_dict[key]
             try:
-                if get_freq(main_df) == 'D' and compare_freq(main_df, new_df):
+                if get_freq(returns_df=main_df) == 'D' and compare_freq(main_df=main_df, new_df=new_df):
                     # main_df = main_df.fillna(0)
-                    merged_dict[key] = merge_dfs(main_df, new_df, drop_na=drop_na, fillzeros=fillzeros)
+                    merged_dict[key] = merge_dfs(main_df=main_df, new_df=new_df, drop_na=drop_na, fillzeros=fillzeros,
+                                                 how=how)
                 else:
-                    merged_dict[key] = merge_dfs(main_df, new_df, drop_na=drop_na, fillzeros=fillzeros)
+                    merged_dict[key] = merge_dfs(main_df=main_df, new_df=new_df, drop_na=drop_na, fillzeros=fillzeros,
+                                                 how=how)
             except ValueError:
-                merged_dict[key] = merge_dfs(main_df, new_df, drop_na=drop_na, fillzeros=fillzeros)
+                merged_dict[key] = merge_dfs(main_df=main_df, new_df=new_df, drop_na=drop_na, fillzeros=fillzeros,
+                                             how=how)
         except KeyError:
             pass
     return merged_dict
@@ -86,7 +91,7 @@ def merge_df_lists(df_list, drop_na=True, fillzeros=False, how='outer'):
     # iterate through dictionary
     for new_df in df_list:
         # merge each dictionary in the list of dictionaries to the main
-        main_df = merge_dfs(main_df, new_df, drop_na, fillzeros, how)
+        main_df = merge_dfs(main_df=main_df, new_df=new_df, drop_na=drop_na, fillzeros=fillzeros, how=how)
     return main_df
 
 
@@ -135,9 +140,20 @@ def get_min_max_dates(returns_df):
     """
     # get list of date index
     dates_list = list(returns_df.index.values)
-    dates = {'start': dt.utcfromtimestamp(dates_list[0].astype('O') / 1e9),
-             'end': dt.utcfromtimestamp(dates_list[len(dates_list) - 1].astype('O') / 1e9)}
-    return dates
+    try:
+        dates = {'start': dt.utcfromtimestamp(dates_list[0].astype('O') / 1e9),
+                 'end': dt.utcfromtimestamp(dates_list[len(dates_list) - 1].astype('O') / 1e9)}
+        return dates
+    except TypeError:
+        print(TypeError)
+
+
+def remove_na_from_dates_index(data_df):
+    data_df.index.names = ['Dates']
+    data_df.reset_index(inplace=True)
+    data_df = data_df.dropna(subset=['Dates'])
+    data_df.set_index('Dates', inplace=True)
+    return data_df
 
 
 def compute_no_of_years(df_returns):
@@ -507,6 +523,10 @@ def filter_data_dict(data_dict, filter_list):
     return {key: data_dict[key] for key in filter_list}
 
 
+def is_nan(value):
+    return isnan(float(value))
+
+
 def check_freq(data_df, freq='M'):
     data_freq = get_freq(data_df)
     return data_freq.__eq__(freq)
@@ -527,8 +547,9 @@ def get_date_offset(freq):
     return switcher.get(freq, 'D')
 
 
-def replace_zero_with_nan(data_df):
-    nan_filter = data_df.ne(0).groupby(data_df.index).cummax()
+def replace_value_with_nan(data_df, value=0):
+    data_df = remove_na_from_dates_index(data_df)
+    nan_filter = data_df.ne(value).groupby(data_df.index).cummax()
 
     return data_df.where(nan_filter)
 
