@@ -11,7 +11,8 @@ Created on Sat Jan 24 2023
 # import libraries
 from EquityHedging.datamanager import data_manager_new as dm
 from EquityHedging.datamanager import data_handler as dh
-from EquityHedging.datamanager.data_xformer_new import copy_data, get_data_dict
+from EquityHedging.datamanager import data_lists as dl
+from EquityHedging.datamanager import data_xformer_new as dxf
 from EquityHedging.analytics import returns_analytics as ra
 from EquityHedging.reporting.excel import new_reports as rp
 
@@ -23,21 +24,21 @@ strat_drop_list = []
 new_strat = False
 
 eq_hedge_dh = dh.EQHedgeDataHandler(eq_bmk=eq_bmk, eq_mv=11.0,
-                                     include_fi=include_fi, fi_mv=20.0,
-                                     strat_drop_list=[])
+                                    include_fi=include_fi, fi_mv=20.0,
+                                    strat_drop_list=[])
 
 # Add new strat
 new_strat = True
 if new_strat:
     strategy_list = ['esprso']
-    filename = 'esprso.xlsx'
+    file_path = dl.NEW_STRATS_FP + 'esprso.xlsx'
     sheet_name = 'Sheet1'
     notional_list = [1]
-    new_strategy = dm.get_new_strategy_returns_data(filename=filename, sheet_name=sheet_name, return_data=False,
-                                                    strategy_list=strategy_list)
-    new_strategy_dict = get_data_dict(new_strategy, index_data=False)
+    new_strategy = dxf.get_new_strategy_returns_data(file_path=file_path, sheet_name=sheet_name,
+                                                     return_data=False, strategy_list=strategy_list)
+    new_strategy_dict = dxf.get_data_dict(new_strategy, index_data=False)
 
-eq_hedge_dh.add_strategy(new_strategy_dict, notional_list)
+    eq_hedge_dh.add_strategy(new_strategy_dict, notional_list)
 
 eq_hedge_dh.get_weighted_returns(new_strat=new_strat)
 
@@ -54,7 +55,7 @@ check_corr = False
 if check_corr:
     corr_freq_list = ['Daily', 'Weekly', 'Monthly']
     eq_hedge_analytics.get_corr_stats_dict(corr_freq_list)
-    corr_dict = copy_data(eq_hedge_analytics.corr_stats_dict)
+    corr_dict = EquityHedging.datamanager.data_manager_new.copy_data(eq_hedge_analytics.corr_stats_dict)
 
 # compute analytics
 # import time
@@ -64,9 +65,10 @@ if check_analysis:
     analytics_freq_list = ['Weekly', 'Monthly']
     eq_hedge_analytics.get_returns_stats_dict(analytics_freq_list)
     eq_hedge_analytics.get_hedge_metrics_dict(analytics_freq_list)
-    analytics_dict = {'return_stats': copy_data(eq_hedge_analytics.returns_stats_dict),
-                      'hedge_metrics': copy_data(eq_hedge_analytics.hedge_metrics_dict)
-                      }
+    analytics_dict = {
+        'return_stats': EquityHedging.datamanager.data_manager_new.copy_data(eq_hedge_analytics.returns_stats_dict),
+        'hedge_metrics': EquityHedging.datamanager.data_manager_new.copy_data(eq_hedge_analytics.hedge_metrics_dict)
+    }
 
 # end = time.time()
 # print(end - start)
@@ -75,13 +77,13 @@ if check_analysis:
 check_hs = False
 if check_hs:
     eq_hedge_analytics.get_hist_selloff()
-    hist_df = copy_data(eq_hedge_analytics.historical_selloff_data)
+    hist_df = EquityHedging.datamanager.data_manager_new.copy_data(eq_hedge_analytics.historical_selloff_data)
 
 # get quantile dataframe
 check_quantile = False
 if check_quantile:
     eq_hedge_analytics.get_quantile_stats()
-    quantile_dict = copy_data(eq_hedge_analytics.quantile_stats_data)
+    quantile_dict = EquityHedging.datamanager.data_manager_new.copy_data(eq_hedge_analytics.quantile_stats_data)
 
 # #get annual dollar returns dataframe
 # check_ann = False
