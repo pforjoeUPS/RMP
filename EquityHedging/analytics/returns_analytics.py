@@ -14,14 +14,14 @@ from . import corr_stats_new as cs
 from . import drawdowns as dd
 from . import hedge_metrics_new as hm
 from . import returns_stats_new as rs
+from . import rolling_stats_new as roll
 from .period_stats import BestWorstPeriods
 from .historical_selloffs_new import get_hist_sim_table
 from .quantile_stats import get_all_quantile_data
-from .rolling_stats_new import get_rolling_data
+# from .rolling_stats_new import get_rolling_data
 from ..datamanager import data_xformer_new as dxf
 from .util_new import convert_dict_to_df
 from ..datamanager import data_manager_new as dm
-from ..datamanager.data_xformer_new import copy_data
 
 ACTIVE_COL_DICT = {'bmk_name': 'Bmk Name', 'bmk_beta': 'Bmk Beta', 'excess_ret': 'Excess Return (Ann)',
                    'te': 'Tracking Error (TE)', 'downside_te': 'Downside TE',
@@ -113,21 +113,24 @@ class ReturnsAnalytic:
 
         self.dd_stats_data = None
         self.corr_stats_data = None
-        self.mkt_stats_data = None  # if self.mkt_ret_data.empty else self.get_mkt_stats(self.returns_df, self.mkt_ret_data)
+        self.mkt_stats_data = None
         self.returns_stats_data = None
         self.roll_stats_data = None
         self.quantile_stats_data = None
         self.best_worst_period_stats_data = None
 
-    # TODO: Rethink computing al the stats for rolling
     def get_roll_stats(self, sub_list_data=None):
         if sub_list_data is None:
             sub_list_data = {'ret_stats': None, 'mkt_stats': None, 'active_stats': None}
-        self.roll_stats_data = get_rolling_data(returns_df=self.returns_df, years=self.rolling_years, rfr=self.rfr,
-                                                target=self.target, p=self.p, sub_list_data=sub_list_data,
-                                                include_bmk=self.include_bmk, bmk_df=self.bmk_df,
-                                                bmk_key=self.bmk_key, include_mkt=any(self.mkt_bool_dict.values()),
-                                                mkt_df=self.mkt_ret_data)
+        roll_stats = roll.RollingActiveStats(returns_df=self.returns_df, bmk_df=self.bmk_df, bmk_key=self.bmk_key,
+                                             mkt_df=self.mkt_ret_data, years=self.rolling_years, rfr=self.rfr,
+                                             target=self.target, p=self.p)
+        self.roll_stats_data = {'ret_stats': roll_stats.get_rolling_stat_data(sub_list_data['ret_stats']),
+                                'corr_stats': roll_stats.get_rolling_corr_data()}
+        if any(self.mkt_bool_dict.values()):
+            self.roll_stats_data['mkt_stats'] = roll_stats.get_rolling_mkt_data(sub_list_data['mkt_stats'])
+        if self.include_bmk:
+            self.roll_stats_data['active_stats'] = roll_stats.get_rolling_active_data(sub_list_data['active_stats'])
 
     def get_quantile_stats(self):
         print('Computing Quantile data...')
@@ -138,8 +141,8 @@ class ReturnsAnalytic:
             best_worst_pd = BestWorstPeriods(returns_df=self.returns_df,
                                              mkt_df=self.mkt_ret_data, num_periods=num_periods)
         else:
-            returns_freq_df = dm.convert_freq(self.returns_df, freq=freq)
-            mkt_freq_df = dm.convert_freq(self.mkt_ret_data, freq=freq)
+            returns_freq_df = dxf.convert_freq(self.returns_df, freq=freq)
+            mkt_freq_df = dxf.convert_freq(self.mkt_ret_data, freq=freq)
             best_worst_pd = BestWorstPeriods(returns_df=returns_freq_df,
                                              mkt_df=mkt_freq_df, num_periods=num_periods)
 
@@ -182,14 +185,16 @@ class ReturnsAnalytic:
             print(f'Computing {desc} Correlation analytics...')
         else:
             print('Computing Correlation analytics...')
+        corr_stats = cs.CorrStats(self.returns_df)
         if self.mkt_ret_data.empty:
-            self.corr_stats_data = cs.get_corr_analysis(self.returns_df)
+            self.corr_stats_data = corr_stats.get_corr_analysis()
         else:
-            corr_df = dm.merge_dfs(self.mkt_ret_data, self.returns_df, drop_na=False)
-            self.corr_stats_data = cs.get_corr_analysis(corr_df)
+            merged_returns_df = dm.merge_dfs(self.mkt_ret_data, self.returns_df, drop_na=False)
+            corr_stats = cs.CorrStats(merged_returns_df)
+            self.corr_stats_data = corr_stats.get_corr_analysis()
             for asset_class in self.mkt_bool_dict:
                 if self.mkt_bool_dict[asset_class]:
-                    self.corr_stats_data[asset_class] = cs.get_conditional_corr(corr_df, asset_class)
+                    self.corr_stats_data[asset_class] = corr_stats.get_conditional_corr(asset_class)
 
     def get_mkt_index_list(self):
         mkt_list = []
@@ -211,19 +216,21 @@ class ReturnsAnalytic:
                 print('Computing Market analytics...')
             mkt_stats_dict = {}
             for strat in self.returns_df:
-                return_series = self.returns_df[strat]
-                mkt_ret_df = dm.merge_dfs(self.mkt_ret_data, return_series)
+                returns_series = self.returns_df[strat]
+                mkt_ret_df = dm.merge_dfs(self.mkt_ret_data, returns_series)
 
                 mkt_analytics = {}
+                mkt_returns_stats = rs.MktReturnsStats(freq=self.freq, rfr=self.rfr)
                 for asset_class in self.mkt_bool_dict:
+                    mkt_series = pd.Series(dtype='float64')
+                    empty = True
                     if self.mkt_bool_dict[asset_class]:
-                        mkt_analytics[asset_class] = rs.get_mkt_analytics(mkt_ret_df, asset_class,
-                                                                          strat, self.freq, self.rfr)
-                    else:
-                        mkt_analytics[asset_class] = rs.get_mkt_analytics(mkt_ret_df, asset_class,
-                                                                          strat, empty=True)
+                        mkt_series = mkt_ret_df[asset_class]
+                        empty = False
+                    mkt_analytics[asset_class] = mkt_returns_stats.get_mkt_analytics(returns_series=returns_series,
+                                                                                     mkt_series=mkt_series, empty=empty)
 
-                mkt_stats_dict[strat] = rs.get_mkt_analytics_list(mkt_analytics)
+                mkt_stats_dict[strat] = self.get_mkt_analytics_list(mkt_analytics)
 
             self.mkt_stats_data = convert_dict_to_df(mkt_stats_dict, self.get_mkt_index_list())
             # TODO: not needed
@@ -236,6 +243,13 @@ class ReturnsAnalytic:
                     except KeyError:
                         pass
 
+    @staticmethod
+    def get_mkt_analytics_list(mkt_analytics):
+        mkt_list = []
+        for asset_class in mkt_analytics:
+            mkt_list = mkt_list + list(mkt_analytics[asset_class].values())
+        return mkt_list
+
     def get_returns_stats(self, desc='', drop_active=False):
         if desc:
             print(f'Computing {desc} Returns analytics...')
@@ -243,26 +257,24 @@ class ReturnsAnalytic:
             print('Computing Returns analytics...')
         returns_stats_dict = {}
         period = get_time_frame(self.returns_df)
+        returns_stats = rs.ReturnsStats(freq=self.freq, rfr=self.rfr, target=self.target, p=self.p)
+        if self.include_bmk:
+            returns_stats = rs.ActiveReturnsStats(freq=self.freq, rfr=self.rfr, target=self.target, p=self.p)
         for strat in self.returns_df:
-            return_series = dm.remove_na(self.returns_df, strat)[strat]
+            returns_series = dm.remove_na(self.returns_df, strat)[strat]
             time_frame = period[strat]
-            obs = len(return_series)
+            obs = len(returns_series)
+            port_analytics = returns_stats.get_port_analytics(returns_series)
+            bmk_series = pd.Series(dtype='float64')
+            empty = True
+            if strat not in self.bmk_key.values():
+                bmk_series = self.bmk_df[self.bmk_key[strat]]
+                empty = False if self.include_bmk else True
+            active_analytics = returns_stats.get_active_analytics(returns_series=returns_series, bmk_series=bmk_series,
+                                                                  empty=empty)
 
-            port_analytics = rs.get_port_analytics(return_series, self.freq, self.rfr, self.target, self.p)
-
-            if self.include_bmk:
-                try:
-                    bmk_series = self.bmk_df[self.bmk_key[strat]]
-                    active_analytics = rs.get_active_analytics(return_series, bmk_series, self.freq)
-                except KeyError:
-                    active_analytics = rs.get_active_analytics(return_series, empty=True)
-            else:
-                active_analytics = rs.get_active_analytics(return_series, empty=True)
-
-            returns_stats_dict[strat] = [*list(active_analytics.values())[0:1],
-                                         *[time_frame, obs],
-                                         *list(port_analytics.values()),
-                                         *list(active_analytics.values())[1:]
+            returns_stats_dict[strat] = [*list(active_analytics.values())[0:1], *[time_frame, obs],
+                                         *list(port_analytics.values()), *list(active_analytics.values())[1:]
                                          ]
 
         self.returns_stats_data = convert_dict_to_df(returns_stats_dict, [*list(ACTIVE_COL_DICT.values())[0:1],
@@ -283,6 +295,7 @@ class ReturnsAnalytic:
 
 
 class LiqAltsReturnsAnalytic(ReturnsAnalytic):
+
     def __init__(self, returns_df, rfr=0.0, target=0.0,
                  include_bmk=False, bmk_df=dm.pd.DataFrame(), bmk_key={},
                  include_eq=True, include_fi=True, include_cm=True, include_fx=True,
@@ -301,6 +314,7 @@ class LiqAltsReturnsAnalytic(ReturnsAnalytic):
 
 
 class EqHedgeReturnsAnalytic(ReturnsAnalytic):
+
     def __init__(self, returns_df, rfr=0.0, target=0.0, p=0.05,
                  include_bmk=False, bmk_df=dm.pd.DataFrame(), bmk_key={},
                  include_eq=True, include_fi=False, mkt_df=pd.DataFrame(), mkt_key={}):
@@ -316,14 +330,15 @@ class EqHedgeReturnsAnalytic(ReturnsAnalytic):
             print(f'Computing {desc} Hedge Metrics...')
         else:
             print('Computing Hedge Metrics...')
+        hedge_metrics = hm.HedgeMetrics(freq=self.freq)
         hedge_metrics_dict = {}
         for strat in self.returns_df:
-            return_series = dm.remove_na(self.returns_df, strat)[strat]
+            returns_series = dm.remove_na(self.returns_df, strat)[strat]
             mkt_series = self.mkt_ret_data[mkt]
-            hm_analytics = hm.get_hm_analytics(return_series, mkt_series, self.freq, full_list)
+            hm_analytics = hedge_metrics.get_hm_analytics(returns_series, mkt_series, full_list)
             hedge_metrics_dict[strat] = list(hm_analytics.values())
 
-        self.hedge_metrics_data = convert_dict_to_df(hedge_metrics_dict, hm.get_hm_index_list(full_list))
+        self.hedge_metrics_data = convert_dict_to_df(hedge_metrics_dict, hedge_metrics.get_hm_index_list(full_list))
 
         if dm.switch_freq_int(self.freq) <= 12:
             self.hedge_metrics_data.drop(['Decay Days (50% retrace)', 'Decay Days (25% retrace)',
@@ -340,6 +355,7 @@ class EqHedgeReturnsAnalytic(ReturnsAnalytic):
 
 
 class ReturnsDictAnalytic(ReturnsAnalytic):
+
     def __init__(self, returns_dict, main_key='Monthly', rfr=0.0, target=0.0, p=0.05, rolling_years=3,
                  include_bmk=False, bmk_data={}, bmk_key={},
                  include_eq=True, include_fi=False, mkt_data={}, mkt_key={}):
@@ -375,11 +391,6 @@ class ReturnsDictAnalytic(ReturnsAnalytic):
                                include_eq=self.include_eq, include_fi=self.include_fi, mkt_df=self.mkt_dict[key],
                                mkt_key=self.mkt_key)
 
-    def get_analytics_dict(self):
-        self.analytics_dict = {}
-        for key in self.returns_dict:
-            self.analytics_dict[key] = self.get_return_analytic(key)
-
     # def check_data(self, data):
     #     print(f'Checking data...')
     #     if isinstance(data, dict):
@@ -407,6 +418,11 @@ class ReturnsDictAnalytic(ReturnsAnalytic):
     #         return self.get_empty_dict()
     #         # self.bmk_dict = self.get_empty_dict()
 
+    def get_analytics_dict(self):
+        self.analytics_dict = {}
+        for key in self.returns_dict:
+            self.analytics_dict[key] = self.get_return_analytic(key)
+
     def check_data(self, data, desc='bmk'):
         print(f'Checking {desc} data...')
         if isinstance(data, dict):
@@ -430,18 +446,19 @@ class ReturnsDictAnalytic(ReturnsAnalytic):
             for key in self.returns_dict:
                 temp_freq_data = dm.get_freq_data(self.returns_dict[key])
                 if freq_data['freq_int'] < temp_freq_data['freq_int']:
-                    index_data = dxf.get_price_data(data)
-                    data_dict[key] = dxf.format_data(index_data, temp_freq_data['freq'], False)
+                    index_data = dxf.PriceData(data).price_data
+                    data_dict[key] = dxf.format_df(index_data, temp_freq_data['freq'], False)
                 elif freq_data['freq_int'] == temp_freq_data['freq_int']:
                     data_dict[key] = data
             return data_dict
         else:
             return data
 
-    def check_freq(self, main_df, new_df):
+    @staticmethod
+    def check_freq(main_df, new_df):
         return dm.get_freq(main_df) == dm.get_freq(new_df)
 
-    def get_stats_dict(self, key_list, stat_type, years= None):
+    def get_stats_dict(self, key_list, stat_type, years=None):
         stats_dict = {}
 
         for key in key_list:
@@ -479,7 +496,8 @@ class ReturnsDictAnalytic(ReturnsAnalytic):
 
 
 class LiqAltsReturnsDictAnalytic(ReturnsDictAnalytic):
-    def __init__(self,returns_dict, main_key = 'Monthly', rfr=0.0, target=0.0, 
+
+    def __init__(self, returns_dict, main_key='Monthly', rfr=0.0, target=0.0,
                  include_bmk=False, bmk_data={}, bmk_key={},
                  include_eq=True, include_fi=True, include_cm=True, include_fx=True,
                  mkt_data={}, mkt_key={}):
@@ -507,6 +525,7 @@ class LiqAltsReturnsDictAnalytic(ReturnsDictAnalytic):
 
 
 class LiquidAltsPeriodAnalytic(LiqAltsReturnsDictAnalytic):
+
     def __init__(self, returns_dict, main_key='Full', rfr=0.0, target=0.0,
                  include_bmk=False, bmk_data={}, bmk_key={},
                  include_eq=True, include_fi=True, include_cm=True, include_fx=True,
@@ -524,11 +543,12 @@ class LiquidAltsPeriodAnalytic(LiqAltsReturnsDictAnalytic):
 
     @staticmethod
     def get_key_list(period_list, remove_list=['1 Year']):
-        sub_list = copy_data(period_list)
+        sub_list = dm.copy_data(period_list)
         return [x for x in sub_list if x not in remove_list]
 
 
 class EqHedgeReturnsDictAnalytic(ReturnsDictAnalytic):
+
     def __init__(self, returns_dict, main_key='Monthly', rfr=0.0, target=0.0, p=0.05,
                  include_bmk=False, bmk_data={}, bmk_key={},
                  include_eq=True, include_fi=False, mkt_data={}, mkt_key={}):
