@@ -11,9 +11,9 @@ Created on Sat Dec  3 23:27:30 2022
 import pandas as pd
 
 from .historical_selloffs_new import compute_event_ret
-from .returns_stats_new import get_max_dd
+from .returns_stats_new import ReturnsStats
 from ..datamanager import data_manager_new as dm
-from ..datamanager import data_xformer_new as dxf
+from ..datamanager.data_xformer_new import PriceData
 
 try:
     # try importing cufflinks
@@ -34,11 +34,11 @@ except:
 DD_COL_DICT = {'Peak': 'Start Date', 'Trough': 'End Date', 'Drawdown': 'Strategy Max DD'}
 
 
-def run_drawdown(return_series):
+def run_drawdown(returns_series):
     """
     Parameters
     ----------
-    return_series: series
+    returns_series: series
         Series with returns as values and index is dates
     
     Returns
@@ -49,7 +49,7 @@ def run_drawdown(return_series):
     
     """
 
-    price_series = dxf.get_price_data(return_series)
+    price_series = PriceData(returns_series).price_data
     window = len(price_series)
 
     # calculate the max drawdown in the past window periods for each period in the series.
@@ -134,7 +134,7 @@ def get_co_drawdowns(base_return, compare_return, num_worst=5,
     # get the drawdowns of the base return item
     drawdowns = get_worst_drawdowns(base_return, num_worst=num_worst)
     # use collect to collect the drawdowns for compare_return items
-    compare_index = dxf.get_price_data(compare_return)
+    compare_index = PriceData(compare_return).price_data
     collect = pd.DataFrame(columns=compare_index.columns, index=drawdowns.index)
     # strat_name = base_return.columns[0]
     strat_name = base_return.name
@@ -201,7 +201,7 @@ def get_drawdown_dates(drawdowns):
 
 # TODO: Add docstring
 def get_recovery_data(returns_data, draw):
-    return_index = dxf.get_price_data(returns_data)
+    return_index = PriceData(returns_data).price_data
 
     # remove data before drawdown
     mask_rec = (return_index.index >= draw['Trough'])
@@ -307,20 +307,20 @@ def df_plot(df, title, xax, yax, yrange=None,
 
 
 # from old rs, need to refactor
-def get_drawdown_series(price_series):
+def get_drawdown_series(returns_series):
     """
     Calculate drawdown series (from calculation of MaxDD)
 
     Parameters
     ----------
-    price_series : series
-        price series.
+    returns_series : pandas.series
 
     Returns
     -------
     Drawdown series
 
     """
+    price_series = PriceData(returns_series).price_data
     window = len(price_series)
     roll_max = price_series.rolling(window, min_periods=1).max()
     drawdown = price_series / roll_max - 1.0
@@ -328,22 +328,21 @@ def get_drawdown_series(price_series):
 
 
 # from old rs, need to refactor
-def find_dd_date(price_series):
+def find_dd_date(returns_series):
     """
     Finds the date where Max DD occurs
 
     Parameters
     ----------
-    price_series : series
-        price series.
+    returns_series : pandas.series
 
     Returns
     -------
     Date of MaxDD in dataframe
 
     """
-    max_dd = get_max_dd(price_series)
-    drawdown = get_drawdown_series(price_series)
+    max_dd = ReturnsStats(returns_series=returns_series).get_max_dd()
+    drawdown = get_drawdown_series(returns_series)
     dd_date = drawdown.index[drawdown == float(max_dd)]
 
     return dd_date
