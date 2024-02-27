@@ -257,9 +257,10 @@ class ReturnsAnalytic:
             print('Computing Returns analytics...')
         returns_stats_dict = {}
         period = get_time_frame(self.returns_df)
-        returns_stats = rs.ReturnsStats(freq=self.freq, rfr=self.rfr, target=self.target, p=self.p)
-        if self.include_bmk:
-            returns_stats = rs.ActiveReturnsStats(freq=self.freq, rfr=self.rfr, target=self.target, p=self.p)
+        # returns_stats = rs.ReturnsStats(freq=self.freq, rfr=self.rfr, target=self.target, p=self.p)
+        returns_stats = rs.ActiveReturnsStats(freq=self.freq, rfr=self.rfr, target=self.target, p=self.p)
+        # if self.include_bmk:
+            # returns_stats = rs.ActiveReturnsStats(freq=self.freq, rfr=self.rfr, target=self.target, p=self.p)
         for strat in self.returns_df:
             returns_series = dm.remove_na(self.returns_df, strat)[strat]
             time_frame = period[strat]
@@ -267,9 +268,10 @@ class ReturnsAnalytic:
             port_analytics = returns_stats.get_port_analytics(returns_series)
             bmk_series = pd.Series(dtype='float64')
             empty = True
-            if strat not in self.bmk_key.values():
+            if self.include_bmk is True:
+            # if strat not in self.bmk_key.values():
                 bmk_series = self.bmk_df[self.bmk_key[strat]]
-                empty = False if self.include_bmk else True
+                empty = False  # if self.include_bmk else True
             active_analytics = returns_stats.get_active_analytics(returns_series=returns_series, bmk_series=bmk_series,
                                                                   empty=empty)
 
