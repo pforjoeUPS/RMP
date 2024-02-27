@@ -122,8 +122,8 @@ class DataUpdater:
         updated_dict = {}
         for key in main_dict:
             # create returns data frame
-            new_ret_df = new_dict[key].copy()
-            ret_df = main_dict[key].copy()
+            new_ret_df = dm.remove_na_from_dates_index(new_dict[key])
+            ret_df = dm.remove_na_from_dates_index(main_dict[key])
 
             # update current year returns
             if key == 'Yearly':
