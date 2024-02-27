@@ -270,7 +270,7 @@ class EqHedgeAnalyticSummary(AnalyticsSummary):
         return {'weights_df': dm.copy_data(self.weights_df), 'title': 'Portfolio Weightings'}
 
     def format_returns_data(self):
-        mkt_return_dict = dm.merge_dicts(self.mkt_returns, self.returns, drop_na=False)
+        mkt_return_dict = dm.merge_dicts(self.mkt_returns, self.returns, drop_na=False, how='inner')
 
         if self.selloffs:
             selloff_freq_list = self.freq_list if 'Daily' in self.freq_list else [*self.freq_list, *['Daily']]
