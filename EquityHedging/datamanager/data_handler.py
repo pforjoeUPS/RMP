@@ -807,12 +807,14 @@ class QISDataHandler(MktDataHandler):
             strat_weights_old_dict = self.get_strat_weights2(new_strat)
         self.weighted_hedges_dict2 = {}
         for freq, returns_df in self.returns.items():
-            weighted_hedges_df = (returns_df * strat_weights_dict[freq]).sum(axis=1)
-            weighted_hedges_df.columns = [self.weight_col]
+            weighted_hedges = (returns_df * strat_weights_dict[freq]).sum(axis=1)
+            weighted_hedges.name = self.weight_col
+            weighted_hedges_df = pd.DataFrame(weighted_hedges)
             if new_strat:
                 column_name = f'{self.weight_col} w/o New Strat'
-                weighted_hedges_df[column_name] = (returns_df * strat_weights_old_dict[freq]).sum(axis=1)
-                # weighted_hedges_df[column_name] = temp_returns.dot(tuple(strat_weights_old)).to_frame()
+                weighted_hedges_wo = (returns_df * strat_weights_old_dict[freq]).sum(axis=1)
+                weighted_hedges_wo.name = column_name
+                weighted_hedges_df = dm.merge_dfs(weighted_hedges_df, weighted_hedges_wo)
             self.weighted_hedges_dict2[freq] = weighted_hedges_df
 
     def get_weighted_returns(self, new_strat=False):
