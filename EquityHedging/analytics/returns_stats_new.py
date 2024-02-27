@@ -280,7 +280,7 @@ class ReturnsStats:
         """
         # calculate annualized return and std dev of downside
         ann_ret = self.get_ann_return(returns_series)
-        down_stddev = self.get_updown_dev(returns_series)
+        down_stddev = self.get_updown_dev(returns_series, up=False)
 
         # calculate the sortino ratio
         return (ann_ret - self.rfr) / down_stddev
