@@ -54,7 +54,6 @@ EVENTS = [SPTR_MAXDD, GFC, EURO_DEBT, US_DEBT, CHINA_WEAKNESS,
 #         self.returns_df = returns_df
 
 
-
 def compute_event_ret(index_df, strategy, start, end):
     """
     Returns the return of an event
@@ -91,7 +90,7 @@ def separate_events(events):
     Returns
     -------
     dictionary
-        
+
     """
 
     # define 3 lists to contain period, start and end values
@@ -125,7 +124,7 @@ def get_hist_sim_table(returns_df):
     """
 
     # get index level data
-    index_df = dxf.get_price_data(returns_df)
+    index_df = dxf.PriceData(returns_df).get_price_data()
 
     # create dictionary
 
