@@ -10,8 +10,8 @@ import os
 import pandas as pd
 
 from . import new_sheets
-# from ...analytics import drawdowns as dd
 from ...datamanager import data_manager_new as dm
+from ...datamanager.data_xformer_new import PriceData
 from ...analytics import summary_new
 
 
@@ -75,7 +75,6 @@ class DataReport(SetReport):
         super().__init__(report_name, data_file)
         self.writer = None
         self.data = data
-        # self.info_dict = None
 
     def run_report(self, **kwargs):
         self.writer = self.get_writer()
@@ -106,6 +105,9 @@ class DataReport(SetReport):
 
     def generate_mkt_value_sheet(self, data, sheet_name='market_values'):
         new_sheets.MktValueSheet(self.writer, data=data, sheet_name=sheet_name).create_sheet()
+
+    def generate_index_sheet(self, data, sheet_name='Index Data'):
+        new_sheets.RatioSheet(self.writer, data=data, sheet_name=sheet_name).create_sheet()
 
 
 class ReturnsReport(DataReport):
@@ -419,6 +421,7 @@ class AltsReport(AnalyticReport):
             self.generate_best_worst_sheets()
         self.generate_mtd_ytd_itd_sheets()
         self.generate_returns_sheets()
+        self.generate_index_sheets()
 
     def generate_period_sheets(self, period_list=[]):
         if any(period_list) is False:
@@ -451,7 +454,6 @@ class AltsReport(AnalyticReport):
             new_sheets.RatioSheet(writer=self.writer, data=roll_dict[key],
                                   sheet_name=f'Rolling 36M {key}').create_sheet()
         for key, roll_dict in self.data['rolling_stats']['mkt_stats']['beta'].items():
-            # diff = -(len(key) - 31) if len(key) > 31 else None
             new_sheets.RatioSheet(writer=self.writer, data=roll_dict[key],
                                   sheet_name=f'36M Beta to {key}').create_sheet()
         for key, roll_dict in self.data['rolling_stats']['mkt_stats']['corr'].items():
@@ -489,6 +491,11 @@ class AltsReport(AnalyticReport):
         for freq, returns_df in self.data['returns'].items():
             self.generate_returns_sheet(data=returns_df, sheet_name=f'{freq} Historical Returns')
 
+    def generate_index_sheets(self, multiplier=100):
+        price_data = PriceData(multiplier=multiplier)
+        for freq, returns_df in self.data['returns'].items():
+            self.generate_index_sheet(data=price_data.get_price_data(returns_df), sheet_name=f'{freq} Index Data')
+
     def generate_mtd_ytd_itd_sheets(self):
         new_sheets.HistReturnMTDYTDSheet(writer=self.writer, data=self.data['mtd_ytd_itd']).create_sheet()
 
@@ -514,10 +521,8 @@ class StratAltsReport(AltsReport):
         if self.include_hf:
             self.generate_correlation_sheets()
         self.generate_analytics_sheets()
-        # self.generate_return_stats_sheets()
-        # self.generate_mkt_stats_sheets()
-        # self.generate_quantile_sheets()
         self.generate_drawdowns_sheets()
+        self.generate_index_sheets()
         # self.generate_roll_sheets()
         self.generate_returns_sheets()
 
