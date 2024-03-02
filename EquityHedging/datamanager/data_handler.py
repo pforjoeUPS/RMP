@@ -408,11 +408,11 @@ class LiqAltsPortHandler(LiqAltsBmkDataHandler):
         return bmk_data_dict
 
     def add_mgr(self, df_mgr_ret, sub_port, mv_amt=100000000):
+        price_data = dxf.PriceData(multiplier=mv_amt)
         self.sub_ports[sub_port]['returns'] = dm.merge_dfs(self.sub_ports[sub_port]['returns'], df_mgr_ret,
                                                            drop_na=False)
         col_list = list(self.sub_ports[sub_port]['returns'].columns)
-        self.sub_ports[sub_port]['market_values'][col_list[len(col_list) - 1]] = dxf.PriceData(df_mgr_ret,
-                                                                                               mv_amt).price_data
+        self.sub_ports[sub_port]['market_values'][col_list[len(col_list) - 1]] = price_data.get_price_data(df_mgr_ret)
         self.sub_ports[sub_port]['weights'] = dm.get_weights(self.sub_ports[sub_port]['market_values'])
         self.update_sub_port_total(sub_port)
         self.update_data()
@@ -437,7 +437,8 @@ class LiqAltsPortHandler(LiqAltsBmkDataHandler):
             sub_port_data['returns'] = sub_port_data['returns'][col_list]
         if update_mv:
             sub_port_data['market_values'].drop([mgr], axis=1, inplace=True)
-            sub_port_data['market_values'][mgr] = dxf.PriceData(sub_port_data['returns'][mgr], mv_amt).price_data
+            price_data = dxf.PriceData(multiplier=mv_amt)
+            sub_port_data['market_values'][mgr] = price_data.get_price_data(sub_port_data['returns'][mgr])
             sub_port_data['market_values'] = sub_port_data['market_values'][col_list]
             sub_port_data['weights'] = dm.get_weights(sub_port_data['market_values'])
         self.sub_ports[sub_port_name] = sub_port_data
