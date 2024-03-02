@@ -21,7 +21,7 @@ EQUITY_HEDGE_DATA = DATA_FP + 'ups_equity_hedge\\'
 LIQ_ALTS_BMK_DATA_FP = RETURNS_DATA_FP+'liq_alts_bmks-new.xlsx'
 LIQ_ALTS_PORT_DATA_FP = RETURNS_DATA_FP + 'nexen_liq_alts_data-new.xlsx'
 # LIQ_ALTS_PORT_DATA_FP = RETURNS_DATA_FP + 'all_liquid_alts_data.xlsx'
-ITD_OVERLAY_DATA_FP = RETURNS_DATA_FP + 'itd_overlay_returns.xlsx'
+IDT_OVERLAY_DATA_FP = RETURNS_DATA_FP + 'itd_overlay_returns.xlsx'
 NEW_STRATS_FP = DATA_FP + 'new_strats\\'
 
 UPDATE_DATA_FP = DATA_FP + 'update_data\\'
