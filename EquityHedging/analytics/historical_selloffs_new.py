@@ -124,7 +124,7 @@ def get_hist_sim_table(returns_df):
     """
 
     # get index level data
-    index_df = dxf.PriceData(returns_df).get_price_data()
+    index_df = dxf.PriceData().get_price_data(returns_df)
 
     # create dictionary
 

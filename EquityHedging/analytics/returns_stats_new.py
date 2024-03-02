@@ -19,6 +19,7 @@ class ReturnsStats:
         self.rfr = rfr
         self.target = target
         self.p = p
+        self.price_data = PriceData()
 
     def get_port_analytics(self, returns_series):
         ann_ret = self.get_ann_return(returns_series=returns_series)
@@ -64,6 +65,9 @@ class ReturnsStats:
     def get_cumulative_returns(returns_series):
         return returns_series.add(1).prod(axis=0) - 1
 
+    def get_price_series(self, return_series):
+        return self.price_data.get_price_data(return_series)
+
     def get_ann_return(self, returns_series):
         """
         Return annualized return for a return series.
@@ -106,8 +110,7 @@ class ReturnsStats:
         ret_cap = dm.merge_dfs(mkt_cap, returns_series, True)[returns_series.name]
         return self.get_cumulative_returns(ret_cap) / self.get_cumulative_returns(mkt_cap)
 
-    @staticmethod
-    def get_max_dd(returns_series):
+    def get_max_dd(self, returns_series):
         """
         Return maximum draw down (Max DD) for a price series.
         Returns
@@ -116,7 +119,7 @@ class ReturnsStats:
             Max DD.
 
         """
-        price_series = PriceData(returns_series).price_data
+        price_series = self.get_price_series(returns_series)
         # we are going to use the length of the series as the window
         window = len(price_series)
 
@@ -140,7 +143,7 @@ class ReturnsStats:
         -------
         dictionary
         """
-        price_series = PriceData(returns_series).price_data
+        price_series = self.get_price_series(returns_series)
         # get int frequency
         int_freq = dm.switch_freq_int(self.freq)
 

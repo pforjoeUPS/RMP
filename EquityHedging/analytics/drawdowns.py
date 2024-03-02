@@ -49,7 +49,7 @@ def run_drawdown(returns_series):
     
     """
 
-    price_series = PriceData(returns_series).price_data
+    price_series = PriceData().get_price_data(returns_series)
     window = len(price_series)
 
     # calculate the max drawdown in the past window periods for each period in the series.
@@ -134,7 +134,7 @@ def get_co_drawdowns(base_return, compare_return, num_worst=5,
     # get the drawdowns of the base return item
     drawdowns = get_worst_drawdowns(base_return, num_worst=num_worst)
     # use collect to collect the drawdowns for compare_return items
-    compare_index = PriceData(compare_return).price_data
+    compare_index = PriceData().get_price_data(compare_return)
     collect = pd.DataFrame(columns=compare_index.columns, index=drawdowns.index)
     # strat_name = base_return.columns[0]
     strat_name = base_return.name
@@ -201,7 +201,7 @@ def get_drawdown_dates(drawdowns):
 
 # TODO: Add docstring
 def get_recovery_data(returns_data, draw):
-    return_index = PriceData(returns_data).price_data
+    return_index = PriceData().get_price_data(returns_data)
 
     # remove data before drawdown
     mask_rec = (return_index.index >= draw['Trough'])
@@ -320,7 +320,7 @@ def get_drawdown_series(returns_series):
     Drawdown series
 
     """
-    price_series = PriceData(returns_series).price_data
+    price_series = PriceData().get_price_data(returns_series)
     window = len(price_series)
     roll_max = price_series.rolling(window, min_periods=1).max()
     drawdown = price_series / roll_max - 1.0

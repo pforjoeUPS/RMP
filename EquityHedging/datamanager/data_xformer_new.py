@@ -42,7 +42,7 @@ def get_new_strategy_returns_data(file_path, sheet_name, freq='D', return_data=T
 def convert_freq(data_df, freq='M'):
     data_freq = dm.get_freq(data_df)
     if dm.switch_freq_int(data_freq) > dm.switch_freq_int(freq):
-        return format_df(PriceData(data_df).price_data, freq=freq)
+        return format_df(PriceData().get_price_data(data_df), freq=freq)
     else:
         print(f'Warning: Cannot convert data freq to {dm.switch_freq_string(freq)}')
         return dm.copy_data(data_df)
@@ -108,7 +108,7 @@ def get_data_dict(data_df, index_data=False, drop_na=True, xform=True):
         pass
 
     if index_data is False:
-        data_df = PriceData(data_df).price_data
+        data_df = PriceData().get_price_data(data_df)
     for freq in freq_list:
         freq_string = dm.switch_freq_string(freq)
         if xform:
@@ -119,44 +119,42 @@ def get_data_dict(data_df, index_data=False, drop_na=True, xform=True):
 
 
 class PriceData:
-    def __init__(self, returns_data, multiplier=100):
-        self.returns_data = returns_data
+    def __init__(self, multiplier=100):
         self.multiplier = multiplier
-        self.price_data = self.get_price_data()
 
-    def get_price_data(self):
+    def get_price_data(self, returns_data):
         """"
         Converts returns dataframe to index level dataframe
         Returns:
         index price level - dataframe
         """
 
-        price_data = self.multiplier * (1 + self.returns_data).cumprod()
+        index_data = self.multiplier * (1 + returns_data).cumprod()
         # price_data = self.multiplier * (self.returns_data.add(1).cumprod())
-        if isinstance(price_data, pd.Series):
-            return self.update_index_data(price_data)[0]
+        if isinstance(index_data, pd.Series):
+            return self.update_index_data(index_data)[0]
         else:
-            return self.update_index_data(price_data)
+            return self.update_index_data(index_data)
 
-    def update_index_data(self, price_data):
+    def update_index_data(self, index_data):
         # insert extra row at top for first month of 100
         data = [{}]
-        freq = dm.get_freq(price_data)
-        prices_data = pd.concat([pd.DataFrame(data), price_data])
+        freq = dm.get_freq(index_data)
+        price_data = pd.concat([pd.DataFrame(data), index_data])
 
         # fill columns with multiplier for row 1
-        for col in prices_data:
-            idx_int = dm.get_first_valid_index(prices_data[col]) - 1
-            prices_data[col].iloc[idx_int] = self.multiplier
+        for col in price_data:
+            idx_int = dm.get_first_valid_index(price_data[col]) - 1
+            price_data[col].iloc[idx_int] = self.multiplier
 
         # update index to prior month
-        prices_data.index.names = ['Dates']
-        prices_data.reset_index(inplace=True)
+        price_data.index.names = ['Dates']
+        price_data.reset_index(inplace=True)
         pd.set_option('mode.chained_assignment', None)
-        prices_data.loc[:, 'Dates'][0] = price_data.index[0] - dm.get_date_offset(freq)
-        prices_data.set_index('Dates', inplace=True)
+        price_data.loc[:, 'Dates'][0] = index_data.index[0] - dm.get_date_offset(freq)
+        price_data.set_index('Dates', inplace=True)
 
-        return prices_data
+        return price_data
 
 
 class DataXformer:

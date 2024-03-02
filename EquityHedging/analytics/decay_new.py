@@ -176,7 +176,7 @@ def get_decay_days(return_series, freq="M", retrace_pct=.50, sd=1.28, look_back_
     threshold = sd * ReturnsStats(freq=freq).get_ann_vol(return_series)
 
     # convert return dataframe to index dataframe
-    price_series = dxf.PriceData(return_series, 1).price_data
+    price_series = dxf.PriceData(multiplier=1).get_price_data(return_series)
 
     # convert look back and look fwd days to frequency type
     if freq != "D":
