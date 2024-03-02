@@ -541,7 +541,7 @@ class EquityHedgeReturnsUpdater(BmkDataUpdater):
         self.eq_hedge_xform_data = {'eq_hedge_strats_data': eq_hedge_strats_data, 'vrr_data': vrr_data}
 
         # merge returns dictionaries
-        return dm.merge_dicts_list(list(self.eq_hedge_xform_data.values()), drop_na=True, how='inner')
+        return dm.merge_dicts_list(list(self.eq_hedge_xform_data.values()))
 
 
 class LiquidAltsReturnsUpdater(DataUpdater):
