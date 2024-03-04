@@ -282,6 +282,7 @@ class BbgDataUpdater(DataUpdater):
     def add_new_index(self, new_index_dict):
         if self.new_index:
             self.data_dict = dm.merge_dicts(self.data_dict, new_index_dict, drop_na=False)
+            self.data_dict = self.check_returns(self.data_dict)
             print(f'Added the following columns: {list(next(iter(new_index_dict.values())).columns)}')
 
 
@@ -508,7 +509,7 @@ class EquityHedgeReturnsUpdater(BmkDataUpdater):
     """
 
     # TODO: Don't need ret_filename
-    def __init__(self, filename='eq_hedge_returns.xlsx', report_name='eq_hedge_returns-new', new_strats=False):
+    def __init__(self, filename='eq_hedge_returns.xlsx', report_name='eq_hedge_returns-new', new_index=False):
         """
         Initializes the equityHedgeReturnsUpdater instance.
 
@@ -519,7 +520,7 @@ class EquityHedgeReturnsUpdater(BmkDataUpdater):
                 Default is 'eq_hedge_returns-new'.
         """
         self.eq_hedge_xform_data = None
-        super().__init__(filename=filename, report_name=report_name, new_index=new_strats)
+        super().__init__(filename=filename, report_name=report_name, new_index=new_index)
 
     def xform_data(self):
         """
@@ -541,7 +542,7 @@ class EquityHedgeReturnsUpdater(BmkDataUpdater):
         self.eq_hedge_xform_data = {'eq_hedge_strats_data': eq_hedge_strats_data, 'vrr_data': vrr_data}
 
         # merge returns dictionaries
-        return dm.merge_dicts_list(list(self.eq_hedge_xform_data.values()), drop_na=True, how='inner')
+        return dm.merge_dicts_list(list(self.eq_hedge_xform_data.values()))
 
 
 class LiquidAltsReturnsUpdater(DataUpdater):

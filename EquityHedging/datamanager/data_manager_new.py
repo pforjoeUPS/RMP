@@ -69,18 +69,9 @@ def merge_dicts(main_dict, new_dict, drop_na=True, fillzeros=False, how='outer')
         try:
             main_df = main_dict[key].copy()
             new_df = new_dict[key]
-            try:
-                if get_freq(returns_df=main_df) == 'D' and compare_freq(main_df=main_df, new_df=new_df):
-                    # main_df = main_df.fillna(0)
-                    merged_dict[key] = merge_dfs(main_df=main_df, new_df=new_df, drop_na=drop_na, fillzeros=fillzeros,
-                                                 how=how)
-                else:
-                    merged_dict[key] = merge_dfs(main_df=main_df, new_df=new_df, drop_na=drop_na, fillzeros=fillzeros,
-                                                 how=how)
-            except ValueError:
-                merged_dict[key] = merge_dfs(main_df=main_df, new_df=new_df, drop_na=drop_na, fillzeros=fillzeros,
-                                             how=how)
-        except KeyError:
+            merged_dict[key] = merge_dfs(main_df, new_df, drop_na=drop_na, fillzeros=fillzeros, how=how)
+        except (ValueError, KeyError) as error:
+            print(error)
             pass
     return merged_dict
 
@@ -104,6 +95,7 @@ def merge_dfs(main_df, new_df, drop_na=True, fillzeros=False, how='outer'):
     df_new -- dataframe
     drop_na -- bool
     fillzeros -- bool
+    how -- string
 
     Returns:
     dataframe
@@ -111,8 +103,21 @@ def merge_dfs(main_df, new_df, drop_na=True, fillzeros=False, how='outer'):
 
     df = pd.merge(main_df, new_df, left_index=True, right_index=True, how=how)
     if drop_na:
-        if fillzeros:
-            df = df.fillna(0)
+        # Find first valid index for each column in df
+        first_valid_index_list = [get_first_valid_index(df[col]) for col in df]
+        first_valid_index_list.sort(reverse=True)
+        # Find last valid index for each column in df
+        last_valid_index_list = [get_last_valid_index(df[col]) for col in df]
+        last_valid_index_list.sort(reverse=True)
+        no_rows_from_last = len(df) - last_valid_index_list[0]
+        # drop invalid indices from top and bottom of df
+        if no_rows_from_last > 1:
+            df = df[:-no_rows_from_last]
+        if first_valid_index_list[0] > 0:
+            df = df.iloc[first_valid_index_list[0]:, ]
+        # fill rest of nans with 0
+        # TODO: might want to fill with last relevant index if df is price data, 0 only works for returns data
+        df = df.fillna(0)
         df.dropna(inplace=True)
     if fillzeros:
         df = df.fillna(0)

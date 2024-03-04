@@ -260,7 +260,7 @@ class ReturnsAnalytic:
         # returns_stats = rs.ReturnsStats(freq=self.freq, rfr=self.rfr, target=self.target, p=self.p)
         returns_stats = rs.ActiveReturnsStats(freq=self.freq, rfr=self.rfr, target=self.target, p=self.p)
         # if self.include_bmk:
-            # returns_stats = rs.ActiveReturnsStats(freq=self.freq, rfr=self.rfr, target=self.target, p=self.p)
+        # returns_stats = rs.ActiveReturnsStats(freq=self.freq, rfr=self.rfr, target=self.target, p=self.p)
         for strat in self.returns_df:
             returns_series = dm.remove_na(self.returns_df, strat)[strat]
             time_frame = period[strat]
@@ -269,9 +269,12 @@ class ReturnsAnalytic:
             bmk_series = pd.Series(dtype='float64')
             empty = True
             if self.include_bmk is True:
-            # if strat not in self.bmk_key.values():
-                bmk_series = self.bmk_df[self.bmk_key[strat]]
-                empty = False  # if self.include_bmk else True
+                # if strat not in self.bmk_key.values():
+                try:
+                    bmk_series = self.bmk_df[self.bmk_key[strat]]
+                    empty = False  # if self.include_bmk else True
+                except KeyError:
+                    pass
             active_analytics = returns_stats.get_active_analytics(returns_series=returns_series, bmk_series=bmk_series,
                                                                   empty=empty)
 
@@ -448,7 +451,7 @@ class ReturnsDictAnalytic(ReturnsAnalytic):
             for key in self.returns_dict:
                 temp_freq_data = dm.get_freq_data(self.returns_dict[key])
                 if freq_data['freq_int'] < temp_freq_data['freq_int']:
-                    index_data = dxf.PriceData(data).price_data
+                    index_data = dxf.PriceData().get_price_data(data)
                     data_dict[key] = dxf.format_df(index_data, temp_freq_data['freq'], False)
                 elif freq_data['freq_int'] == temp_freq_data['freq_int']:
                     data_dict[key] = data
