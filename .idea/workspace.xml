@@ -5,9 +5,22 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="097b79bf-9c35-4f3b-839c-13f2bf58ee38" name="Changes" comment="Pushing Scratch file for RCM and MVO">
-      <change beforePath="$PROJECT_DIR$/.idea/RMP.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/RMP.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_1_24_2024_4_07_PM__Changes_.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_1_24_2024_4_07_PM__Changes_.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_1_24_2024_4_20_PM__Changes_.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_1_24_2024_4_20_PM__Changes_.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/RStrats/stratanalysis/Convexity Fit Analysis.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/EquityHedging/data/ups_equity_hedge/returns_data.xlsx" beforeDir="false" afterPath="$PROJECT_DIR$/EquityHedging/data/ups_equity_hedge/returns_data.xlsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/EquityHedging/datamanager/data_manager.py" beforeDir="false" afterPath="$PROJECT_DIR$/EquityHedging/datamanager/data_manager.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/EquityHedging/reporting/excel/reports.py" beforeDir="false" afterPath="$PROJECT_DIR$/EquityHedging/reporting/excel/reports.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/EquityHedging/scripts/script.py" beforeDir="false" afterPath="$PROJECT_DIR$/EquityHedging/scripts/script.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/EquityHedging/scripts/strat_report_script.py" beforeDir="false" afterPath="$PROJECT_DIR$/EquityHedging/scripts/strat_report_script.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RStrats/Comm Games AnalysisMetricsAnalysis.xlsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/RStrats/stratanalysis/MRC.py" beforeDir="false" afterPath="$PROJECT_DIR$/RStrats/stratanalysis/MRC.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RStrats/stratanalysis/MVO.py" beforeDir="false" afterPath="$PROJECT_DIR$/RStrats/stratanalysis/MVO.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RStrats/stratanalysis/MarginalAnalysis.py" beforeDir="false" afterPath="$PROJECT_DIR$/RStrats/stratanalysis/MarginalAnalysis.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RStrats/stratanalysis/MarginalAnalysisOOPATTEMPT.py" beforeDir="false" afterPath="$PROJECT_DIR$/RStrats/stratanalysis/MarginalAnalysisOOPATTEMPT.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RStrats/stratanalysis/MarginalAnalysisScript.py" beforeDir="false" afterPath="$PROJECT_DIR$/RStrats/stratanalysis/MarginalAnalysisScript.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RStrats/stratanalysis/RCMGMM.py" beforeDir="false" afterPath="$PROJECT_DIR$/RStrats/stratanalysis/RCMGMM.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RStrats/stratanalysis/scratch.py" beforeDir="false" afterPath="$PROJECT_DIR$/RStrats/stratanalysis/scratch.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -83,7 +96,12 @@
       <workItem from="1706799409139" duration="8010000" />
       <workItem from="1706894702602" duration="6674000" />
       <workItem from="1707143217216" duration="8831000" />
-      <workItem from="1709047059916" duration="676000" />
+      <workItem from="1709047059916" duration="779000" />
+      <workItem from="1709047860925" duration="3828000" />
+      <workItem from="1709053659699" duration="24515000" />
+      <workItem from="1709220566637" duration="13783000" />
+      <workItem from="1709311956287" duration="7759000" />
+      <workItem from="1709562184469" duration="618000" />
     </task>
     <task id="LOCAL-00001" summary="Pushing/Updating DM, SUMMARY, MRC, MVO, RCM">
       <option name="closed" value="true" />
@@ -111,6 +129,16 @@
     <MESSAGE value="Pushing/Updating DM, SUMMARY, MRC, MVO, RCM" />
     <MESSAGE value="Pushing Scratch file for RCM and MVO" />
     <option name="LAST_COMMIT_MESSAGE" value="Pushing Scratch file for RCM and MVO" />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/RStrats/stratanalysis/MarginalAnalysisScript.py</url>
+          <option name="timeStamp" value="1" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/RMP$SharpeVSCVar.coverage" NAME="SharpeVSCVar Coverage Results" MODIFIED="1706903606148" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/RStrats/stratanalysis" />
