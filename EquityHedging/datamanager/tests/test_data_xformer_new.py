@@ -497,7 +497,7 @@ class TestFormatDF(unittest.TestCase):
         pd.testing.assert_frame_equal(result, expected_result)
 
 
-class TestPriceDataInit(unittest.TestCase):
+class TestPriceData(unittest.TestCase):
 
     @patch('EquityHedging.datamanager.data_xformer_new.PriceData.get_price_data')
     def test_init(self, mock_get_price_data):
@@ -509,13 +509,12 @@ class TestPriceDataInit(unittest.TestCase):
             0: [100, 110, 115.5]
         })
 
-        price_data = PriceData(returns_data, multiplier=multiplier)
-        print(price_data.price_data)
+        price_data = PriceData(multiplier=multiplier)
         # Assertions
-        self.assertEqual(price_data.returns_data.tolist(), returns_data.tolist())
+        # self.assertEqual(price_data.returns_data.tolist(), returns_data.tolist())
         self.assertEqual(price_data.multiplier, multiplier)
-        self.assertIsInstance(price_data.price_data, pd.DataFrame)
-        pd.testing.assert_frame_equal(price_data.price_data, mock_get_price_data.return_value)
+        # self.assertIsInstance(price_data.price_data, pd.DataFrame)
+        # pd.testing.assert_frame_equal(price_data.price_data, mock_get_price_data.return_value)
 
     @patch('EquityHedging.datamanager.data_xformer_new.PriceData.get_price_data')
     @patch('EquityHedging.datamanager.data_xformer_new.dm')
@@ -528,7 +527,7 @@ class TestPriceDataInit(unittest.TestCase):
             0: [100, 110, 115.5]
         })
 
-        price_data = PriceData(returns_data, multiplier=multiplier)
+        price_data = PriceData(multiplier=multiplier)
 
         price_data.price_data = pd.DataFrame({
             0: [100, 110, 115.5]
@@ -556,9 +555,9 @@ class TestPriceDataInit(unittest.TestCase):
             'Dates': pd.to_datetime(['2022-01-01', '2022-02-01', '2022-03-01']),
             0: [100, 110, 115.5]
         })
-        price_data_instance = PriceData(returns_data, multiplier=multiplier)
+        price_data_instance = PriceData(multiplier=multiplier)
 
-        actual_output = price_data_instance.get_price_data()
+        actual_output = price_data_instance.get_price_data(returns_data)
 
         expected_output = pd.Series([100, 110, 115.5])
         expected_output.name = 0
