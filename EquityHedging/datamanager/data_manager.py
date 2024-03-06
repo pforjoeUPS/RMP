@@ -24,7 +24,7 @@ QIS_UNIVERSE = CWD + '\\Cluster Analysis\\data\\'
 NEW_DATA_COL_LIST = ['SPTR', 'SX5T','M1WD', 'Long Corp', 'STRIPS', 'Down Var',
  'Vortex', 'VOLA I', 'VOLA II','Dynamic VOLA','Dynamic Put Spread',
                     'GW Dispersion', 'Corr Hedge','Def Var (Mon)', 'Def Var (Fri)', 'Def Var (Wed)', 
-                    'Commodity Basket','ESPRSO']
+                    'Commodity Basket','ESPRSO','EVolCon', 'Moments']
 
 def merge_dicts(main_dict, new_dict, fillzeros = False):
     """
@@ -306,16 +306,15 @@ def create_copy_with_fi(df_returns, equity = 'SPTR', freq='1M', include_fi=False
             strategy_returns = strategy_returns[[equity, 'FI Benchmark',  
 
                                                  'Down Var', 'Vortex', 'VOLA 3','Dynamic Put Spread',
-                                                  'VRR 2', 'VRR Trend', 'GW Dispersion', 'Corr Hedge','Def Var','Commodity Basket','ESPRSO']]
+                                                  'VRR 2', 'VRR Trend', 'GW Dispersion', 'Corr Hedge','Def Var','Commodity Basket','ESPRSO','EVolCon','Moments']]
         else:
             strategy_returns = strategy_returns[[equity, 
                                                  'Down Var', 'Vortex', 'VOLA 3','Dynamic Put Spread',
-                                                 'VRR 2', 'VRR Trend', 'GW Dispersion', 'Corr Hedge','Def Var','Commodity Basket','ESPRSO']]
+                                                 'VRR 2', 'VRR Trend', 'GW Dispersion', 'Corr Hedge','Def Var','Commodity Basket','ESPRSO','EVolCon','Moments']]
     else:
         strategy_returns = strategy_returns[[equity, 'Down Var', 'Vortex',
                                              'VOLA 3','Dynamic Put Spread', 'VRR 2', 'VRR Trend', 
-
-                                             'GW Dispersion', 'Corr Hedge','Def Var','Commodity Basket','ESPRSO']]
+                                             'GW Dispersion', 'Corr Hedge','Def Var','Commodity Basket','ESPRSO','EVolCon','Moments']]
 
     return strategy_returns
 
@@ -784,3 +783,31 @@ def get_qis_uni_dict():
         index_price = pd.read_excel(QIS_UNIVERSE + "QIS Universe Time Series TEST.xlsx", sheet_name = sheet, index_col=0,header = 1)
         qis_uni[sheet] = format_data(index_price, freq = '1W')
     return qis_uni
+
+def get_weighted_index(df_index_prices, col_name ='', pct_weights = [], new_strat = False):
+    strat_list = df_index_prices.columns.tolist()
+    #initiate df
+    weighted_index = pd.Series(100, index=df_index_prices.index) 
+    for i in range(0,len(strat_list)):
+        strat = strat_list[i]
+        strat_weight = pct_weights[i]
+        StratStartLevel = df_index_prices[strat][0]
+        StratShare = (strat_weight * 100 / StratStartLevel) * (df_index_prices[strat] - StratStartLevel)
+        weighted_index += StratShare
+    weighted_index_df = weighted_index.to_frame(name=col_name)
+
+    # get weighted strategies without new strat
+    if new_strat:
+        weighted_index = pd.Series(100, index=df_index_prices.index)
+        pct_weights_old = pct_weights.copy()
+        pct_weights_old[len(pct_weights_old) - 1] = 0
+        for i in range(0, len(strat_list)):
+            strat = strat_list[i]
+            strat_weight = pct_weights_old[i]
+            StratStartLevel = df_index_prices[strat][0]
+            StratShare = (strat_weight * 100 / StratStartLevel) * (df_index_prices[strat] - StratStartLevel)
+            weighted_index += StratShare
+        weighted_index_df[col_name + 'w/o New Strat'] = weighted_index
+
+
+    return weighted_index_df
