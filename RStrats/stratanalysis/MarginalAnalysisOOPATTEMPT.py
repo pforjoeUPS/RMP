@@ -165,15 +165,15 @@ class MarginalAnalysis:
 equity_analyzer = MarginalAnalysis()
 
 #MXWDIM and Program DATA
-bmk_index = pd.read_excel(equity_analyzer.CWD+'\\RStrats\\' + 'SPX&MXWDIM Historical Price.xlsx', sheet_name = 'MXWDIM', index_col=0)
-df_index_prices = pd.read_excel(equity_analyzer.CWD+'\\RStrats\\' + 'weighted hedgesSam.xlsx', sheet_name = 'Program', index_col=0)
+bmk_index = pd.read_excel(equity_analyzer.CWD+'\\RStrats\\' + 'Commods TICKERS.xlsx', sheet_name = 'MXWDIM', index_col=0)
+df_index_prices = pd.read_excel(equity_analyzer.CWD+'\\RStrats\\' + 'Commods TICKERS.xlsx', sheet_name = 'EqHedgewDCP', index_col=0)
     
 bmk = 'MXWDIM'
-strat = 'EqHedge'
-strat_index = equity_analyzer.get_weighted_index(df_index_prices, name = strat, notional_weights = [1,1.25,0.5,0.85,1,.25,1,1,1.05,0.5,1])
-ol_weights = [.05,.1,.15,.2,.25,.3,.35,.4,.45,.5]
+strat = 'Program w/ DCP'
+strat_index = df_index_prices #equity_analyzer.get_weighted_index(df_index_prices, name = strat, notional_weights = [1,1.25,0.5,0.85,1,.25,1,1,1.05,0.5,1])
+ol_weights = [.01,.02,.03,.04,.05,.06,.07,.08,.09,.10,.11,.12,.13,.14,.15]
 
 df_metrics = equity_analyzer.get_returns_analysis(bmk_index, strat_index, bmk, strat, ol_weights)
 equity_analyzer.show_SharpeCVaR(df_metrics, bmk, strat, ol_weights)
 equity_analyzer.show_plots(df_metrics, strat)
-equity_analyzer.transpose_export_excel_file(df_metrics, strat, multiple=False)
+equity_analyzer.transpose_export_excel_file(df_metrics, strat_type='DCP Marginal Analysis', multiple=False)

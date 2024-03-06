@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 from EquityHedging.datamanager import data_manager as dm
 from EquityHedging.analytics import returns_stats  as rs
 from matplotlib.ticker import FuncFormatter
+from matplotlib.ticker import PercentFormatter
 import os
 CWD = os.getcwd()
 
@@ -49,15 +50,18 @@ def get_weighted_index(df_index_prices, name ='', notional_weights = []):
     return weighted_index_df
 
 
-def get_returns_analysis(bmk_index, strat_index, bmk = '', strat = '', weights = [.01,.02,.03,.04,.05,.06,.07,.08,.09,.1,.11,.12,.13,.14,.15]):
+def get_returns_analysis(bmk_index, strat_index, eqhedge_index, bmk = '', strat = '', weights = [.01,.02,.03,.04,.05,.06,.07,.08,.09,.1,.11,.12,.13,.14,.15]):
     df_index_prices = pd.merge(bmk_index, strat_index, left_index=True, right_index=True, how='inner')
+    df_index_prices = pd.merge(df_index_prices, eqhedge_index, left_index=True, right_index=True, how='inner')
+    eqhedge_startlevel = df_index_prices['EqHedge'][0]
     StratStartLevel = df_index_prices[strat][0]
     bmk_start_level = df_index_prices[bmk][0]
     df_weighted_prices = pd.DataFrame({bmk: df_index_prices[bmk], strat: df_index_prices[strat]})
     for i in weights:
         StratShare = i * 100.0 / StratStartLevel
         MXWDIMShare = 100.0 / bmk_start_level
-        df_weighted_prices[str(i)] = 100.0 + StratShare * (df_index_prices[strat] - StratStartLevel) + MXWDIMShare * (df_index_prices[bmk]  - bmk_start_level)
+        EqHedgeShare = 0.85 * 100.0 / eqhedge_startlevel
+        df_weighted_prices[str(i)] = 100.0 + StratShare * (df_index_prices[strat] - StratStartLevel) + MXWDIMShare * (df_index_prices[bmk]  - bmk_start_level) + EqHedgeShare * (df_index_prices['EqHedge']  - eqhedge_startlevel)
  
     returns_strat_only = dm.get_data_dict(df_weighted_prices)['Daily'].drop((strat), axis=1)
 
@@ -78,7 +82,7 @@ def get_returns_analysis(bmk_index, strat_index, bmk = '', strat = '', weights =
         vol = rs.get_ann_vol(returns_strat_only[col], freq='1D')   
         sharpe = ret/vol
         bottom5pct = np.percentile(returns_strat_only[col].values[1:],q=5)
-        cvar = returns_strat_only[col][returns_strat_only[col] < bottom5pct].mean()
+        cvar = returns_strat_only[col][returns_strat_only[col] < bottom5pct].mean() * (252**0.5)
         excess_return = (returns_strat_only[col]- returns_strat_only[bmk])
         track_error = np.std(excess_return) * np.sqrt(252)
         if track_error == 0:
@@ -117,24 +121,25 @@ def get_returns_analysis(bmk_index, strat_index, bmk = '', strat = '', weights =
 
 #plot SharpeVSCVaR
 def show_SharpeCVaR(df_metrics, BMK = '', Strat = '', weights = []):
-    fig, ax = plt.subplots(figsize=(23, 15))
+    fig, ax = plt.subplots(figsize=(23,15))
     plt.scatter(df_metrics['CVaR'], df_metrics['Sharpe'], s= df_metrics['Rank'], c = 'blue', marker='o', label='')
-    labels = [BMK + ' 0 weight'] + [f'{int(wei * 100)}%' for wei in weights]
+    labels = [BMK + ' 0 weight'] + [f'{int(wei*100)}%' for wei in weights]
     # Add labels to each data point
     for i, label in enumerate(labels):
         plt.annotate(label, (df_metrics['CVaR'][i], df_metrics['Sharpe'][i]), textcoords="offset points", xytext=(-5,20), ha='center')
     #Round x and y axes
     for i, (x, y) in enumerate(zip(df_metrics['CVaR'], df_metrics['Sharpe'])):
-       x_rounded = round(x, 4)
+       x_rounded = round(x*100, 4)
        y_rounded = round(y, 3)
        label = f'({x_rounded}%, {y_rounded})'
-       plt.text(x+0.00002, y, label, ha='left', va='bottom')
+       plt.text(x+0.0002, y, label, ha='left', va='bottom')
     # Customize the plot
     plt.xticks(rotation=-45)
     plt.gca().xaxis.set_major_formatter(FuncFormatter(percent_formatter))
     plt.xlabel('CVaR')
     plt.ylabel('Sharpe')
     plt.title('MXWDIM w ' + Strat)
+    plt.tight_layout()
     plt.show()
 
 #plot for sharpe, cvar, tracking error, correlation, information ratio against extended weights of strategy
@@ -151,21 +156,18 @@ def show_plots(df_metrics, Strat = ''):
             plt.scatter(ol_weight_index_list_IR_float, df_metrics_IR, c = 'blue', marker='o', label='')
             
             plt.gca().xaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f'{x:.0%}'))
-    
-            plt.xticks(rotation=-45)
-            plt.xlabel('Extended ' + Strat + ' Weights')
-            plt.ylabel(graph)
-            plt.title('MXWDIM w ' + Strat + ': ' + 'Information Ratio')
-            #plt.legend()
-            plt.show()
         else:
             plt.scatter(ol_weight_index_list, df_metrics[graph], c = 'blue', marker='o', label='')
-            plt.xticks(rotation=-45)
-            plt.xlabel('Extended ' + Strat + ' Weights')
-            plt.ylabel(graph)
-            plt.title('MXWDIM w ' + Strat + ': ' + graph)
-            #plt.legend()
-            plt.show()
+
+        if graph in ['Tracking Error', 'CVaR', 'Ret', 'Vol']:
+            plt.gca().yaxis.set_major_formatter(PercentFormatter(1))
+
+        plt.xticks(rotation=-45)
+        plt.xlabel('Extended ' + Strat + ' Weights')
+        plt.ylabel(graph)
+        plt.title('MXWDIM w ' + Strat + ': ' + graph)
+        plt.tight_layout()
+        plt.show()
 
 #Transpose dataframes and Create an ExcelWriter object and specify the file name
 def transpose_export_excel_file(strat_metrics, strat_type = '', multiple = False):
