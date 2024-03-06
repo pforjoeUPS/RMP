@@ -83,7 +83,7 @@ def get_analysis(df_returns, notional_weights=[], include_fi=False, new_strat=Fa
     df_hedge_metrics = get_hedge_metrics(hedge_returns,freq)
     
     #remove equity col
-    df_hedge_metrics.drop([col_list[0]],axis=1,inplace=True)
+   # df_hedge_metrics.drop([col_list[0]],axis=1,inplace=True)
     
     #remove decay metrics if frequency is 1M, 1Q, 1Y
     if dm.switch_freq_int(freq) <= 12:
@@ -628,3 +628,43 @@ def all_strat_month_ret_table(returns_df, notional_weights = [], include_fi = Fa
        month_table_dict[strat] = dm.month_ret_table(returns_df, strat)
        #month_table_dict[strat] = month_table_dict[strat][:-1]
     return month_table_dict
+
+
+def get_weighted_data_new(df_index, weights=[], include_fi=False, new_strat=False):
+    """
+    Returns dataframe containg df_returns plus the weighted strats and hedges data
+
+    Parameters
+    ----------
+    df_returns : dataframe
+        dataframe of returns
+    notional_weights : list, optional
+        notional weights of strategies. The default is [].
+    include_fi : boolean, optional
+        Include Fixed Income benchmark. The default is False.
+    new_strat : boolean, optional
+        Does analysis involve a new strategy. The default is False.
+
+    Returns
+    -------
+    df_weighted_returns : dataframe
+
+    """
+
+    # Get weighted strategies with and without new strategy (if new_strat = True)
+    df_weighted_strats = util.get_weighted_strats_df(df_returns, notional_weights, include_fi,
+                                                     new_strat)
+
+    # merge weighted_strats with returns with and
+    # without new strategy (weighted_strats_old)
+    df_weighted_returns = pd.merge(df_returns, df_weighted_strats, left_index=True,
+                                   right_index=True, how='outer')
+
+    # Get weighted hedges with and without new strategy (if new_strat = True)
+    df_weighted_hedges = util.get_weighted_hedges(df_returns, notional_weights, include_fi, new_strat)
+
+    # merge weighted hedges with weighted returns
+    df_weighted_hedges.drop(list(df_returns.columns), axis=1, inplace=True)
+    df_weighted_returns = pd.merge(df_weighted_returns, df_weighted_hedges, left_index=True,
+                                   right_index=True, how='outer')
+    return df_weighted_returns
