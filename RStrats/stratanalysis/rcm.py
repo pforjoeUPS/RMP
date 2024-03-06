@@ -8,6 +8,7 @@ Created on Wed Jan 24 10:40:28 2024
 import numpy as np
 import pandas as pd
 from sklearn.mixture import GaussianMixture
+from EquityHedging.analytics import returns_stats as rs
 from RStrats.stratanalysis import MVO as mvo
 
 from scipy.stats import norm
@@ -108,8 +109,8 @@ def mean_variance_optimization(returns, bmk_returns, optimization_type='sharpe')
     """
 
     # Calculate mean and volatility of returns
-    mean_returns = returns.mean()*252
-    volatility = returns.std(axis=0)*np.sqrt(252)
+    ann_returns = rs.get_ann_return(returns, freq='1D')
+    volatility = rs.get_ann_vol(returns, freq='1D')
     covariance_matrix = mvo.calculate_covariance_matrix(np.corrcoef(returns, rowvar=False), volatility)
     robust_covariance_matrix = get_robust_cov_matrix(bmk_returns, returns)
 
@@ -135,10 +136,10 @@ def mean_variance_optimization(returns, bmk_returns, optimization_type='sharpe')
         # Choose objective function based on optimization type
     if optimization_type == 'sharpe':
         objective = sharpe_objective
-        args = (mean_returns, robust_covariance_matrix)
+        args = (ann_returns, robust_covariance_matrix)
     elif optimization_type == 'calmar':
         objective = calmar_objective
-        args = (mean_returns, robust_covariance_matrix)
+        args = (ann_returns, robust_covariance_matrix)
     else:
         raise ValueError("Invalid optimization type. Choose 'sharpe' or 'calmar'.")
 
@@ -147,8 +148,8 @@ def mean_variance_optimization(returns, bmk_returns, optimization_type='sharpe')
     optimal_weights = result.x
 
     # Aggregate results
-    final_optimal_weights = optimal_weights
-    final_portfolio_return = np.sum(mean_returns * final_optimal_weights)
+    final_optimal_weights = pd.DataFrame(optimal_weights,index=returns.columns.tolist(), columns=['Weights'])
+    final_portfolio_return = np.sum(ann_returns * final_optimal_weights['Weights'])
     final_portfolio_volatility = np.sqrt(np.dot(final_optimal_weights.T, np.dot(covariance_matrix, final_optimal_weights)))
     final_portfolio_retvol = final_portfolio_return / final_portfolio_volatility
 
