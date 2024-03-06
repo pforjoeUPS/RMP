@@ -9,6 +9,7 @@ import pandas as pd
 import numpy as np
 from scipy.optimize import minimize
 from EquityHedging.analytics import returns_stats as rs
+from EquityHedging.analytics import hedge_metrics as hm
 from EquityHedging.datamanager import data_manager as dm
 # TODO: Use dm to transform returns to price data if needed
 import os
@@ -19,9 +20,9 @@ def calculate_covariance_matrix(correlation_matrix, volatility):
     return np.outer(volatility, volatility) * correlation_matrix
 
     # Bootstrap resampling logic
-def bootstrap_resample(data):
-    n = len(data)
-    resample_indices = np.random.choice(n, n, replace=True)
+def bootstrap_resample(data,sample_size, n):
+
+    resample_indices = np.random.choice(n, sample_size, replace=True)
     return data.iloc[resample_indices]
 
     # Calculate CAGR
@@ -56,22 +57,24 @@ def bootstrap_resample(data):
 def asset_class_bounds():
     asset_class_bounds = {
 # =============================================================================
-#         'Down Var': (.1063, .1065),
-#         'VOLA': (0.1329, 0.1331),
-#         'VRR 2': (.0903, .0905),
-#         'GW Dispersion': (.1063, .1065),
-#         'Corr Hedge': (0,.2),
-#         'Def Var': (.1063, .1065),
-#         'Macq Core': (.1063, .1065),
-#         'ESPRSO': (0.1116, 0.1118),
-#         'EVolCon': (0,.2),
- #        'Moments': (0,.2)
+        'Down Var': (0,1),
+        'VOLA 3': (0,1),
+        'Dynamic Put Spread': (0,1),
+        'VRR 2': (0,1),
+        'GW Dispersion': (0,1),
+        'Corr Hedge': (0,1),
+        'Def Var': (0,1),
+        'ESPRSO': (0,1),
+        'EVolCon': (0,1),
+        'Moments': (0,1),
+        "Total Commodity Portfolio": (0, 1)
 # =============================================================================        
     }
     return asset_class_bounds
 
 
-def mean_variance_optimization(returns, bmk_returns=None, num_iterations=1000, optimization_type='sharpe'):
+
+def mean_variance_optimization(returns, sample_size, bmk_returns=None, num_iterations=1000, optimization_type='sharpe'):
     """
     Mean-variance optimization.
     The objective can be based on either the Sharpe ratio or the Calmar ratio.
@@ -98,7 +101,7 @@ def mean_variance_optimization(returns, bmk_returns=None, num_iterations=1000, o
     resampled = []
     
     for _ in range(num_iterations):
-        resampled_returns = bootstrap_resample(returns)
+        resampled_returns = bootstrap_resample(returns, sample_size = sample_size, n = len(returns) )
         resampled_matrix = np.corrcoef(resampled_returns, rowvar=False)
         resampled.append({'resampled_matrix': resampled_matrix, 'resampled_returns': resampled_returns})
 
@@ -114,7 +117,20 @@ def mean_variance_optimization(returns, bmk_returns=None, num_iterations=1000, o
         max_drawdown = rs.get_max_dd(bmk_prices)
         calmar_ratio = portfolio_return / abs(max_drawdown)
         return -calmar_ratio
+    
+    def convexity_cost_objective(weights,  sample_returns, covariance_matrix):
 
+         # index = dm.get_prices_df(sample_returns)
+         # weighted_index = dm.get_weighted_index(index, name = "Port Return",weight_ratio = weights)
+         ret_df = pd.DataFrame()
+         ret_df['Port Return'] = np.dot(sample_returns, weights)
+         convexity = hm.get_convexity_stats(ret_df, 'Port Return')['cumulative']
+         cost = hm.get_cost_stats(ret_df, 'Port Return')['cumulative']
+         
+         covex_cost = convexity / cost
+         
+         return covex_cost
+     
     # Perform optimization for each sampled matrix
     all_optimal_weights = []
 
@@ -135,6 +151,9 @@ def mean_variance_optimization(returns, bmk_returns=None, num_iterations=1000, o
         elif optimization_type == 'calmar':
             objective = calmar_objective
             args = (ann_returns, sample['resampled_returns'], covariance_matrix)
+        elif optimization_type == 'convexity/cost':
+            objective = convexity_cost_objective
+            args = ( sample['resampled_returns'], covariance_matrix)
         else:
             raise ValueError("Invalid optimization type. Choose 'sharpe' or 'calmar'.")
 
