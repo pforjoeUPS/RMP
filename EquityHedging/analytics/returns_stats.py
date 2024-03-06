@@ -301,7 +301,7 @@ def get_ret_max_dd_freq_ratio(return_series, price_series, freq, max_3m_dd=False
     #compute ratio
     return ann_ret/abs(max_freq_dd)
 
-def get_var(return_series, p = 0.05):
+def get_var(return_series, freq,p = 0.05):
     
     count = len(return_series)
     location = p*count
@@ -313,15 +313,15 @@ def get_var(return_series, p = 0.05):
 
     interp = scipy.interpolate.interp1d(rank, ranked_returns, fill_value='extrapolate')
 
-    return float(interp(location))
+    return float(interp(location))*np.sqrt(dm.switch_freq_int(freq))
     
-def get_cvar(return_series, p=0.05):
+def get_cvar(return_series, freq,p=0.05):
     
-    var = get_var(return_series, p =p)
+    var = get_var(return_series, freq, p =p) / np.sqrt(dm.switch_freq_int(freq))
     
     cvar_series = return_series.loc[return_series < var]
-    
-    return cvar_series.mean()
+    cvar = cvar_series.mean()
+    return cvar*np.sqrt(dm.switch_freq_int(freq))
 
 def get_return_stats(df_returns, freq='1M', var_p = 0.05):
     """
@@ -360,8 +360,8 @@ def get_return_stats(df_returns, freq='1M', var_p = 0.05):
         avg_pos_neg = get_avg_pos_neg(df_strat[col])
         down_stdev = get_down_stddev(df_strat[col], freq)
         sortino = get_sortino_ratio(df_strat[col], freq)
-        var = get_var(df_strat[col], p = var_p)
-        cvar = get_cvar(df_strat[col], p = var_p)
+        var = get_var(df_strat[col],freq, p = var_p)
+        cvar = get_cvar(df_strat[col],freq, p = var_p)
         returns_stats_dict[col] = [ann_ret, ann_vol, ret_vol, max_dd, ret_dd,
                              max_1m_dd_dict['max_dd'], max_1m_dd_dict['index'], ret_1m_dd,
                              max_3m_dd_dict['max_dd'], max_3m_dd_dict['index'], ret_3m_dd,
