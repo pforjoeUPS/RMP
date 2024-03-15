@@ -7,6 +7,8 @@ Created on Sun Feb 4 2024
 import pandas as pd
 from ..datamanager import data_manager_new as dm
 
+# TODO: Add flexibility to take all data with/without dropping nas
+# TODO: Refactor to create reusable class where you can keep changing returns and mkt data
 
 class BestWorstPeriods:
     def __init__(self, returns_df, mkt_df=pd.DataFrame, num_periods=10):
@@ -26,6 +28,7 @@ class BestWorstPeriods:
             worst_periods_df = self.returns_df.nsmallest(self.num_periods, strat)
             return dm.format_date_index(data_df=worst_periods_df, freq=self.freq)
 
+    # TODO: add drop_na variable
     def get_mkt_best_worst_pds_df(self, mkt, best=True):
         mkt_ret_df = dm.merge_dfs(self.mkt_df[[mkt]], self.returns_df)
         if best:
