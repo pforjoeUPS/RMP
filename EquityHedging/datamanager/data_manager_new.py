@@ -544,10 +544,12 @@ def copy_data(data):
 def get_date_offset(freq):
     switcher = {
         "D": pd.DateOffset(days=1),
+        "B": pd.DateOffset(days=1),
         "W": pd.DateOffset(weeks=1),
         "M": pd.DateOffset(months=1),
         "Q": pd.DateOffset(months=3),
-        "Y": pd.DateOffset(years=1)
+        "Y": pd.DateOffset(years=1),
+        "A": pd.DateOffset(years=1)
     }
     return switcher.get(freq, 'D')
 
