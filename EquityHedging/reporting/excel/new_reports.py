@@ -189,7 +189,6 @@ class AnalyticReport(DataReport):
                                             include_fi=self.include_fi)
 
 
-# TODO: add include_fi
 class HistSelloffReport(AnalyticReport):
 
     def __init__(self, report_name, data_handler, include_fi=False, weighted=False, new_strat=False):
@@ -215,8 +214,8 @@ class HistSelloffReport(AnalyticReport):
         super().__init__(report_name=report_name, data_handler=data_handler, include_fi=include_fi)
 
     def get_analytic_summary(self):
-        return summary_new.HistSellOffAnalyticSummary(data_handler=self.data_handler, new_strat=self.new_strat,
-                                                      weighted=self.weighted)
+        return summary_new.HistSellOffAnalyticSummary(data_handler=self.data_handler, include_fi=self.include_fi,
+                                                      new_strat=self.new_strat, weighted=self.weighted)
 
     def generate_report(self):
         self.generate_selloffs_sheets()
