@@ -100,8 +100,8 @@ class DataReport(SetReport):
         folder_location = self.file_path.replace(self.report_name + '.xlsx', '')
         print(f'"{self.report_name}.xlsx" report generated in "{folder_location}" folder')
 
-    def generate_returns_sheet(self, data, sheet_name):
-        new_sheets.HistReturnSheet(writer=self.writer, data=data, sheet_name=sheet_name).create_sheet()
+    def generate_percent_sheet(self, data, sheet_name):
+        new_sheets.PercentSheet(writer=self.writer, data=data, sheet_name=sheet_name).create_sheet()
 
     def generate_mkt_value_sheet(self, data, sheet_name='market_values'):
         new_sheets.MktValueSheet(self.writer, data=data, sheet_name=sheet_name).create_sheet()
@@ -110,7 +110,7 @@ class DataReport(SetReport):
         new_sheets.RatioSheet(self.writer, data=data, sheet_name=sheet_name).create_sheet()
 
 
-class ReturnsReport(DataReport):
+class PercentReport(DataReport):
 
     def __init__(self, report_name, data, data_file=True):
         """
@@ -131,15 +131,73 @@ class ReturnsReport(DataReport):
         """
         super().__init__(report_name=report_name, data=data, data_file=data_file)
 
+    def convert_data_to_dict(self):
+        return {'data': self.data}
+
+    def print_sheet_generation_info(self, data_key):
+        print(f'Writing {data_key} sheet...')
+
     def generate_report(self, *kwargs):
-        # loop through dictionary to create returns spreadsheets
+        # loop through dictionary to create spreadsheets
         if isinstance(self.data, dict) is False:
-            freq_string = dm.switch_freq_string(dm.get_freq(self.data))
-            self.data = {freq_string: self.data}
-        for data_key, returns_df in self.data.items():
-            print(f'Writing {data_key} Historical Returns sheet...')
-            # diff = -(len(data_key) - 31) if len(data_key) > 31 else None
-            self.generate_returns_sheet(data=returns_df, sheet_name=data_key)
+            self.data = self.convert_data_to_dict()
+        for data_key, data_df in self.data.items():
+            self.print_sheet_generation_info(data_key)
+            self.generate_percent_sheet(data=data_df, sheet_name=data_key)
+
+
+class ReturnsReport(PercentReport):
+
+    def __init__(self, report_name, data, data_file=True):
+        """
+        Generates Excel file containing historical returns for different frequencies
+
+        Parameters
+        ----------
+        report_name : string
+            Name of report.
+        data : dict/dataframe
+            Dictionary containing returns of different frequencies.
+        data_file : boolean, optional
+            Boolean to determine if Excel file belongs in data folder or reports folder. The default is True.
+
+        Returns
+        -------
+        None. An Excel report called [report_name].xlsx is created
+        """
+        super().__init__(report_name=report_name, data=data, data_file=data_file)
+
+    def convert_data_to_dict(self):
+        freq_string = dm.switch_freq_string(dm.get_freq(self.data))
+        return {freq_string: self.data}
+
+    def print_sheet_generation_info(self, data_key):
+        print(f'Writing {data_key} Historical Returns sheet...')
+
+
+class ExposureReport(PercentReport):
+
+    def __init__(self, report_name, data, data_file=True):
+        """
+        Generates Excel file containing historical returns for different frequencies
+
+        Parameters
+        ----------
+        report_name : string
+            Name of report.
+        data : dict/dataframe
+            Dictionary containing returns of different frequencies.
+        data_file : boolean, optional
+            Boolean to determine if Excel file belongs in data folder or reports folder. The default is True.
+
+        Returns
+        -------
+        None. An Excel report called [report_name].xlsx is created
+        """
+        super().__init__(report_name=report_name, data=data, data_file=data_file)
+
+    def convert_data_to_dict(self):
+        return {'exposures': self.data}
 
 
 class ReturnMktValueReport(DataReport):
@@ -164,7 +222,7 @@ class ReturnMktValueReport(DataReport):
 
     def generate_report(self):
         print("Writing Monthly Returns sheet...")
-        self.generate_returns_sheet(data=self.data['returns'], sheet_name='returns')
+        self.generate_percent_sheet(data=self.data['returns'], sheet_name='returns')
         print("Writing Monthly Market Values sheet...")
         self.generate_mkt_value_sheet(data=self.data['market_values'])
 
@@ -223,7 +281,7 @@ class HistSelloffReport(AnalyticReport):
     def generate_selloffs_sheets(self):
         # Create sheets
         new_sheets.HistSelloffSheet(self.writer, self.data['selloffs']).create_sheet()
-        self.generate_returns_sheet(data=self.data['returns']['Daily'], sheet_name='Daily Historical Returns')
+        self.generate_percent_sheet(data=self.data['returns']['Daily'], sheet_name='Daily Historical Returns')
 
 
 class EquityHedgeReport(HistSelloffReport):
@@ -277,7 +335,7 @@ class EquityHedgeReport(HistSelloffReport):
         for freq in self.data['analytics']:
             new_sheets.AnalysisSheet(self.writer, self.data['analytics'][freq],
                                      sheet_name=f'{freq} Analysis').create_sheet()
-            self.generate_returns_sheet(data=self.data['returns'][freq], sheet_name=f'{freq} Historical Returns')
+            self.generate_percent_sheet(data=self.data['returns'][freq], sheet_name=f'{freq} Historical Returns')
 
 
 class StratReport(EquityHedgeReport):
@@ -488,7 +546,7 @@ class AltsReport(AnalyticReport):
 
     def generate_returns_sheets(self):
         for freq, returns_df in self.data['returns'].items():
-            self.generate_returns_sheet(data=returns_df, sheet_name=f'{freq} Historical Returns')
+            self.generate_percent_sheet(data=returns_df, sheet_name=f'{freq} Historical Returns')
 
     def generate_index_sheets(self, multiplier=100):
         price_data = PriceData(multiplier=multiplier)
