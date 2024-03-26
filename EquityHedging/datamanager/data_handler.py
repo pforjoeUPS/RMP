@@ -30,14 +30,14 @@ BMK_KEYS = {'Liquid Alts': {'Global Macro': 'HFRX Macro/CTA', 'Trend Following':
             'Group Trust': {'Liquid Alts': 'Liquid Alts Bmk', 'Public Equity': 'MSCI ACWI IMI',
                             'Fixed Income': 'Dynamic FI Benchmark'}
             }
-EQ_HEDGE_STRAT_DICT = {'Down Var': 1.0, 'VOLA 3': 1.25, 'Dynamic Put Spread': 1.0,
-                       'VRR Portfolio': 1.0, 'GW Dispersion': 1.0, 'Corr Hedge': 0.25, 'Def Var': 1.0,
-                       'Commodity Basket': 1.0}
+EQ_HEDGE_STRAT_DICT = {'Down Var': 1.0, 'VOLA 3': 1.25, 'VRR Portfolio': 1.0, 'Corr Hedge': 0.25, 'Def Var': 1.0,
+                       'Commodity Basket': 1.0,'ESPRSO': 1.0,'Moments': 0.5,'EVolCon':1.0,
+                       'UBS GW Dispersion': 1.0,'UBS Dynamic Put Spread': 0.5}
 
 FI_BMK_WEIGHTS_DICT = {'Long Corp': 0.6, 'STRIPS': 0.4}
 LA_BMK_WEIGHTS_DICT = {'HFRX Macro/CTA': 0.5, 'SG Trend': 0.2, 'HFRX Absolute Return': 0.3}
-DEF_VAR_WEIGHTS_DICT = {'Def Var (Fri)': 0.4, 'Def Var (Mon)': 0.3, 'Def Var (Wed)': 0.3}
-VRR_WEIGHTS_DICT = {'VRR 2': 0.75, 'VRR Trend': 0.25}
+DEF_VAR_WEIGHTS_DICT = {'Def Var II (Fri)': 0.4, 'Def Var II (Mon)': 0.3, 'Def Var II (Wed)': 0.3}
+VRR_WEIGHTS_DICT = {'VRR 2': 0.75, 'VRR Trend': 0}
 
 
 # TODO: Import data using di. it'll be efficient in the long run.
