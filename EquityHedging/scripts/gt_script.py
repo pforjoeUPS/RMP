@@ -1,10 +1,11 @@
+from EquityHedging.datamanager import data_lists as dl
 from EquityHedging.datamanager import data_handler as dh, data_manager_new as dm, data_xformer_new as dxf
 from EquityHedging.analytics import returns_analytics as ra, period_stats as ps
 from EquityHedging.reporting.excel import new_reports as rp, new_sheets
 
 # GT Data
 # GT DataHandler
-filepath = dh.UPSGT_DATA_FP
+filepath = dl.UPSGT_DATA_FP
 gt_dh = dh.GTPortDataHandler()
 w_la_list = ['Public Equity', 'Fixed Income', 'Liquid Alts', 'Credit', 'Private Equity', 'Real Estate', 'Cash']
 wo_la_list = ['Public Equity', 'Fixed Income', 'Credit', 'Private Equity', 'Real Estate', 'Cash']
@@ -25,8 +26,8 @@ gt_wo_la_data_cash = dm.get_agg_data(returns_df=gt_wo_la_returns, mvs_df=gt_wo_l
                                      agg_col='GT-Composite wo Liquid Alts', merge_agg=True)
 
 gt_dh.custom_returns_data = {'returns': dm.merge_df_lists([gt_dh.returns[w_la_list], gt_w_la_data['returns'],
-                                                           gt_wo_la_data['returns']], drop_na=False),
-                             'mv': dm.merge_df_lists([gt_dh.mvs, gt_w_la_data['mv'], gt_wo_la_data['mv']],
+                                                           gt_wo_la_data_eq['returns']], drop_na=False),
+                             'mv': dm.merge_df_lists([gt_dh.mvs, gt_w_la_data['mv'], gt_wo_la_data_eq['mv']],
                                                      drop_na=False)}
 
 returns_dict = dxf.get_data_dict(gt_dh.custom_returns_data['returns'], drop_na=False)
@@ -55,8 +56,8 @@ for freq, data_df in gt_rp.data.items():
     new_sheets.LiquidAltsReturnsStatsSheet(writer=gt_rp.writer, data=gt_rp.data[freq],
                                            sheet_name=f'Returns Statistics ({freq})', include_bmk=False).create_sheet()
 for freq, returns_df in returns_dict.items():
-    new_sheets.HistReturnSheet(writer=gt_rp.writer, data=returns_df,
-                               sheet_name=f'{freq} Historical Returns').create_sheet()
+    new_sheets.PercentSheet(writer=gt_rp.writer, data=returns_df,
+                            sheet_name=f'{freq} Historical Returns').create_sheet()
 new_sheets.MktValueSheet(writer=gt_rp.writer, data=gt_dh.custom_returns_data['mv']).create_sheet()
 gt_rp.writer.close()
 
@@ -81,7 +82,7 @@ gt_weights_rp.writer.close()
 la_dh = dh.LiqAltsPortHandler()
 la_q_returns = dm.merge_dfs(gt_dh.returns[['Public Equity', 'Fixed Income', 'Liquid Alts', 'Group Trust']],
                             la_dh.bmk_returns, drop_na=False)
-la_q_returns = dxf.format_data(dxf.get_price_data(la_q_returns), freq='Q', drop_na=False)
+la_q_returns = dxf.format_df(dxf.PriceData().get_price_data(la_q_returns), freq='Q', drop_na=False)
 
 # Liquid Alts Best-Worst Quarters
 la_q_ps = ps.BestWorstPeriods(la_q_returns)

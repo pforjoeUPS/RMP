@@ -4,14 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="b803898b-e4fe-48e5-b312-a81e5815600b" name="Changes" comment="Update modules in analytics">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/EquityHedging/datamanager/data_handler.py" beforeDir="false" afterPath="$PROJECT_DIR$/EquityHedging/datamanager/data_handler.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/EquityHedging/datamanager/data_importer.py" beforeDir="false" afterPath="$PROJECT_DIR$/EquityHedging/datamanager/data_importer.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/EquityHedging/datamanager/data_manager_new.py" beforeDir="false" afterPath="$PROJECT_DIR$/EquityHedging/datamanager/data_manager_new.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/EquityHedging/datamanager/data_updater_new.py" beforeDir="false" afterPath="$PROJECT_DIR$/EquityHedging/datamanager/data_updater_new.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/EquityHedging/datamanager/data_xformer_new.py" beforeDir="false" afterPath="$PROJECT_DIR$/EquityHedging/datamanager/data_xformer_new.py" afterDir="false" />
-    </list>
+    <list default="true" id="b803898b-e4fe-48e5-b312-a81e5815600b" name="Changes" comment="Update modules in analytics" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -64,6 +57,9 @@
   <component name="ProblemsViewState">
     <option name="selectedTabId" value="CurrentFile" />
   </component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 5
+}</component>
   <component name="ProjectId" id="2TaG2yifTwfVXdqKdbWpag4vkJT" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
@@ -74,13 +70,16 @@
     &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
     &quot;WebServerToolWindowFactoryState&quot;: &quot;false&quot;,
-    &quot;last_opened_file_path&quot;: &quot;C:/Users/nvg9hxp/Documents/Projects/RMP/EquityHedging/analytics/summary.py&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;refactor__branch&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/Users/Bloomberg/Documents/GitHub/RMP&quot;,
     &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
     &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
     &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
     &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
     &quot;run.code.analysis.last.selected.profile&quot;: &quot;aDefault&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;configurable.group.build&quot;
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.editor&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
 }</component>
   <component name="PyConsoleOptionsProvider">
@@ -175,10 +174,17 @@
       </list>
     </recent_temporary>
   </component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-python-sdk-d68999036c7f-b11f5e8da5ad-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-233.14475.56" />
+      </set>
+    </attachedChunks>
+  </component>
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">
-      <changelist id="2ffa8bc5-3080-451f-b012-30c2fbd5c3d6" name="Changes" comment="" />
+      <changelist id="b803898b-e4fe-48e5-b312-a81e5815600b" name="Changes" comment="Update modules in analytics" />
       <created>1691273577404</created>
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
@@ -198,6 +204,8 @@
       <workItem from="1705840718484" duration="32775000" />
       <workItem from="1705947617626" duration="2493000" />
       <workItem from="1706004360627" duration="10930000" />
+      <workItem from="1709913476744" duration="1249000" />
+      <workItem from="1711044316918" duration="602000" />
     </task>
     <task id="LOCAL-00001" summary="Updated data_importer.py">
       <created>1705599861548</created>

@@ -161,11 +161,11 @@ class DataSheet(SetSheet):
         self.worksheet.conditional_format(self.row + 1, self.col + 1, self.row_dim, self.col_dim,
                                           {'type': 'no_blanks', 'format': self.pct_fmt})
 
-    def conditional_returns_worksheet_format(self):
-        # format negative returns with pct_fmt_neg
+    def conditional_percent_worksheet_format(self):
+        # format negative values with pct_fmt_neg
         self.worksheet.conditional_format(self.row + 1, self.col + 1, self.row_dim, self.col_dim,
                                           {'type': 'cell', 'criteria': '<', 'value': 0, 'format': self.pct_fmt_neg})
-        # format zero or positive returns with pct_fmt
+        # format zero or positive values with pct_fmt
         self.worksheet.conditional_format(self.row + 1, self.col + 1, self.row_dim, self.col_dim,
                                           {'type': 'cell', 'criteria': '>=', 'value': 0, 'format': self.pct_fmt})
 
@@ -309,9 +309,9 @@ class TSDataDictSheet(DataDictSheet):
         return dm.switch_freq_string(freq)
 
 
-class HistReturnSheet(DataFrameSheet):
+class PercentSheet(DataFrameSheet):
 
-    def __init__(self, writer, data, sheet_name='Monthly Historical Returns'):
+    def __init__(self, writer, data, sheet_name='data'):
         """
         Create Excel sheet for historical returns
 
@@ -321,7 +321,7 @@ class HistReturnSheet(DataFrameSheet):
         data : dataframe
             Returns dataframe.
         sheet_name : string, optional
-            Excel sheet name. The default is 'Monthly Historical Returns'.
+            Excel sheet name. The default is 'data'.
 
         Returns
         -------
@@ -334,10 +334,10 @@ class HistReturnSheet(DataFrameSheet):
 
     def get_conditional_worksheet_format(self):
         self.conditional_worksheet_date_format()
-        self.conditional_returns_worksheet_format()
+        self.conditional_percent_worksheet_format()
 
 
-class MktValueSheet(HistReturnSheet):
+class MktValueSheet(PercentSheet):
 
     def __init__(self, writer, data, sheet_name='market_values'):
         """
@@ -362,7 +362,7 @@ class MktValueSheet(HistReturnSheet):
         self.conditional_ccy_worksheet_format()
 
 
-class RatioSheet(HistReturnSheet):
+class RatioSheet(PercentSheet):
 
     def __init__(self, writer, data, sheet_name):
         """
@@ -458,8 +458,8 @@ class LiquidAltsReturnsStatsSheet(MarketStatsDataSheet):
 
     def conditional_worksheet_format(self):
         self.increase_row_dim()
-        ann_ret_jump = self.row + 3 # 5
-        excess_ret_jump = 0 # 7
+        ann_ret_jump = self.row + 3  # 5
+        excess_ret_jump = 0  # 7
         bmk_beta_jump = 0  # 8
         first_col = self.col + 1
         ret_stats_jump = ann_ret_jump + 4  # 9
@@ -617,7 +617,7 @@ class HistReturnMTDYTDSheet(DataDictSheet):
             self.update_row()
 
     def get_conditional_worksheet_format(self):
-        self.conditional_returns_worksheet_format()
+        self.conditional_percent_worksheet_format()
 
 
 class CorrStatsSheet(DataDictSheet):

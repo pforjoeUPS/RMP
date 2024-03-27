@@ -48,4 +48,5 @@ INNOCAP_EXP_DATA_COL_DICT = {'Date': 'Dates', 'Account Name': 'Name', 'Asset Exp
 NEW_DATA_COL_LIST = ['SPTR', 'SX5T', 'M1WD', 'Long Corp', 'STRIPS', 'Down Var',
                      'Vortex', 'VOLA I', 'VOLA II', 'Dynamic VOLA', 'Dynamic Put Spread',
                      'GW Dispersion', 'Corr Hedge', 'Def Var (Mon)', 'Def Var (Fri)', 'Def Var (Wed)',
-                     'Commodity Basket']
+                     'Commodity Basket','Def Var II (Mon)', 'Def Var II (Fri)', 'Def Var II (Wed)','ESPRSO',
+                     'Moments','EVolCon','UBS GW Dispersion','UBS Dynamic Put Spread']
